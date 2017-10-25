@@ -1,0 +1,263 @@
+# Copyright 2017 The Openstack-Helm Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Default values for maas.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+dependencies:
+  rack_controller:
+    jobs:
+      - maas-db-sync
+    services:
+      - service: maas_region_ui
+        endpoint: internal
+  region_controller:
+    jobs:
+      - maas-db-sync
+    services:
+      - service: maas_db
+        endpoint: internal
+  db_init:
+    services:
+      - service: maas_db
+        endpoint: internal
+  db_sync:
+    jobs:
+      - maas-db-init
+  bootstrap_admin_user:
+    jobs:
+      - maas-db-sync
+    services:
+      - service: maas_region_ui
+        endpoint: internal
+      - service: maas_db
+        endpoint: internal
+  import_resources:
+    jobs:
+      - maas-db-sync
+    services:
+      - service: maas_region_ui
+        endpoint: internal
+      - service: maas_db
+        endpoint: internal
+  export_api_key:
+    jobs:
+      - maas-db-sync
+    services:
+      - service: maas_region_ui
+        endpoint: internal
+      - service: maas_db
+        endpoint: internal
+
+
+images:
+  db_init: docker.io/postgres:9.5
+  db_sync: quay.io/attcomdev/maas-region:master
+  maas_rack: quay.io/attcomdev/maas-rack:master
+  maas_region: quay.io/attcomdev/maas-region:master
+  bootstrap: quay.io/attcomdev/maas-region:master
+  export_api_key: quay.io/attcomdev/maas-region:master
+  dep_check: docker.io/kolla/ubuntu-source-kubernetes-entrypoint:4.0.0
+  pull_policy: IfNotPresent
+
+jobs:
+  import_boot_resources:
+    retry_timer: 10
+    #default timeout: 15 minutes
+    timeout: 900
+
+labels:
+  rack:
+    node_selector_key: ucp-control-plane
+    node_selector_value: enabled
+  region:
+    node_selector_key: ucp-control-plane
+    node_selector_value: enabled
+
+network:
+  proxy:
+    node_port:
+      enabled: true
+      port: 31800
+  gui:
+    node_port:
+      enabled: true
+      port: 31900
+  port:
+    region_container: 80
+    service_gui: 80
+    service_gui_target: 80
+    service_proxy: 8000
+    service_proxy_target: 8000
+    db_service: 5432
+    db_service_target: 5432
+
+conf:
+  bind:
+    override:
+    append:
+  curtin:
+    override:
+    append:
+  maas:
+    override:
+    append:
+    url:
+      maas_url: null
+    ntp:
+      # Use external only points region and rack serves and deployed nodes directly
+      # at external NTP servers. Otherwise we have nodes -> rack -> region -> external
+      use_external_only: 'false'
+      ntp_servers: null
+    dns:
+      require_dnssec: 'no'
+      # These are upstream servers
+      dns_servers: null
+    proxy:
+      # If proxy_enabled is true and proxy_serer is null, then nodes will use
+      # MAAS region server as a proxy for Apt and region server will connect directly
+      # to repos
+      # If proxy_enabled is false, regin server and all ndoes will connect directly to
+      # pkg repos
+      # If proxy_enabled is true and proxy_server is set, then region server and all nodes
+      # will use the specified proxy_server to connect to pkg repos
+      proxy_enabled: 'false'
+      proxy_server: null
+    database:
+      database_name: maasdb
+      database_user: maas
+      database_password: password
+    credentials:
+      admin_username: admin
+      admin_password: admin
+      admin_email: support@nowhere.com
+      secret:
+        namespace: maas
+        name: maas-api-key
+
+secrets:
+  maas_db:
+    admin: maas-db-admin
+    user: maas-db-user
+  maas_region:
+    name: maas-region-secret
+    value: 3858f62230ac3c915f300c664312c63f
+
+pod:
+  affinity:
+    anti:
+      type:
+        default: preferredDuringSchedulingIgnoredDuringExecution
+      topologyKey:
+        default: kubernetes.io/hostname
+  mounts:
+    maas_rack:
+      init_container: null
+      maas_rack:
+    maas_region:
+      init_container: null
+      maas_region:
+    export_api_key:
+      init_container: null
+      export_api_key:
+  replicas:
+    rack: 1
+    region: 1
+  resources:
+    enabled: false
+    maas_rack:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+      requests:
+        memory: "128Mi"
+        cpu: "500m"
+    maas_region:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+      requests:
+        memory: "128Mi"
+        cpu: "500m"
+    jobs:
+      db_init:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+      db_sync:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+      bootstrap_admin_user:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+      import_resources:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+      export_api_key:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+
+endpoints:
+  cluster_domain_suffix: cluster.local
+  maas_db:
+    auth:
+      admin:
+        username: postgres
+        password: password
+      user:
+        username: maas
+        password: password
+    path: maasdb
+    hosts:
+      default: postgresql
+    port:
+      postgresql:
+        default: 5432
+    host_fqdn_override:
+      default: null
+  maas_region_ui:
+    name: maas-region-ui
+    hosts:
+      default: maas-region-ui
+      public: maas
+    path:
+      default: /MAAS
+    scheme:
+      default: 'http'
+    port:
+      region_ui:
+        default: 80
+        public: 80
+    host_fqdn_override:
+      default: null

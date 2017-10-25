@@ -1,0 +1,79 @@
+{{/*
+Copyright 2017 The Openstack-Helm Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/}}
+
+{{- $envAll := . }}
+{{- $dependencies := .Values.dependencies.export_api_key }}
+{{- $initMounts := .Values.pod.mounts.export_api_key.export_api_key }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: maas-export-api-key
+spec:
+  template:
+    metadata:
+      labels:
+{{ tuple $envAll "maas" "export-api-key" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      nodeSelector:
+        {{ .Values.labels.region.node_selector_key }}: {{ .Values.labels.region.node_selector_value }}
+      initContainers:
+{{ tuple $envAll $dependencies $initMounts | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      containers:
+        - name: exporter
+          image: {{ .Values.images.export_api_key }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+          env:
+            - name: SECRET_NAMESPACE
+              value: {{ .Values.conf.maas.credentials.secret.namespace }}
+            - name: ADMIN_USERNAME
+              value: {{ .Values.conf.maas.credentials.admin_username }}
+            - name: SECRET_NAME
+              value: {{ .Values.conf.maas.credentials.secret.name }}
+          command:
+            - /tmp/export-api-key.sh
+          readinessProbe:
+            exec:
+              command:
+                - /tmp/job-readiness.sh
+            initialDelaySeconds: 60
+          volumeMounts:
+            - name: maas-bin
+              mountPath: /tmp/export-api-key.sh
+              subPath: export-api-key.sh
+              readOnly: true
+            - name: maas-bin
+              mountPath: /tmp/job-readiness.sh
+              subPath: job-readiness.sh
+              readOnly: true
+            - name: maas-etc
+              mountPath: /etc/bind/named.conf.options
+              subPath: named.conf.options
+              readOnly: true
+            - name: maas-etc
+              mountPath: /etc/maas/regiond.conf
+              subPath: regiond.conf
+              readOnly: true
+      volumes:
+        - name: maas-bin
+          configMap:
+            name: maas-bin
+            defaultMode: 0555
+        - name: maas-etc
+          configMap:
+            name: maas-etc
+            defaultMode: 0444

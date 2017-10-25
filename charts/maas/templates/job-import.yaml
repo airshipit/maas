@@ -1,0 +1,93 @@
+{{/*
+Copyright 2017 The Openstack-Helm Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/}}
+
+{{- $envAll := . }}
+{{- $dependencies := .Values.dependencies.import_resources }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: maas-import-resources
+spec:
+  template:
+    metadata:
+      labels:
+{{ tuple $envAll "maas" "import-resources" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      nodeSelector:
+        {{ .Values.labels.region.node_selector_key }}: {{ .Values.labels.region.node_selector_value }}
+      initContainers:
+{{ tuple $envAll $dependencies "[]" | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      containers:
+        - name: region-import-resources
+          image: {{ .Values.images.maas_region }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+          env:
+            - name: JOB_TIMEOUT
+              value: {{ .Values.jobs.import_boot_resources.timeout | quote }}
+            - name: ADMIN_USERNAME
+              value: {{ .Values.conf.maas.credentials.admin_username }}
+            - name: RETRY_TIMER
+              value: {{ .Values.jobs.import_boot_resources.retry_timer | quote }}
+            - name: MAAS_ENDPOINT
+              value: {{ tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" }}
+            - name: MAAS_PROXY_ENABLED
+              value: {{ .Values.conf.maas.proxy.proxy_enabled | quote }}
+            - name: MAAS_PROXY_SERVER
+              value: {{ .Values.conf.maas.proxy.proxy_server }}
+            - name: MAAS_NTP_SERVERS
+              value: {{ .Values.conf.maas.ntp.ntp_servers }}
+            - name: MAAS_NTP_EXTERNAL_ONLY
+              value: {{ .Values.conf.maas.ntp.use_external_only | quote }}
+            - name: MAAS_DNS_DNSSEC_REQUIRED
+              value: {{ .Values.conf.maas.dns.require_dnssec | quote }}
+            - name: MAAS_DNS_SERVERS
+              value: {{ .Values.conf.maas.dns.dns_servers }}
+{{ tuple $envAll $envAll.Values.pod.resources.jobs.import_resources | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+          command:
+            - /tmp/import-boot-resources.sh
+          readinessProbe:
+            exec:
+              command:
+                - /tmp/job-readiness.sh
+            initialDelaySeconds: 60
+          volumeMounts:
+            - name: maas-bin
+              mountPath: /tmp/import-boot-resources.sh
+              subPath: import-boot-resources.sh
+              readOnly: true
+            - name: maas-bin
+              mountPath: /tmp/job-readiness.sh
+              subPath: job-readiness.sh
+              readOnly: true
+            - name: maas-etc
+              mountPath: /etc/bind/named.conf.options
+              subPath: named.conf.options
+              readOnly: true
+            - name: maas-etc
+              mountPath: /etc/maas/regiond.conf
+              subPath: regiond.conf
+              readOnly: true
+      volumes:
+        - name: maas-bin
+          configMap:
+            name: maas-bin
+            defaultMode: 0555
+        - name: maas-etc
+          configMap:
+            name: maas-etc
+            defaultMode: 0444

@@ -1,0 +1,88 @@
+{{/*
+Copyright 2017 The Openstack-Helm Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/}}
+{{- if empty .Values.conf.maas.url.maas_url -}}
+{{- tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | set .Values.conf.maas.url "maas_url" | quote | trunc 0 -}}
+{{- end -}}
+{{- $envAll := . }}
+{{- $dependencies := .Values.dependencies.rack_controller }}
+{{- $mounts_maas_rack := .Values.pod.mounts.maas_rack }}
+{{- $mounts_maas_rack_init := .Values.pod.mounts.maas_rack.init_container }}
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: maas-rack
+spec:
+  replicas: {{ .Values.pod.replicas.rack }}
+  template:
+    metadata:
+      labels:
+{{ tuple $envAll "maas" "rack" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-bin-hash: {{ tuple "configmap-bin.yaml" . | include "helm-toolkit.utils.hash" }}
+        configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}
+    spec:
+      affinity:
+{{ tuple $envAll "maas" "rack" | include "helm-toolkit.snippets.kubernetes_pod_anti_affinity" | indent 8 }}
+      nodeSelector:
+        {{ .Values.labels.rack.node_selector_key }}: {{ .Values.labels.rack.node_selector_value }}
+      initContainers:
+{{ tuple $envAll $dependencies $mounts_maas_rack_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirst
+      initContainers:
+{{ tuple $envAll $dependencies "[]" | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      containers:
+        - name: maas-rack
+          image: {{ .Values.images.maas_rack }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+          env:
+            - name: MAAS_ENDPOINT
+              value: {{ .Values.conf.maas.url.maas_url }}
+            - name: MAAS_REGION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.maas_region.name }}
+                  key: REGION_SECRET
+{{ tuple $envAll $envAll.Values.pod.resources.maas_rack | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+          command:
+            - /tmp/start.sh
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: maas-bin
+              mountPath: /tmp/start.sh
+              subPath: start.sh
+              readOnly: true
+            - name: maas-bin
+              mountPath: /usr/local/bin/register-rack-controller.sh
+              subPath: register-rack-controller.sh
+              readOnly: true
+            - name: maas-etc
+              mountPath: /lib/systemd/system/register-rack-controller.service
+              subPath: register-rack-controller.service
+              readOnly: true
+{{ if $mounts_maas_rack.volumeMounts }}{{ toYaml $mounts_maas_rack.volumeMounts | indent 12 }}{{ end }}
+      volumes:
+        - name: maas-bin
+          configMap:
+            name: maas-bin
+            defaultMode: 0555
+        - name: maas-etc
+          configMap:
+            name: maas-etc
+            defaultMode: 0444
+{{ if $mounts_maas_rack.volumes }}{{ toYaml $mounts_maas_rack.volumes | indent 8 }}{{ end }}
