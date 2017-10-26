@@ -63,13 +63,14 @@ dependencies:
 
 
 images:
-  db_init: docker.io/postgres:9.5
-  db_sync: quay.io/attcomdev/maas-region:master
-  maas_rack: quay.io/attcomdev/maas-rack:master
-  maas_region: quay.io/attcomdev/maas-region:master
-  bootstrap: quay.io/attcomdev/maas-region:master
-  export_api_key: quay.io/attcomdev/maas-region:master
-  dep_check: docker.io/kolla/ubuntu-source-kubernetes-entrypoint:4.0.0
+  tags:
+    db_init: docker.io/postgres:9.5
+    db_sync: quay.io/attcomdev/maas-region:master
+    maas_rack: quay.io/attcomdev/maas-rack:master
+    maas_region: quay.io/attcomdev/maas-region:master
+    bootstrap: quay.io/attcomdev/maas-region:master
+    export_api_key: quay.io/attcomdev/maas-region:master
+    dep_check: docker.io/kolla/ubuntu-source-kubernetes-entrypoint:4.0.0
   pull_policy: IfNotPresent
 
 jobs:
