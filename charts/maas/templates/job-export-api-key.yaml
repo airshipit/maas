@@ -35,7 +35,7 @@ spec:
 {{ tuple $envAll $dependencies $initMounts | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: exporter
-          image: {{ .Values.images.export_api_key }}
+          image: {{ .Values.images.tags.export_api_key }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
           env:
             - name: SECRET_NAMESPACE

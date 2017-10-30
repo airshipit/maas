@@ -40,7 +40,7 @@ spec:
 {{ tuple $envAll $dependencies $mounts_maas_region_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
       - name: maas-region
-        image: {{ .Values.images.maas_region }}
+        image: {{ .Values.images.tags.maas_region }}
         imagePullPolicy: {{ .Values.images.pull_policy }}
 {{ tuple $envAll $envAll.Values.pod.resources.maas_region | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
         ports:

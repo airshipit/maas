@@ -34,7 +34,7 @@ spec:
 {{ tuple $envAll $dependencies "[]" | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: region-import-resources
-          image: {{ .Values.images.maas_region }}
+          image: {{ .Values.images.tags.maas_region }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
           env:
             - name: JOB_TIMEOUT

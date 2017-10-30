@@ -47,7 +47,7 @@ spec:
 {{ tuple $envAll $dependencies "[]" | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: maas-rack
-          image: {{ .Values.images.maas_rack }}
+          image: {{ .Values.images.tags.maas_rack }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
           env:
             - name: MAAS_ENDPOINT
