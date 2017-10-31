@@ -33,17 +33,7 @@ metadata:
   name: maas-etc
 data:
   curtin_userdata: |+
-{{ if .Values.conf.curtin.override -}}
-{{ .Values.conf.curtin.override | indent 4 }}
-{{- else -}}
-{{- if .Values.conf.curtin.prefix -}}
-{{ .Values.conf.curtin.prefix | indent 4 }}
-{{- end }}
 {{ tuple "etc/_curtin_userdata.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
-{{- end }}
-{{- if .Values.conf.curtin.append -}}
-{{ .Values.conf.curtin.append | indent 4 }}
-{{- end }}
   named.conf.options: |+
 {{ if .Values.conf.bind.override -}}
 {{ .Values.conf.bind.override | indent 4 }}

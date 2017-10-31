@@ -66,10 +66,12 @@ spec:
           mountPath: /etc/maas/regiond.conf
           subPath: regiond.conf
           readOnly: true
+{{- if .Values.conf.curtin.override }}
         - name: maas-etc
           mountPath: /etc/maas/preseeds/curtin_userdata
           subPath: curtin_userdata
           readOnly: true
+{{- end }}
         - name: maas-bin
           mountPath: /tmp/start.sh
           subPath: start.sh

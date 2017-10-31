@@ -110,8 +110,9 @@ conf:
     override:
     append:
   curtin:
-    override:
-    append:
+    override: true
+  drydock:
+    bootaction_url: null
   maas:
     override:
     append:

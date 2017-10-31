@@ -24,17 +24,31 @@ early_commands:
   driver_00: ["sh", "-c", "echo third party drivers not installed or necessary."]
 {{ "{{" }}endif{{ "}}" }}
 late_commands:
-  {{ "{{" }}py: bootdata_url = ''.join([{{ .Values.bootdata_url | quote }},node.hostname,"/promconfig"]){{ "}}" }}
-  {{ "{{" }}py: promsvc_url = ''.join([{{ .Values.bootdata_url | quote }},node.hostname,"/promservice"]){{ "}}" }}
-  {{ "{{" }}py: vfsvc_url = ''.join([{{ .Values.bootdata_url | quote }},node.hostname,"/vfservice"]){{ "}}" }}
-  {{ "{{" }}py: prominit_url = ''.join([{{ .Values.bootdata_url | quote }},node.hostname,"/prominit"]){{ "}}" }}
-  drydock_01: ["curtin", "in-target","--", "wget", "--no-proxy", "{{ "{{" }}bootdata_url{{ "}}" }}", "-O", "/etc/prom_init.yaml"]
-  drydock_02: ["curtin", "in-target","--", "wget", "--no-proxy", "{{ "{{" }}prominit_url{{ "}}" }}", "-O", "/var/tmp/prom_init.sh"]
-  drydock_03: ["curtin", "in-target","--", "chmod", "555", "/var/tmp/prom_init.sh"]
-  drydock_04: ["curtin", "in-target","--", "wget", "--no-proxy", "{{ "{{" }}promsvc_url{{ "}}" }}", "-O", "/lib/systemd/system/prom_init.service"]
-  drydock_05: ["curtin", "in-target","--", "systemctl", "enable", "prom_init.service"]
-  drydock_06: ["curtin", "in-target","--", "wget", "--no-proxy", "{{ "{{" }}vfsvc_url{{ "}}" }}", "-O", "/lib/systemd/system/drydock_vf.service"]
-  drydock_07: ["curtin", "in-target","--", "systemctl", "enable", "drydock_vf.service"]
+{{ "{{" }}py:
+def find_ba_key(n):
+    tag_prefix = "%s_baid" % n.hostname
+    for t in n.tag_names():
+        if t.startswith(tag_prefix):
+            prefix, ba_key = t.split('-')
+            return ba_key
+    return False
+{{ "}}" }}
+{{ "{{" }}py: ba_key = find_ba_key(node){{ "}}" }}
+{{ "{{" }}py: ba_units_url = ''.join([{{ .Values.conf.drydock.bootaction_url | quote }},node.hostname,'/units']){{ "}}" }}
+{{ "{{" }}py: ba_files_url = ''.join([{{ .Values.conf.drydock.bootaction_url | quote }},node.hostname,'/files']){{ "}}" }}
+{{ "{{" }}if ba_key{{ "}}" }}
+  drydock_00: ["sh", "-c", "echo Installing Drydock Boot Actions."]
+  drydock_01: ["curtin", "in-target", "--", "wget", "--no-proxy", "--header=X-Bootaction-Key: {{ "{{" }}ba_key{{ "}}" }}", "{{ "{{" }}ba_units_url{{ "}}" }}", "-O", "/tmp/bootaction-units.tar.gz"]
+  drydock_02: ["curtin", "in-target", "--", "wget", "--no-proxy", "--header=X-Bootaction-Key: {{ "{{" }}ba_key{{ "}}" }}", "{{ "{{" }}ba_files_url{{ "}}" }}", "-O", "/tmp/bootaction-files.tar.gz"]
+  drydock_03: ["curtin", "in-target", "--", "sh", "-c", "tar --owner=root -xPzvf /tmp/bootaction-units.tar.gz > /tmp/bootaction-unit-names.txt"]
+  drydock_04: ["curtin", "in-target", "--", "sh", "-c", "tar --owner=root -xPzvf /tmp/bootaction-files.tar.gz > /tmp/bootaction-file-names.txt"]
+  drydock_05: ["curtin", "in-target", "--", "sh", "-c", "xargs -a /tmp/bootaction-unit-names.txt -n 1 basename > /tmp/bootaction-unit-basenames.txt"]
+  drydock_06: ["curtin", "in-target", "--", "sh", "-c", "xargs -a /tmp/bootaction-unit-basenames.txt -n 1 systemctl enable"]
+  drydock_07: ["sh", "-c", "echo Following SystemD units installed and enabled:"]
+  drydock_08: ["curtin", "in-target", "--", "cat", "/tmp/bootaction-unit-basenames.txt"]
+  drydock_09: ["sh", "-c", "echo Following files installed on deployed node:"]
+  drydock_10: ["curtin", "in-target", "--", "cat", "/tmp/bootaction-file-names.txt"]
+{{ "{{" }}}endif{{ "}}" }}
   maas: [wget, '--no-proxy', {{ "{{" }}node_disable_pxe_url|escape.json{{ "}}" }}, '--post-data', {{ "{{" }}node_disable_pxe_data|escape.json{{ "}}" }}, '-O', '/dev/null']
 {{ "{{" }}if third_party_drivers and driver{{ "}}" }}
   {{ "{{" }}if driver['key_binary'] and driver['repository'] and driver['package']{{ "}}" }}
@@ -51,3 +65,5 @@ late_commands:
   driver_06_depmod: ["curtin", "in-target", "--", "depmod"]
   driver_07_update_initramfs: ["curtin", "in-target", "--", "update-initramfs", "-u"]
 {{ "{{" }}endif{{ "}}" }}
+showtrace: true
+verbosity: 2
