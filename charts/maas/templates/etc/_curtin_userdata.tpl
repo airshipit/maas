@@ -48,7 +48,7 @@ def find_ba_key(n):
   drydock_08: ["curtin", "in-target", "--", "cat", "/tmp/bootaction-unit-basenames.txt"]
   drydock_09: ["sh", "-c", "echo Following files installed on deployed node:"]
   drydock_10: ["curtin", "in-target", "--", "cat", "/tmp/bootaction-file-names.txt"]
-{{ "{{" }}}endif{{ "}}" }}
+{{ "{{" }}endif{{ "}}" }}
   maas: [wget, '--no-proxy', {{ "{{" }}node_disable_pxe_url|escape.json{{ "}}" }}, '--post-data', {{ "{{" }}node_disable_pxe_data|escape.json{{ "}}" }}, '-O', '/dev/null']
 {{ "{{" }}if third_party_drivers and driver{{ "}}" }}
   {{ "{{" }}if driver['key_binary'] and driver['repository'] and driver['package']{{ "}}" }}
