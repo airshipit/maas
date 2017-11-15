@@ -70,7 +70,7 @@ images:
     maas_region: quay.io/attcomdev/maas-region:master
     bootstrap: quay.io/attcomdev/maas-region:master
     export_api_key: quay.io/attcomdev/maas-region:master
-    dep_check: docker.io/kolla/ubuntu-source-kubernetes-entrypoint:4.0.0
+    dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.2.1
   pull_policy: IfNotPresent
 
 jobs:
