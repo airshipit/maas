@@ -36,4 +36,4 @@ data:
   export-api-key.sh: |
 {{ tuple "bin/_export-api-key.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   register-rack-controller.sh: |
-{{ tuple "bin/_register-rack-controller.sh" . | include "helm-toolkit.utils.template" | indent 4 }}
+{{ tuple "bin/_register-rack-controller.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
