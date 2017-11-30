@@ -49,6 +49,13 @@ function configure_dns {
   maas ${ADMIN_USERNAME} maas set-config name=upstream_dns value=${MAAS_DNS_SERVERS}
 }
 
+function configure_boot_sources {
+  if [[ $USE_IMAGE_CACHE == 'true' ]]
+  then
+    maas ${ADMIN_USERNAME} boot-source update 1 url=http://localhost:8888/maas/images/ephemeral-v3/daily/
+  fi
+}
+
 KEY=$(maas-region apikey --username=${ADMIN_USERNAME})
 maas login ${ADMIN_USERNAME} ${MAAS_ENDPOINT} $KEY
 
@@ -57,6 +64,7 @@ configure_ntp
 configure_dns
 
 # make call to import images
+configure_boot_sources
 maas ${ADMIN_USERNAME} boot-resources import
 # see if we can find > 0 images
 sleep ${RETRY_TIMER}

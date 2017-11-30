@@ -37,6 +37,8 @@ spec:
           image: {{ .Values.images.tags.maas_region }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
           env:
+            - name: USE_IMAGE_CACHE
+              value: {{ .Values.conf.cache.enabled | quote }}
             - name: JOB_TIMEOUT
               value: {{ .Values.jobs.import_boot_resources.timeout | quote }}
             - name: ADMIN_USERNAME

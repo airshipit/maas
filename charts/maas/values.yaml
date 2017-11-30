@@ -61,6 +61,9 @@ dependencies:
       - service: maas_db
         endpoint: internal
 
+manifests:
+  region_statefulset: true
+  rack_deployment: true
 
 images:
   tags:
@@ -70,6 +73,7 @@ images:
     maas_region: quay.io/attcomdev/maas-region:master
     bootstrap: quay.io/attcomdev/maas-region:master
     export_api_key: quay.io/attcomdev/maas-region:master
+    maas_cache: quay.io/attcomdev/maas-cache:master
     dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.2.1
   pull_policy: IfNotPresent
 
@@ -113,6 +117,8 @@ conf:
     override: true
   drydock:
     bootaction_url: null
+  cache:
+    enabled: true
   maas:
     override:
     append:
@@ -179,6 +185,13 @@ pod:
     region: 1
   resources:
     enabled: false
+    test:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+      requests:
+        memory: "128Mi"
+        cpu: "500m"
     maas_rack:
       limits:
         memory: "128Mi"

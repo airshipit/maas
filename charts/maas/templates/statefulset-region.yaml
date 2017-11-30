@@ -1,19 +1,18 @@
 {{/*
-Copyright 2017 The Openstack-Helm Authors.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/}}
-
+# Copyright (c) 2017 AT&T Intellectual Property. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License. */}}
+{{- if .Values.manifests.region_statefulset }}
 {{- $envAll := . }}
 {{- $dependencies := .Values.dependencies.region_controller }}
 {{- $mounts_maas_region := .Values.pod.mounts.maas_region.maas_region }}
@@ -29,7 +28,7 @@ spec:
   template:
     metadata:
       labels:
-        app: maas-region
+{{ tuple $envAll "maas" "region" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
     spec:
       affinity:
@@ -39,47 +38,52 @@ spec:
       initContainers:
 {{ tuple $envAll $dependencies $mounts_maas_region_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
-      - name: maas-region
-        image: {{ .Values.images.tags.maas_region }}
-        imagePullPolicy: {{ .Values.images.pull_policy }}
-{{ tuple $envAll $envAll.Values.pod.resources.maas_region | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
-        ports:
-        - name: r-ui
-          containerPort: {{ .Values.network.port.region_container }}
-        readinessProbe:
-          tcpSocket:
-            port: {{ .Values.network.port.region_container }}
-        securityContext:
-          privileged: true
-        command:
-          - /tmp/start.sh
-        volumeMounts:
-        - name: maas-region-secret
-          mountPath: /var/lib/maas/secret
-          subPath: REGION_SECRET
-          readOnly: true
-        - name: maas-etc
-          mountPath: /etc/bind/named.conf.options
-          subPath: named.conf.options
-          readOnly: true
-        - name: maas-etc
-          mountPath: /etc/maas/regiond.conf
-          subPath: regiond.conf
-          readOnly: true
-{{- if .Values.conf.curtin.override }}
-        - name: maas-etc
-          mountPath: /etc/maas/preseeds/curtin_userdata
-          subPath: curtin_userdata
-          readOnly: true
+{{- if .Values.conf.cache.enabled }}
+        - name: maas-cache
+          image: {{ .Values.images.tags.maas_cache }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
 {{- end }}
-        - name: maas-bin
-          mountPath: /tmp/start.sh
-          subPath: start.sh
-          readOnly: true
-        - name: maas-etc
-          mountPath: /etc/nsswitch.conf
-          subPath: nsswitch.conf
-          readOnly: true
+        - name: maas-region
+          image: {{ .Values.images.tags.maas_region }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+{{ tuple $envAll $envAll.Values.pod.resources.maas_region | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+          ports:
+            - name: r-ui
+              containerPort: {{ .Values.network.port.region_container }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.network.port.region_container }}
+          securityContext:
+            privileged: true
+          command:
+            - /tmp/start.sh
+          volumeMounts:
+            - name: maas-region-secret
+              mountPath: /var/lib/maas/secret
+              subPath: REGION_SECRET
+              readOnly: true
+            - name: maas-etc
+              mountPath: /etc/bind/named.conf.options
+              subPath: named.conf.options
+              readOnly: true
+            - name: maas-etc
+              mountPath: /etc/maas/regiond.conf
+              subPath: regiond.conf
+              readOnly: true
+{{- if .Values.conf.curtin.override }}
+            - name: maas-etc
+              mountPath: /etc/maas/preseeds/curtin_userdata
+              subPath: curtin_userdata
+              readOnly: true
+{{- end }}
+            - name: maas-bin
+              mountPath: /tmp/start.sh
+              subPath: start.sh
+              readOnly: true
+            - name: maas-etc
+              mountPath: /etc/nsswitch.conf
+              subPath: nsswitch.conf
+              readOnly: true
 {{- if $mounts_maas_region.volumeMounts }}{{ toYaml $mounts_maas_region.volumeMounts | indent 12 }}{{ end }}
       volumes:
         - name: maas-etc
@@ -94,3 +98,5 @@ spec:
           secret:
             secretName: {{ .Values.secrets.maas_region.name }}
 {{- if $mounts_maas_region.volumes }}{{ toYaml $mounts_maas_region.volumes | indent 8 }}{{ end }}
+...
+{{- end }}

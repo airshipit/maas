@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */}}
+{{- if .Values.manifests.rack_deployment }}
 {{- if empty .Values.conf.maas.url.maas_url -}}
 {{- tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | set .Values.conf.maas.url "maas_url" | quote | trunc 0 -}}
 {{- end -}}
@@ -86,3 +87,4 @@ spec:
             name: maas-etc
             defaultMode: 0444
 {{ if $mounts_maas_rack.volumes }}{{ toYaml $mounts_maas_rack.volumes | indent 8 }}{{ end }}
+{{- end }}

@@ -13,9 +13,9 @@
 # limitations under the License.
 
 MAAS_IMAGE_COMMON          ?= maas
-REGION_SUFFIX              ?= regiond
+REGION_SUFFIX              ?= region
 REGION_IMG_DIR             ?= images/maas-region-controller
-RACK_SUFFIX                ?= rackd
+RACK_SUFFIX                ?= rack
 RACK_IMG_DIR               ?= images/maas-rack-controller
 CACHE_SUFFIX               ?= cache
 CACHE_IMG_DIR              ?= images/sstream-cache
