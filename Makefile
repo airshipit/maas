@@ -27,7 +27,7 @@ USE_PROXY                  ?= false
 
 # Build all docker images for this project
 .PHONY: images
-images: build_rack build_region build_cache
+images: build_maas-rack-controller build_maas-region-controller build_sstream-cache
 
 # Create tgz of the chart
 .PHONY: charts
@@ -47,24 +47,24 @@ dry-run: clean
 
 # Make targets intended for use by the primary targets above.
 
-.PHONY: build_rack
-build_rack:
+.PHONY: build_maas-rack-controller
+build_maas-rack-controller:
 ifeq ($(USE_PROXY), true)
 	docker build -t $(IMAGE_PREFIX)/$(MAAS_IMAGE_COMMON)-$(RACK_SUFFIX):$(IMAGE_TAG) -f $(RACK_IMG_DIR)/Dockerfile $(RACK_IMG_DIR) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY)
 else
 	docker build -t $(IMAGE_PREFIX)/$(MAAS_IMAGE_COMMON)-$(RACK_SUFFIX):$(IMAGE_TAG) -f $(RACK_IMG_DIR)/Dockerfile $(RACK_IMG_DIR)
 endif
 
-.PHONY: build_region
-build_region:
+.PHONY: build_maas-region-controller
+build_maas-region-controller:
 ifeq ($(USE_PROXY), true)
 	docker build -t $(IMAGE_PREFIX)/$(MAAS_IMAGE_COMMON)-$(REGION_SUFFIX):$(IMAGE_TAG) -f $(REGION_IMG_DIR)/Dockerfile $(REGION_IMG_DIR) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY)
 else
 	docker build -t $(IMAGE_PREFIX)/$(MAAS_IMAGE_COMMON)-$(REGION_SUFFIX):$(IMAGE_TAG) -f $(REGION_IMG_DIR)/Dockerfile $(REGION_IMG_DIR)
 endif
 
-.PHONY: build_cache
-build_cache:
+.PHONY: build_sstream-cache
+build_sstream-cache:
 ifeq ($(USE_PROXY), true)
 	docker build -t $(IMAGE_PREFIX)/$(MAAS_IMAGE_COMMON)-$(CACHE_SUFFIX):$(IMAGE_TAG) -f $(CACHE_IMG_DIR)/Dockerfile $(CACHE_IMG_DIR) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY)
 else
