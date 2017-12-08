@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-MAAS_IMAGE_COMMON          ?= maas
-REGION_SUFFIX              ?= region
+REGION_SUFFIX              ?= maas-region
+IMG_COMMON_DIR             ?= images
 REGION_IMG_DIR             ?= images/maas-region-controller
-RACK_SUFFIX                ?= rack
+RACK_SUFFIX                ?= maas-rack
 RACK_IMG_DIR               ?= images/maas-rack-controller
-CACHE_SUFFIX               ?= cache
+CACHE_SUFFIX               ?= maas-cache
 CACHE_IMG_DIR              ?= images/sstream-cache
 IMAGE_PREFIX               ?= attcomdev
 IMAGE_TAG                  ?= latest
@@ -25,9 +25,16 @@ HELM                       ?= helm
 PROXY                      ?= http://one.proxy.att.com:8080
 USE_PROXY                  ?= false
 
-# Build all docker images for this project
+IMAGE_LIST                 := maas-rack-controller maas-region-controller sstream-cache
+
 .PHONY: images
-images: build_maas-rack-controller build_maas-region-controller build_sstream-cache
+#Build all images in the list
+images: $(IMAGE_LIST)
+
+$(IMAGE_LIST):
+	@echo
+	@echo "===== Processing [$@] image ====="
+	@make build IMAGE_SUFFIX=$@ IMAGE_DIR=images/$@
 
 # Create tgz of the chart
 .PHONY: charts
@@ -47,28 +54,12 @@ dry-run: clean
 
 # Make targets intended for use by the primary targets above.
 
-.PHONY: build_maas-rack-controller
-build_maas-rack-controller:
+.PHONY: build
+build:
 ifeq ($(USE_PROXY), true)
-	docker build -t $(IMAGE_PREFIX)/$(MAAS_IMAGE_COMMON)-$(RACK_SUFFIX):$(IMAGE_TAG) -f $(RACK_IMG_DIR)/Dockerfile $(RACK_IMG_DIR) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY)
+	docker build -t $(IMAGE_PREFIX)/$(IMAGE_SUFFIX):$(IMAGE_TAG) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY)
 else
-	docker build -t $(IMAGE_PREFIX)/$(MAAS_IMAGE_COMMON)-$(RACK_SUFFIX):$(IMAGE_TAG) -f $(RACK_IMG_DIR)/Dockerfile $(RACK_IMG_DIR)
-endif
-
-.PHONY: build_maas-region-controller
-build_maas-region-controller:
-ifeq ($(USE_PROXY), true)
-	docker build -t $(IMAGE_PREFIX)/$(MAAS_IMAGE_COMMON)-$(REGION_SUFFIX):$(IMAGE_TAG) -f $(REGION_IMG_DIR)/Dockerfile $(REGION_IMG_DIR) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY)
-else
-	docker build -t $(IMAGE_PREFIX)/$(MAAS_IMAGE_COMMON)-$(REGION_SUFFIX):$(IMAGE_TAG) -f $(REGION_IMG_DIR)/Dockerfile $(REGION_IMG_DIR)
-endif
-
-.PHONY: build_sstream-cache
-build_sstream-cache:
-ifeq ($(USE_PROXY), true)
-	docker build -t $(IMAGE_PREFIX)/$(MAAS_IMAGE_COMMON)-$(CACHE_SUFFIX):$(IMAGE_TAG) -f $(CACHE_IMG_DIR)/Dockerfile $(CACHE_IMG_DIR) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY)
-else
-	docker build -t $(IMAGE_PREFIX)/$(MAAS_IMAGE_COMMON)-$(CACHE_SUFFIX):$(IMAGE_TAG) -f $(CACHE_IMG_DIR)/Dockerfile $(CACHE_IMG_DIR)
+	docker build -t $(IMAGE_PREFIX)/$(IMAGE_SUFFIX):$(IMAGE_TAG) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR)
 endif
 
 .PHONY: clean
