@@ -45,7 +45,7 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirst
       initContainers:
-{{ tuple $envAll $dependencies "[]" | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+{{ tuple $envAll $dependencies list | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: maas-rack
           image: {{ .Values.images.tags.maas_rack }}

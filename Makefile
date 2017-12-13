@@ -38,9 +38,8 @@ $(IMAGE_LIST):
 
 # Create tgz of the chart
 .PHONY: charts
-charts: clean
-	$(HELM) dep up charts/maas
-	$(HELM) package charts/maas
+charts: helm_lint
+	$(HELM) package build/charts/maas
 
 # Perform Linting
 .PHONY: lint
@@ -48,9 +47,9 @@ lint: helm_lint
 
 # Dry run templating of chart
 .PHONY: dry-run
-dry-run: clean
+dry-run: helm_lint
 	tools/helm_tk.sh $(HELM)
-	$(HELM) template charts/maas
+	$(HELM) template build/charts/maas
 
 # Make targets intended for use by the primary targets above.
 
@@ -69,4 +68,7 @@ clean:
 .PHONY: helm_lint
 helm_lint: clean
 	tools/helm_tk.sh $(HELM)
-	$(HELM) lint charts/maas
+	mkdir -p build/charts/maas
+	cp -R charts/maas build/charts/
+	$(HELM) dep up build/charts/maas
+	$(HELM) lint build/charts/maas

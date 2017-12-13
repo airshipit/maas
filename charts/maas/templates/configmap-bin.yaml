@@ -37,3 +37,5 @@ data:
 {{ tuple "bin/_export-api-key.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   register-rack-controller.sh: |
 {{ tuple "bin/_register-rack-controller.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  maas-test.sh: |
+{{ tuple "bin/_maas-test.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}

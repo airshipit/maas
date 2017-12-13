@@ -64,6 +64,7 @@ dependencies:
 manifests:
   region_statefulset: true
   rack_deployment: true
+  test_maas_api: true
 
 images:
   tags:
@@ -118,7 +119,7 @@ conf:
   drydock:
     bootaction_url: null
   cache:
-    enabled: true
+    enabled: false
   maas:
     override:
     append:
@@ -169,13 +170,13 @@ pod:
         default: kubernetes.io/hostname
   mounts:
     maas_rack:
-      init_container: null
+      init_container: []
       maas_rack:
     maas_region:
-      init_container: null
+      init_container: []
       maas_region:
     export_api_key:
-      init_container: null
+      init_container: []
       export_api_key:
   replicas:
     rack: 1
