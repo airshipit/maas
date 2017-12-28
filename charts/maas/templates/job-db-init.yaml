@@ -31,7 +31,7 @@ spec:
       nodeSelector:
         {{ .Values.labels.region.node_selector_key }}: {{ .Values.labels.region.node_selector_value }}
       initContainers:
-{{ tuple $envAll $dependencies "[]" | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+{{ tuple $envAll $dependencies list | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: maas-db-init
           image: {{ .Values.images.tags.db_init | quote }}
