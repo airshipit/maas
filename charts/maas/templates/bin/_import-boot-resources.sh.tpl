@@ -36,6 +36,7 @@ function check_for_download {
 
 function configure_proxy {
   maas ${ADMIN_USERNAME} maas set-config name=enable_http_proxy value=${MAAS_PROXY_ENABLED}
+  maas ${ADMIN_USERNAME} maas set-config name=use_peer_proxy value=${MAAS_PEER_PROXY_ENABLED}
   maas ${ADMIN_USERNAME} maas set-config name=http_proxy value=${MAAS_PROXY_SERVER}
 }
 

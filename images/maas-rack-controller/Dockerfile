@@ -27,8 +27,10 @@ RUN apt-get install -y systemd
 RUN apt-get install -y rsyslog
 RUN systemctl enable rsyslog.service
 
+ENV MAAS_VERSION 2.3.0-6434-gd354690-0ubuntu1~16.04.1
+
 # install maas
-RUN rsyslogd; apt-get install -y maas-cli=2.2.2-6099-g8751f91-0ubuntu1~16.04.1 maas-rack-controller=2.2.2-6099-g8751f91-0ubuntu1~16.04.1
+RUN rsyslogd; apt-get install -y maas-cli=$MAAS_VERSION maas-rack-controller=$MAAS_VERSION
 
 COPY scripts/register-rack-controller.sh /usr/local/bin
 RUN chmod +x /usr/local/bin/register-rack-controller.sh

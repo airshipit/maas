@@ -68,11 +68,11 @@ manifests:
 images:
   tags:
     db_init: docker.io/postgres:9.5
-    db_sync: quay.io/attcomdev/maas-region:master
-    maas_rack: quay.io/attcomdev/maas-rack:master
-    maas_region: quay.io/attcomdev/maas-region:master
-    bootstrap: quay.io/attcomdev/maas-region:master
-    export_api_key: quay.io/attcomdev/maas-region:master
+    db_sync: sthussey/maas-region-controller:2.3
+    maas_rack: sthussey/maas-rack-controller:2.3
+    maas_region: sthussey/maas-region-controller:2.3
+    bootstrap: sthussey/maas-region-controller:2.3
+    export_api_key: sthussey/maas-region-controller:2.3
     maas_cache: quay.io/attcomdev/maas-cache:master
     dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.2.1
   pull_policy: IfNotPresent
@@ -127,21 +127,18 @@ conf:
     ntp:
       # Use external only points region and rack serves and deployed nodes directly
       # at external NTP servers. Otherwise we have nodes -> rack -> region -> external
-      use_external_only: 'false'
+      use_external_only: false
       ntp_servers: null
     dns:
-      require_dnssec: 'no'
+      require_dnssec: no
       # These are upstream servers
       dns_servers: null
     proxy:
-      # If proxy_enabled is true and proxy_serer is null, then nodes will use
-      # MAAS region server as a proxy for Apt and region server will connect directly
-      # to repos
-      # If proxy_enabled is false, regin server and all ndoes will connect directly to
-      # pkg repos
-      # If proxy_enabled is true and proxy_server is set, then region server and all nodes
-      # will use the specified proxy_server to connect to pkg repos
-      proxy_enabled: 'false'
+      # Whether deploying nodes should use MaaS region as an APT proxy
+      proxy_enabled: false
+      # Whether MaaS region should utilize an external proxy for accessing repos
+      peer_proxy_enabled: false
+      # An external proxy server to use
       proxy_server: null
     database:
       database_name: maasdb
