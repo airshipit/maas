@@ -59,7 +59,3 @@ git pull
 helm_serve
 make helm-toolkit
 popd && popd
-for c in $DEP_UP_LIST
-do
-  ${HELM} dep up charts/$c
-done
