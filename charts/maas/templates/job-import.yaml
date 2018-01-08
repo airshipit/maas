@@ -49,6 +49,8 @@ spec:
               value: {{ tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" }}
             - name: MAAS_PROXY_ENABLED
               value: {{ .Values.conf.maas.proxy.proxy_enabled | quote }}
+            - name: MAAS_PEER_PROXY_ENABLED
+              value: {{ .Values.conf.maas.proxy.peer_proxy_enabled | quote }}
             - name: MAAS_PROXY_SERVER
               value: {{ .Values.conf.maas.proxy.proxy_server }}
             - name: MAAS_NTP_SERVERS

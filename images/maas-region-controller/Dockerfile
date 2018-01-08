@@ -2,7 +2,6 @@ FROM ubuntu:16.04
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV container docker
-ENV MAAS_VERSION 2.2.2-6099-g8751f91-0ubuntu1~16.04.1
 
 # Don't start any optional services except for the few we need.
 RUN find /etc/systemd/system \
@@ -27,6 +26,8 @@ RUN apt-get install -y systemd
 # install syslog and enable it
 RUN apt-get install -y rsyslog
 RUN systemctl enable rsyslog.service
+
+ENV MAAS_VERSION 2.3.0-6434-gd354690-0ubuntu1~16.04.1
 
 # install maas
 RUN rsyslogd; apt-get install -y maas-cli=$MAAS_VERSION \
