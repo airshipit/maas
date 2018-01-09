@@ -123,6 +123,7 @@ conf:
   maas:
     override:
     append:
+    http_boot: true
     url:
       maas_url: null
     ntp:

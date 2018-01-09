@@ -55,6 +55,7 @@ function configure_boot_sources {
   then
     maas ${ADMIN_USERNAME} boot-source update 1 url=http://localhost:8888/maas/images/ephemeral-v3/daily/
   fi
+  maas ${ADMIN_USERNAME} maas set-config name=http_boot value=${MAAS_HTTP_BOOT}
 }
 
 KEY=$(maas-region apikey --username=${ADMIN_USERNAME})
