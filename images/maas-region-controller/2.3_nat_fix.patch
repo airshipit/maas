@@ -1,0 +1,18 @@
+diff --git a/src/maasserver/utils/__init__.py b/src/maasserver/utils/__init__.py
+index 1c58859..f8e673d 100644
+--- a/src/maasserver/utils/__init__.py
++++ b/src/maasserver/utils/__init__.py
+@@ -66,8 +66,11 @@ def absolute_reverse(
+     if not base_url:
+         with RegionConfiguration.open() as config:
+             base_url = config.maas_url
+-        if default_region_ip is not None:
+-            base_url = compose_URL(base_url, default_region_ip)
++        # NOTE(sh8121att)
++        # Commenting out as workaround to
++        # https://bugs.launchpad.net/maas/+bug/1743005
++        #if default_region_ip is not None:
++        #    base_url = compose_URL(base_url, default_region_ip)
+     url = urljoin(base_url, reverse(view_name, *args, **kwargs))
+     if query is not None:
+         url += '?%s' % urlencode(query, doseq=True)

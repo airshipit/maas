@@ -50,8 +50,9 @@ RUN apt-get download maas-region-controller=$MAAS_VERSION && \
     dpkg -i maas-region-controller.deb && \
     pg_dropcluster --stop 9.5 main
 
-# potentially used to calculate cidrs
-# RUN pip3 install netaddr
+# 2.3 workaround
+COPY 2.3_nat_fix.patch /tmp/2.3_nat_fix.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver/utils && patch __init__.py < /tmp/2.3_nat_fix.patch
 
 # initalize systemd
 CMD ["/sbin/init"]
