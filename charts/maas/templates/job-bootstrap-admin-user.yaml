@@ -42,11 +42,20 @@ spec:
 {{ tuple $envAll $envAll.Values.pod.resources.jobs.bootstrap_admin_user | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           env:
             - name: ADMIN_USERNAME
-              value: {{ .Values.conf.maas.credentials.admin_username }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.maas_users.admin }}
+                  key: USERNAME
             - name: ADMIN_PASSWORD
-              value: {{ .Values.conf.maas.credentials.admin_password }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.maas_users.admin }}
+                  key: PASSWORD
             - name: ADMIN_EMAIL
-              value: {{ .Values.conf.maas.credentials.admin_email}}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.maas_users.admin }}
+                  key: EMAIL
           command:
             - /tmp/bootstrap-admin-user.sh
           volumeMounts:

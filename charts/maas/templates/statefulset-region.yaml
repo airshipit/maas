@@ -27,6 +27,8 @@ metadata:
 spec:
   serviceName: maas-region-ui
   replicas: {{ .Values.pod.replicas.region }}
+  updateStrategy:
+    type: 'RollingUpdate'
   template:
     metadata:
       labels:

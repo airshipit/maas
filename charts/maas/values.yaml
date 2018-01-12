@@ -147,9 +147,6 @@ conf:
       database_user: maas
       database_password: password
     credentials:
-      admin_username: admin
-      admin_password: admin
-      admin_email: support@nowhere.com
       secret:
         namespace: maas
         name: maas-api-key
@@ -158,6 +155,8 @@ secrets:
   maas_db:
     admin: maas-db-admin
     user: maas-db-user
+  maas_users:
+    admin: maas-admin
   maas_region:
     name: maas-region-secret
     value: 3858f62230ac3c915f300c664312c63f
@@ -262,6 +261,11 @@ endpoints:
       default: null
   maas_region_ui:
     name: maas-region-ui
+    auth:
+      admin:
+        username: admin
+        password: admin
+        email: none@none
     hosts:
       default: maas-region-ui
       public: maas

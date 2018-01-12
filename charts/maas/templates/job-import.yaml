@@ -45,7 +45,10 @@ spec:
             - name: JOB_TIMEOUT
               value: {{ .Values.jobs.import_boot_resources.timeout | quote }}
             - name: ADMIN_USERNAME
-              value: {{ .Values.conf.maas.credentials.admin_username }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.maas_users.admin }}
+                  key: USERNAME
             - name: RETRY_TIMER
               value: {{ .Values.jobs.import_boot_resources.retry_timer | quote }}
             - name: MAAS_ENDPOINT

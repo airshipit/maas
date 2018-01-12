@@ -71,7 +71,10 @@ spec:
             - name: SECRET_NAMESPACE
               value: {{ .Values.conf.maas.credentials.secret.namespace }}
             - name: ADMIN_USERNAME
-              value: {{ .Values.conf.maas.credentials.admin_username }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.maas_users.admin }}
+                  key: USERNAME
             - name: SECRET_NAME
               value: {{ .Values.conf.maas.credentials.secret.name }}
           command:
