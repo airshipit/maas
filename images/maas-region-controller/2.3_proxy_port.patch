@@ -1,0 +1,34 @@
+diff --git a/src/maasserver/compose_preseed.py b/src/maasserver/compose_preseed.py
+index e15b3b2..b7c7edc 100644
+--- a/src/maasserver/compose_preseed.py
++++ b/src/maasserver/compose_preseed.py
+@@ -8,7 +8,7 @@ __all__ = [
+     ]
+ 
+ from datetime import timedelta
+-from urllib.parse import urlencode
++from urllib.parse import urlencode, urlparse
+ 
+ from maasserver.clusterrpc.osystems import get_preseed_data
+ from maasserver.enum import (
+@@ -17,6 +17,7 @@ from maasserver.enum import (
+     PRESEED_TYPE,
+ )
+ from maasserver.models import PackageRepository
++from maasserver.config import RegionConfiguration
+ from maasserver.models.config import Config
+ from maasserver.server_address import get_maas_facing_server_host
+ from maasserver.utils import absolute_reverse
+@@ -41,9 +42,9 @@ def get_apt_proxy(rack_controller=None, default_region_ip=None):
+         if http_proxy and not use_peer_proxy:
+             return http_proxy
+         else:
+-            return compose_URL(
+-                "http://:8000/", get_maas_facing_server_host(
+-                    rack_controller, default_region_ip=default_region_ip))
++            with RegionConfiguration.open() as config:
++                maas_url = config.maas_url
++            return compose_URL("http://:31800/", urlparse(maas_url).hostname)
+     else:
+         return None
+ 
