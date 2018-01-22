@@ -16,6 +16,8 @@ limitations under the License.
 
 {{- $envAll := . }}
 {{- $dependencies := .Values.dependencies.db_sync }}
+{{- $serviceAccountName := "maas-db-sync" }}
+{{ tuple $envAll $dependencies $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -27,6 +29,7 @@ spec:
       labels:
 {{ tuple $envAll "maas" "db-sync" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
+      serviceAccountName: {{ $serviceAccountName }}
       restartPolicy: OnFailure
       nodeSelector:
         {{ .Values.labels.region.node_selector_key }}: {{ .Values.labels.region.node_selector_value }}

@@ -19,6 +19,8 @@ limitations under the License.
 {{- end -}}
 {{- $envAll := . }}
 {{- $dependencies := .Values.dependencies.rack_controller }}
+{{- $serviceAccountName := "maas-rack" }}
+{{ tuple $envAll $dependencies $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 {{- $mounts_maas_rack := .Values.pod.mounts.maas_rack }}
 {{- $mounts_maas_rack_init := .Values.pod.mounts.maas_rack.init_container }}
 ---
@@ -36,6 +38,7 @@ spec:
         configmap-bin-hash: {{ tuple "configmap-bin.yaml" . | include "helm-toolkit.utils.hash" }}
         configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}
     spec:
+      serviceAccountName: {{ $serviceAccountName }}
       affinity:
 {{ tuple $envAll "maas" "rack" | include "helm-toolkit.snippets.kubernetes_pod_anti_affinity" | indent 8 }}
       nodeSelector:

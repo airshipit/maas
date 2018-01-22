@@ -15,6 +15,8 @@
 {{- if .Values.manifests.region_statefulset }}
 {{- $envAll := . }}
 {{- $dependencies := .Values.dependencies.region_controller }}
+{{- $serviceAccountName := "maas-region" }}
+{{ tuple $envAll $dependencies $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 {{- $mounts_maas_region := .Values.pod.mounts.maas_region.maas_region }}
 {{- $mounts_maas_region_init := .Values.pod.mounts.maas_region.init_container }}
 ---
@@ -31,6 +33,7 @@ spec:
 {{ tuple $envAll "maas" "region" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
     spec:
+      serviceAccountName: {{ $serviceAccountName }}
       affinity:
 {{ tuple $envAll "maas" "region" | include "helm-toolkit.snippets.kubernetes_pod_anti_affinity" | indent 8 }}
       nodeSelector:
