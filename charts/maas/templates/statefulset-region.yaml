@@ -16,9 +16,10 @@
 {{- $envAll := . }}
 {{- $dependencies := .Values.dependencies.region_controller }}
 {{- $serviceAccountName := "maas-region" }}
-{{ tuple $envAll $dependencies $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 {{- $mounts_maas_region := .Values.pod.mounts.maas_region.maas_region }}
 {{- $mounts_maas_region_init := .Values.pod.mounts.maas_region.init_container }}
+
+{{ tuple $envAll $dependencies $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet

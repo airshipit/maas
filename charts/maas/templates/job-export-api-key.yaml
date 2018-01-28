@@ -1,5 +1,6 @@
 {{/*
 Copyright 2017 The Openstack-Helm Authors.
+Copyright (c) 2018 AT&T Intellectual Property. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,34 +19,54 @@ limitations under the License.
 {{- $dependencies := .Values.dependencies.export_api_key }}
 {{- $initMounts := .Values.pod.mounts.export_api_key.export_api_key }}
 {{- $serviceAccountName := "maas-export-api-key" }}
-{{ tuple $envAll $dependencies $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
+apiVersion: v1
+kind: ServiceAccount
 metadata:
   name: {{ $serviceAccountName }}
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - get
-      - create
-      - update
+  namespace: {{ $envAll.Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
-  name: {{ $serviceAccountName }}
+  name: {{ $envAll.Release.Name }}-{{ $serviceAccountName }}
+  namespace: {{ $envAll.Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ $serviceAccountName }}
+  name: {{ $envAll.Release.Name }}-{{ $envAll.Release.Namespace }}-{{ $serviceAccountName }}
 subjects:
   - kind: ServiceAccount
     name: {{ $serviceAccountName }}
     namespace: {{ $envAll.Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: {{ $envAll.Release.Name }}-{{ $envAll.Release.Namespace }}-{{ $serviceAccountName }}
+  namespace: {{ $envAll.Release.Namespace }}
+rules:
+  - apiGroups:
+      - ""
+      - extensions
+      - batch
+      - apps
+    verbs:
+      - get
+      - list
+    resources:
+      - services
+      - endpoints
+      - jobs
+      - pods
+  - apiGroups:
+      - ""
+    verbs:
+      - get
+      - create
+      - update
+    resources:
+      - secrets
 ---
 apiVersion: batch/v1
 kind: Job

@@ -36,8 +36,8 @@ if [[ ! -v DB_HOST ]]; then
 elif [[ ! -v ROOT_DB_USER ]]; then
     echo "environment variable ROOT_DB_USER not set"
     exit 1
-elif [[ ! -v ROOT_DB_PASS ]]; then
-    echo "environment variable ROOT_DB_PASS not set"
+elif [[ ! -v PGPASSWORD ]]; then
+    echo "environment variable PGPASSWORD not set"
     exit 1
 elif [[ ! -v USER_DB_USER ]]; then
     echo "environment variable USER_DB_USER not set"

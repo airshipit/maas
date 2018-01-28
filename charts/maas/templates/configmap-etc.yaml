@@ -16,16 +16,6 @@ limitations under the License.
 
 {{- $envAll := . }}
 
-{{- include "maas.conf.maas_values_skeleton" .Values.conf.maas | trunc 0 -}}
-
-{{- if empty .Values.conf.maas.database.database_host -}}
-{{- tuple "maas_db" "internal" . | include "helm-toolkit.endpoints.hostname_fqdn_endpoint_lookup" | set .Values.conf.maas.database "database_host" | quote | trunc 0 -}}
-{{- end -}}
-
-{{- if empty .Values.conf.maas.url.maas_url -}}
-{{- tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | set .Values.conf.maas.url "maas_url" | quote | trunc 0 -}}
-{{- end -}}
-
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -47,17 +37,7 @@ data:
 {{ .Values.conf.bind.append | indent 4 }}
 {{- end }}
   regiond.conf: |
-{{ if .Values.conf.maas.override -}}
-{{ .Values.conf.maas.override | indent 4 }}
-{{- else -}}
-{{- if .Values.conf.maas.prefix -}}
-{{ .Values.conf.maas.prefix | indent 4 }}
-{{- end }}
 {{ tuple "etc/_regiond.conf.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
-{{- end }}
-{{- if .Values.conf.maas.append -}}
-{{ .Values.conf.maas.append | indent 4 }}
-{{- end }}
   nsswitch.conf: |
 {{ tuple "etc/_nsswitch.conf.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   register-rack-controller.service: |
