@@ -147,6 +147,10 @@ conf:
       database_name: maasdb
       database_user: maas
       database_password: password
+    images:
+      default_os: 'ubuntu'
+      default_image: 'xenial'
+      default_kernel: 'ga-16.04'
     credentials:
       secret:
         namespace: maas

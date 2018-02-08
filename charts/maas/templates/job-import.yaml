@@ -70,6 +70,12 @@ spec:
               value: {{ .Values.conf.maas.dns.require_dnssec | quote }}
             - name: MAAS_DNS_SERVERS
               value: {{ .Values.conf.maas.dns.dns_servers }}
+            - name: MAAS_DEFAULT_OS
+              value: {{ .Values.conf.maas.images.default_os | quote }}
+            - name: MAAS_DEFAULT_DISTRO
+              value: {{ .Values.conf.maas.images.default_image | quote }}
+            - name: MAAS_DEFAULT_KERNEL
+              value: {{ .Values.conf.maas.images.default_kernel | quote }}
 {{ tuple $envAll $envAll.Values.pod.resources.jobs.import_resources | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           command:
             - /tmp/import-boot-resources.sh

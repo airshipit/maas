@@ -27,7 +27,7 @@ function check_for_download {
         else
             echo 'Boot resources have completed importing'
             # TODO(sthussey) Need to check synced images exist - could be a import failure
-            exit 0
+            return 0
         fi
     done
     exit 1
@@ -48,6 +48,13 @@ function configure_ntp {
 function configure_dns {
   maas ${ADMIN_USERNAME} maas set-config name=dnssec_validation value=${MAAS_DNS_DNSSEC_REQUIRED}
   maas ${ADMIN_USERNAME} maas set-config name=upstream_dns value=${MAAS_DNS_SERVERS}
+}
+
+function configure_images {
+  maas ${ADMIN_USERNAME} maas set-config name=default_osystem value=${MAAS_DEFAULT_OS}
+  maas ${ADMIN_USERNAME} maas set-config name=commissioning_distro_series value=${MAAS_DEFAULT_DISTRO}
+  maas ${ADMIN_USERNAME} maas set-config name=default_distro_series value=${MAAS_DEFAULT_DISTRO}
+  maas ${ADMIN_USERNAME} maas set-config name=default_min_hwe_kernel value=${MAAS_DEFAULT_KERNEL}
 }
 
 function configure_boot_sources {
@@ -71,3 +78,4 @@ maas ${ADMIN_USERNAME} boot-resources import
 # see if we can find > 0 images
 sleep ${RETRY_TIMER}
 check_for_download
+configure_images
