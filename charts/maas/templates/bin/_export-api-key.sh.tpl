@@ -35,7 +35,7 @@ function post_secret {
         --method=POST \
         --body-file=/tmp/secret.json \
         https://kubernetes.default.svc.cluster.local/api/v1/namespaces/${SECRET_NAMESPACE}/secrets \
-        2>&1 | grep -E "HTTP/1.1 (201 Created|409 Conflict)"
+        2>&1
 }
 
 KEY=$(maas-region apikey --username=${ADMIN_USERNAME})
@@ -64,7 +64,8 @@ EOS
             echo 'Secret exists, clearing before trying again'
             clear_secret
         else
-          echo Secret creation failed
+          echo 'Secret creation failed'
+          echo $result
         fi
         sleep 15
     done

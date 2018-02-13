@@ -70,12 +70,12 @@ manifests:
 images:
   tags:
     db_init: docker.io/postgres:9.5
-    db_sync: sthussey/maas-region-controller:2.3_patchv4
-    maas_rack: sthussey/maas-rack-controller:2.3
-    maas_region: sthussey/maas-region-controller:2.3_patchv4
-    bootstrap: sthussey/maas-region-controller:2.3_patchv4
-    export_api_key: sthussey/maas-region-controller:2.3_patchv4
-    maas_cache: quay.io/attcomdev/maas-cache:master
+    db_sync: quay.io/attcomdev/maas-region-controller:latest
+    maas_rack: quay.io/attcomdev/maas-rack-controller:latest
+    maas_region: quay.io/attcomdev/maas-region-controller:latest
+    bootstrap: quay.io/attcomdev/maas-region-controller:latest
+    export_api_key: quay.io/attcomdev/maas-region-controller:latest
+    maas_cache: quay.io/attcomdev/sstream-cache:latest
     dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.2.1
   pull_policy: IfNotPresent
 
@@ -143,10 +143,6 @@ conf:
       peer_proxy_enabled: false
       # An external proxy server to use
       proxy_server: null
-    database:
-      database_name: maasdb
-      database_user: maas
-      database_password: password
     images:
       default_os: 'ubuntu'
       default_image: 'xenial'
