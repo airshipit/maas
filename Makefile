@@ -24,7 +24,7 @@ IMAGE_TAG                  ?= latest
 HELM                       ?= helm
 PROXY                      ?= http://one.proxy.att.com:8080
 USE_PROXY                  ?= false
-
+LABEL                      ?= commit-id
 IMAGE_LIST                 := maas-rack-controller maas-region-controller sstream-cache
 
 .PHONY: images
@@ -56,9 +56,9 @@ dry-run: helm_lint
 .PHONY: build
 build:
 ifeq ($(USE_PROXY), true)
-	docker build -t $(IMAGE_PREFIX)/$(IMAGE_SUFFIX):$(IMAGE_TAG) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY)
+	docker build -t $(IMAGE_PREFIX)/$(IMAGE_SUFFIX):$(IMAGE_TAG) --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY)
 else
-	docker build -t $(IMAGE_PREFIX)/$(IMAGE_SUFFIX):$(IMAGE_TAG) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR)
+	docker build -t $(IMAGE_PREFIX)/$(IMAGE_SUFFIX):$(IMAGE_TAG) --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR)
 endif
 
 .PHONY: clean
