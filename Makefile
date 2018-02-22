@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+DOCKER_REGISTRY            ?= quay.io
 REGION_SUFFIX              ?= maas-region
 IMG_COMMON_DIR             ?= images
 REGION_IMG_DIR             ?= images/maas-region-controller
@@ -25,16 +26,16 @@ HELM                       ?= helm
 PROXY                      ?= http://one.proxy.att.com:8080
 USE_PROXY                  ?= false
 LABEL                      ?= commit-id
-IMAGE_LIST                 := maas-rack-controller maas-region-controller sstream-cache
+IMAGE_NAME                 := maas-rack-controller maas-region-controller sstream-cache
 
 .PHONY: images
 #Build all images in the list
-images: $(IMAGE_LIST)
+images: $(IMAGE_NAME)
 
-$(IMAGE_LIST):
+$(IMAGE_NAME):
 	@echo
 	@echo "===== Processing [$@] image ====="
-	@make build IMAGE_SUFFIX=$@ IMAGE_DIR=images/$@
+	@make build IMAGE=${DOCKER_REGISTRY}/${IMAGE_PREFIX}/$@:${IMAGE_TAG} IMAGE_DIR=images/$@
 
 # Create tgz of the chart
 .PHONY: charts
@@ -56,9 +57,9 @@ dry-run: helm_lint
 .PHONY: build
 build:
 ifeq ($(USE_PROXY), true)
-	docker build -t $(IMAGE_PREFIX)/$(IMAGE_SUFFIX):$(IMAGE_TAG) --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY)
+	docker build -t $(IMAGE) --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY) $(IMAGE_DIR)
 else
-	docker build -t $(IMAGE_PREFIX)/$(IMAGE_SUFFIX):$(IMAGE_TAG) --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR)
+	docker build -t $(IMAGE) --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR)
 endif
 
 .PHONY: clean
