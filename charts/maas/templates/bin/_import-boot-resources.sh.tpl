@@ -16,22 +16,50 @@
 
 set -ex
 
+import_tries=0
+
+TRY_LIMIT=${TRY_LIMIT:-1}
+JOB_TIMEOUT=${JOB_TIMEOUT:-900}
+RETRY_TIMER=${RETRY_TIMER:-30}
+
+function start_import {
+    while [[ ${import_tries} -lt $TRY_LIMIT ]]
+    do
+        import_tries=$(($import_tries + 1))
+        echo "Starting image import try ${import_tries}..."
+        maas ${ADMIN_USERNAME} boot-resources import
+        check_for_download
+        if [[ $? -eq 0 ]]
+        then
+            echo "Image import success!"
+            return 0
+        fi
+    done
+    return 1
+}
+
 function check_for_download {
 
     while [[ ${JOB_TIMEOUT} -gt 0 ]]; do
         if maas ${ADMIN_USERNAME} boot-resources is-importing | grep -q 'true';
         then
             echo -e '\nBoot resources currently importing\n'
-            let TIMEOUT-=${RETRY_TIMER}
+            let JOB_TIMEOUT-=${RETRY_TIMER}
             sleep ${RETRY_TIMER}
         else
-            echo 'Boot resources have completed importing'
-            # TODO(sthussey) Need to check synced images exist - could be a import failure
-            return 0
+            synced_imgs=$(maas ${ADMIN_USERNAME} boot-resources read | grep -B 3 'Synced' | grep 'ubuntu' | wc -l)
+            if [[ $synced_imgs -gt 0 ]]
+            then
+                echo 'Boot resources have completed importing'
+                return 0
+            else
+                echo 'Import failed!'
+                return 1
+            fi
         fi
     done
-    exit 1
-
+    echo "Timeout waiting for import!"
+    return 1
 }
 
 function configure_proxy {
@@ -74,8 +102,11 @@ configure_dns
 
 # make call to import images
 configure_boot_sources
-maas ${ADMIN_USERNAME} boot-resources import
-# see if we can find > 0 images
-sleep ${RETRY_TIMER}
-check_for_download
-configure_images
+start_import
+if [[ $? -eq 0 ]]
+then
+    configure_images
+else
+    echo "Image import FAILED!"
+    exit 1
+fi

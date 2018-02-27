@@ -56,11 +56,11 @@ if [ "x$KEY" != "x" ]; then
 }
 EOS
     while true; do
-        result=$(post_secret)
-        if [ ! -z "$(echo $result | grep 201)" ]; then
+        export result=$(post_secret)
+        if [ ! -z "$(echo "$result" | grep -i '201 Created')" ]; then
             echo 'Secret created'
             break
-        elif [ ! -z "$(echo $result | grep 409)" ]; then
+        elif [ ! -z "$(echo "$result" | grep -i '409 Conflict')" ]; then
             echo 'Secret exists, clearing before trying again'
             clear_secret
         else

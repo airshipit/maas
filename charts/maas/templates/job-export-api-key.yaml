@@ -65,6 +65,7 @@ rules:
       - get
       - create
       - update
+      - delete
     resources:
       - secrets
 ---

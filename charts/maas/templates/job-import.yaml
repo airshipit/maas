@@ -52,6 +52,8 @@ spec:
                   key: USERNAME
             - name: RETRY_TIMER
               value: {{ .Values.jobs.import_boot_resources.retry_timer | quote }}
+            - name: TRY_LIMIT
+              value: {{ .Values.jobs.import_boot_resources.try_limit | quote }}
             - name: MAAS_ENDPOINT
               value: {{ tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" }}
             - name: MAAS_PROXY_ENABLED
