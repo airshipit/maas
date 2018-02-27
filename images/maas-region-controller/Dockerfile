@@ -53,8 +53,10 @@ RUN apt-get download maas-region-controller=$MAAS_VERSION && \
 # 2.3 workarounds
 COPY 2.3_nat_fix.patch /tmp/2.3_nat_fix.patch
 COPY 2.3_proxy_port.patch /tmp/2.3_proxy_port.patch
+COPY 2.3_route.patch /tmp/2.3_route.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver/utils && patch __init__.py < /tmp/2.3_nat_fix.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch compose_preseed.py < /tmp/2.3_proxy_port.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.3_route.patch
 
 # initalize systemd
 CMD ["/sbin/init"]

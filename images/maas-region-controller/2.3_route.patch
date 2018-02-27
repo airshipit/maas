@@ -1,0 +1,28 @@
+diff --git a/src/maasserver/preseed_network.py b/src/maasserver/preseed_network.py
+index 1be72d6..96ee6a3 100644
+--- a/src/maasserver/preseed_network.py
++++ b/src/maasserver/preseed_network.py
+@@ -192,7 +192,7 @@ class InterfaceConfiguration:
+         return {
+             route
+             for route in self.routes
+-            if route.source == source
++            if str(route.source.cidr) == str(source.cidr)
+         }
+ 
+     def _generate_addresses(self, version=1):
+@@ -251,8 +251,12 @@ class InterfaceConfiguration:
+                                 v2_nameservers["addresses"] = []
+                         v2_nameservers["addresses"].extend(
+                             [server for server in subnet.dns_servers])
+-                    self.matching_routes.update(
+-                        self._get_matching_routes(subnet))
++                    net_routes = self._get_matching_routes(subnet)
++                    rl = [_generate_route_operation(r, version=version)
++                          for r
++                          in net_routes]
++                    v1_subnet_operation['routes'] = rl
++                    v2_config['routes'] =  rl
+             if dhcp_type:
+                 v1_config.append(
+                     {"type": dhcp_type}
