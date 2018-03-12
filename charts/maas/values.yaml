@@ -152,6 +152,40 @@ conf:
       secret:
         namespace: maas
         name: maas-api-key
+  drivers: null
+  #### If you populates drivers, it will replace the 3rd party driver
+  #### info that comes with MaaS. see structure below if it is needed
+  # - blacklist: string    # a kernel module to blacklist from loading if needed
+  #   comment: string       # free form comment
+  #   key_binary: |    # The GPG key for the repo holding the package, base64 encoded, non-ascii armored
+  #     mQENBFRtGAgBCADlSku65P14hVdx9E/W0n6MwuB3WGqmsyKNoa3HezFdMjWERldINNUdi8O28cZ6
+  #     j2+Hi9L1HeQIQ9+7FHpR3JyQePBJtRX8WSEusfRtML98opDhJxKm8Jyxb7aTvCwdNHz3yxADINkM
+  #     tOj5oRm7VCr8XHkG7YU27ELs8B+BXWvjO21oSosiFurnhT+H3hQsYXfYA55aa21q0qX+L5dFJSNd
+  #     zZVo7m9ybioVv2R5+PfBvdaSxCnmOpcGXFaKAsqVHeTW0pd3sdkin1rkbhOBaU5lFBt2ZiMtKpKH
+  #     pT8TZnqHpFHFbgi8j2ARJj4IDct2OGILddUIZSFyue6WE2hpV5c/ABEBAAG0OEhld2xldHQtUGFj
+  #     a2FyZCBDb21wYW55IFJTQSAoSFAgQ29kZXNpZ25pbmcgU2VydmljZSkgLSAxiQE+BBMBAgAoBQJU
+  #     bRgIAhsDBQkSzAMABgsJCAcDAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRD63Y1ksSdeo6BJCADOfIPP
+  #     LPpIOnFK9jH4t8lLUd+RyMc+alA3uTDPUJa/ZHa6DHfh42iaPYVEV8OG0tnbMlHmwvsZ5c1/MRMw
+  #     1UbxCvD88P2qM4SUrUjQUlSCms2GLGvFftFXBiOJQ7/yBc9o+yoSvwPrrTxSCk4+Sqm0IfVXVzCh
+  #     DM9dM9YPY2Vzjd+LUaYC3X+eSuggUDO0TmJLJd7tZdF9fVXq3lr63BZ5PY98MTCuOoeSMDa9FIUQ
+  #     f6vn6UUJMDSRZ9OzhpNJOKR+ShVRwDK6My8gtVIW1EAW2w3VQWI2UNF07aLeO8UG6nTNWA23+OuZ
+  #     kUdgQovjcq01caSefgOkmiQOx6d74CAkuQENBFRtGAgBCAC35eBfUIpnTdF5lpIBWOsWGKwNZEg1
+  #     f5GRCc3qv2Cd0dpcDPFDiE6Oa0OjtnyzhBXWEQXfckWh53tIl5Sjhoy4Gh7z7vZEgmuw1L+ILy0Q
+  #     00SqMpZFZaXNn4cnkc4wy5XG1bs81ij4Xp8Gkk9oRDJfCxv6ztW7++uhmU/2w4iqJghJRZwjMKl7
+  #     hGis8cx6vP5UCr7K7nnJqHVeO/z82ooE6XgxHHeGrLNPrzebO74PQ5iV/F5Dq9DFwYk61JaoJ9mA
+  #     R9CKn+CDtTTCkbdv7yQKFxXQSludHInRBfuBeM28djOddZF9XCBL3n+KYWC9Mjf0SCyqiUKA/f3P
+  #     c6KaTqCZABEBAAGJASUEGAECAA8FAlRtGAgCGwwFCRLMAwAACgkQ+t2NZLEnXqM0/gf/VwQY9rVG
+  #     X0ZEoEAto+naRi2wLxae8AJ+JTwChaybyOFtIblM4PnG3rUmQCqFM18PNcfeSiX+dd8CuXOI/voI
+  #     hwcfM7HP4hPTykmquHgEHp5t+/gA4+iRYDZvHthURmBzFUl4NS9AhOT7V1udUkn1lAORFc8/bcu1
+  #     yiFIhaQRT3MtOzp+qvThPrspXAgpfOwqjSkPR2YdvvZeqWAs77k2RZQc2aknaMgjWaPLb+V8mBmg
+  #     zRO1RDvShu8hsREaKYVMHyAeKhEYC+lX2bNCImQIs/TqhYo5sn0I5+sbpmFNwtF1gP7AF9DjcFfJ
+  #     ruvNnfrWpNvn7vuBH6g//Qk5ZnBpwg==
+  #   modaliases:  # list of strings with modalias patterns that denote a need for this driver
+  #     - string
+  #   module: string  # the name of the kernel module to load
+  #   package: string # the name of the debian package containing the kernel module
+  #   repository: string # URL to the debian repo containing the package
+  ####
 
 secrets:
   maas_db:

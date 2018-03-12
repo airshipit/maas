@@ -42,3 +42,7 @@ data:
 {{ tuple "etc/_nsswitch.conf.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   register-rack-controller.service: |
 {{ tuple "etc/_register-rack-controller.service.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+{{- if .Values.conf.drivers }}
+  drivers.yaml: |
+{{ tuple "etc/_drivers.yaml.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+{{- end }}

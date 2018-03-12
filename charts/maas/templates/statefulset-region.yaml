@@ -82,6 +82,12 @@ spec:
               subPath: curtin_userdata
               readOnly: true
 {{- end }}
+{{- if .Values.conf.drivers }}
+            - name: maas-etc
+              mountPath: /etc/maas/drivers.yaml
+              subPath: drivers.yaml
+              readOnly: true
+{{- end }}
             - name: maas-bin
               mountPath: /tmp/start.sh
               subPath: start.sh
