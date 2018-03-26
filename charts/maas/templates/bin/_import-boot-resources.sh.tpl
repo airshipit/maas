@@ -47,7 +47,7 @@ function check_for_download {
             let JOB_TIMEOUT-=${RETRY_TIMER}
             sleep ${RETRY_TIMER}
         else
-            synced_imgs=$(maas ${ADMIN_USERNAME} boot-resources read | grep -B 3 'Synced' | grep 'ubuntu' | wc -l)
+            synced_imgs=$(maas ${ADMIN_USERNAME} boot-resources read | tr -d '\n' | grep -oE '{[^}]+}' | grep ubuntu | grep -c Synced)
             if [[ $synced_imgs -gt 0 ]]
             then
                 echo 'Boot resources have completed importing'
