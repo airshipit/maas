@@ -88,6 +88,7 @@ spec:
       containers:
         - name: exporter
           image: {{ .Values.images.tags.export_api_key }}
+{{ tuple $envAll $envAll.Values.pod.resources.jobs.export_api_key | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
           env:
             - name: SECRET_NAMESPACE

@@ -36,7 +36,7 @@ spec:
               key: 'token'
       image: {{ .Values.images.tags.maas_region }}
       imagePullPolicy: {{ .Values.images.pull_policy }}
-{{ tuple . .Values.pod.resources.test | include "helm-toolkit.snippets.kubernetes_resources" | indent 8 }}
+{{ tuple . .Values.pod.resources.test | include "helm-toolkit.snippets.kubernetes_resources" | indent 6 }}
       command: ["/tmp/maas-test.sh"]
       volumeMounts:
         - name: maas-bin
