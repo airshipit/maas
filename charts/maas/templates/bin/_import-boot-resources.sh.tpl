@@ -23,6 +23,14 @@ JOB_TIMEOUT=${JOB_TIMEOUT:-900}
 RETRY_TIMER=${RETRY_TIMER:-30}
 
 function start_import {
+    check_for_download
+
+    if [[ $? -eq 0 ]]
+    then
+      echo "Already have images, skipping import."
+      return 0
+    fi
+
     while [[ ${import_tries} -lt $TRY_LIMIT ]]
     do
         import_tries=$(($import_tries + 1))
@@ -62,27 +70,45 @@ function check_for_download {
     return 1
 }
 
+function check_then_set {
+  option=$1
+  value=$2
+
+  cur_val=$(maas ${ADMIN_USERNAME} maas get-config name=${option} | tail -1 | tr -d '"')
+  desired_val=$(echo ${value} | tr -d '"')
+
+  if [[ $cur_val != $desired_val ]]
+  then
+    echo "Setting MAAS option ${option} to ${desired_val}"
+    maas ${ADMIN_USERNAME} maas set-config name=${option} value=${desired_val}
+    return $?
+  else
+    echo "MAAS option ${option} already set to ${cur_val}"
+    return 0
+  fi
+}
+
 function configure_proxy {
-  maas ${ADMIN_USERNAME} maas set-config name=enable_http_proxy value=${MAAS_PROXY_ENABLED}
-  maas ${ADMIN_USERNAME} maas set-config name=use_peer_proxy value=${MAAS_PEER_PROXY_ENABLED}
-  maas ${ADMIN_USERNAME} maas set-config name=http_proxy value=${MAAS_PROXY_SERVER}
+  check_then_set enable_http_proxy ${MAAS_PROXY_ENABLED}
+  check_then_set use_peer_proxy ${MAAS_PEER_PROXY_ENABLED}
+  check_then_set http_proxy ${MAAS_PROXY_SERVER}
 }
 
 function configure_ntp {
-  maas ${ADMIN_USERNAME} maas set-config name=ntp_servers value=${MAAS_NTP_SERVERS}
-  maas ${ADMIN_USERNAME} maas set-config name=ntp_external_only value=${MAAS_NTP_EXTERNAL_ONLY}
+  check_then_set ntp_servers ${MAAS_NTP_SERVERS}
+  check_then_set ntp_external_only ${MAAS_NTP_EXTERNAL_ONLY}
 }
 
 function configure_dns {
-  maas ${ADMIN_USERNAME} maas set-config name=dnssec_validation value=${MAAS_DNS_DNSSEC_REQUIRED}
-  maas ${ADMIN_USERNAME} maas set-config name=upstream_dns value=${MAAS_DNS_SERVERS}
+  check_then_set dnssec_validation ${MAAS_DNS_DNSSEC_REQUIRED}
+  check_then_set upstream_dns ${MAAS_DNS_SERVERS}
 }
 
 function configure_images {
-  maas ${ADMIN_USERNAME} maas set-config name=default_osystem value=${MAAS_DEFAULT_OS}
-  maas ${ADMIN_USERNAME} maas set-config name=commissioning_distro_series value=${MAAS_DEFAULT_DISTRO}
-  maas ${ADMIN_USERNAME} maas set-config name=default_distro_series value=${MAAS_DEFAULT_DISTRO}
-  maas ${ADMIN_USERNAME} maas set-config name=default_min_hwe_kernel value=${MAAS_DEFAULT_KERNEL}
+  check_then_set default_osystem ${MAAS_DEFAULT_OS}
+  check_then_set commissioning_distro_series ${MAAS_DEFAULT_DISTRO}
+  check_then_set default_distro_series ${MAAS_DEFAULT_DISTRO}
+  check_then_set default_min_hwe_kernel ${MAAS_DEFAULT_KERNEL}
 }
 
 function configure_boot_sources {
@@ -90,7 +116,7 @@ function configure_boot_sources {
   then
     maas ${ADMIN_USERNAME} boot-source update 1 url=http://localhost:8888/maas/images/ephemeral-v3/daily/
   fi
-  maas ${ADMIN_USERNAME} maas set-config name=http_boot value=${MAAS_HTTP_BOOT}
+  check_then_set http_boot ${MAAS_HTTP_BOOT}
 }
 
 KEY=$(maas-region apikey --username=${ADMIN_USERNAME})
