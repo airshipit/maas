@@ -129,6 +129,12 @@ conf:
     url:
       maas_url: null
     ntp:
+      # These options allow you to mock out the ntpd binary within the container
+      # by overwriting it with a script that simply sleeps - this is useful in
+      # environments where you do not wish these privileged containers to try and
+      # run ntpd that may conflict with the baremetal host
+      disable_ntpd_region: false
+      disable_ntpd_rack: false
       # Use external only points region and rack serves and deployed nodes directly
       # at external NTP servers. Otherwise we have nodes -> rack -> region -> external
       use_external_only: false

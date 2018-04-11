@@ -96,6 +96,12 @@ spec:
               mountPath: /etc/nsswitch.conf
               subPath: nsswitch.conf
               readOnly: true
+{{- if .Values.conf.maas.ntp.disable_ntpd_region }}
+            - name: maas-bin
+              mountPath: /usr/sbin/ntpd
+              subPath: ntpd.sh
+              readOnly: true
+{{- end }}
 {{- if $mounts_maas_region.volumeMounts }}{{ toYaml $mounts_maas_region.volumeMounts | indent 12 }}{{ end }}
       volumes:
         - name: maas-etc

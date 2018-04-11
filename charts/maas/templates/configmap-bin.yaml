@@ -39,3 +39,5 @@ data:
 {{ tuple "bin/_register-rack-controller.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   maas-test.sh: |
 {{ tuple "bin/_maas-test.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  ntpd.sh: |
+{{ tuple "bin/_ntpd.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}

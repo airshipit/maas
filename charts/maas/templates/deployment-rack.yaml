@@ -69,6 +69,12 @@ spec:
           securityContext:
             privileged: true
           volumeMounts:
+{{- if .Values.conf.maas.ntp.disable_ntpd_rack }}
+            - name: maas-bin
+              mountPath: /usr/sbin/ntpd
+              subPath: ntpd.sh
+              readOnly: true
+{{- end }}
             - name: maas-bin
               mountPath: /tmp/start.sh
               subPath: start.sh
