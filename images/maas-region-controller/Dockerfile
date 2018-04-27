@@ -16,7 +16,9 @@ RUN systemctl set-default multi-user.target
 # everything else below is to setup maas into the systemd initialized
 # container based on ubuntu 16.04
 RUN apt-get -qq update && \
-    apt-get -y install sudo software-properties-common
+    apt-get -y install sudo \
+                       software-properties-common \
+                       jq
 
 # TODO(alanmeadows)
 # we need systemd 231 per https://github.com/systemd/systemd/commit/a1350640ba605cf5876b25abfee886488a33e50b

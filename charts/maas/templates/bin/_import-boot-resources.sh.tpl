@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -x
 
 import_tries=0
 
@@ -36,6 +36,7 @@ function start_import {
         import_tries=$(($import_tries + 1))
         echo "Starting image import try ${import_tries}..."
         maas ${ADMIN_USERNAME} boot-resources import
+        sleep 30  # Seems MAAS needs time to sync up
         check_for_download
         if [[ $? -eq 0 ]]
         then
@@ -55,7 +56,7 @@ function check_for_download {
             let JOB_TIMEOUT-=${RETRY_TIMER}
             sleep ${RETRY_TIMER}
         else
-            synced_imgs=$(maas ${ADMIN_USERNAME} boot-resources read | tr -d '\n' | grep -oE '{[^}]+}' | grep ubuntu | grep -c Synced)
+            synced_imgs=$(maas ${ADMIN_USERNAME} boot-resources read | tail -n +1 | jq ".[] | select( .type | contains(\"Synced\")) | .name " | grep -c $MAAS_DEFAULT_DISTRO)
             if [[ $synced_imgs -gt 0 ]]
             then
                 echo 'Boot resources have completed importing'
@@ -88,6 +89,31 @@ function check_then_set {
   fi
 }
 
+function check_for_rack_sync {
+  rack_list=$(maas ${ADMIN_USERNAME} rack-controllers read | tail -n +1 | jq -r '.[] | .system_id')
+  sync_list=""
+
+  while [[ ${JOB_TIMEOUT} -gt 0 ]]
+  do
+      for rack_id in ${rack_list}
+      do
+        selected_imgs=$(maas ${ADMIN_USERNAME} rack-controller list-boot-images ${rack_id} | tail -n +1 | jq ".images[] | select( .name | contains(\"${MAAS_DEFAULT_DISTRO}\")) | .name")
+        synced_ctlr=$(maas ${ADMIN_USERNAME} rack-controller list-boot-images ${rack_id} | tail -n +1 | jq '.status == "synced"')
+        if [[ $synced_ctlr == "true" && ! -z ${selected_imgs} ]]
+        then
+          sync_list=$(echo -e "${sync_list}\n${rack_id}" | sort | uniq)
+        fi
+        if [[ $(echo -e "${rack_list}" | sort | uniq | grep -v '^$' ) == $(echo -e "${sync_list}" | sort | uniq | grep -v '^$') ]]
+        then
+          return 0
+        fi
+      done
+      let JOB_TIMEOUT-=${RETRY_TIMER}
+      sleep ${RETRY_TIMER}
+  done
+  return 1
+}
+
 function configure_proxy {
   check_then_set enable_http_proxy ${MAAS_PROXY_ENABLED}
   check_then_set use_peer_proxy ${MAAS_PEER_PROXY_ENABLED}
@@ -105,6 +131,14 @@ function configure_dns {
 }
 
 function configure_images {
+  check_for_rack_sync
+
+  if [[ $? -eq 1 ]]
+  then
+    echo "Timed out waiting for rack controller sync."
+    return 1
+  fi
+
   check_then_set default_osystem ${MAAS_DEFAULT_OS}
   check_then_set commissioning_distro_series ${MAAS_DEFAULT_DISTRO}
   check_then_set default_distro_series ${MAAS_DEFAULT_DISTRO}
@@ -116,7 +150,16 @@ function configure_boot_sources {
   then
     maas ${ADMIN_USERNAME} boot-source update 1 url=http://localhost:8888/maas/images/ephemeral-v3/daily/
   fi
+
   check_then_set http_boot ${MAAS_HTTP_BOOT}
+
+  selected_releases=$(maas ${ADMIN_USERNAME} boot-source-selections read 1 | tail -n +1 | jq -r '.[] | .release')
+
+  if [[ -z $(echo "${selected_releases}" | grep "${MAAS_DEFAULT_DISTRO}") ]]
+  then
+    maas ${ADMIN_USERNAME} boot-source-selections create 1 os="${MAAS_DEFAULT_OS}" \
+      release="${MAAS_DEFAULT_DISTRO}" arches="amd64" subarches='*' labels='*'
+  fi
 }
 
 KEY=$(maas-region apikey --username=${ADMIN_USERNAME})
