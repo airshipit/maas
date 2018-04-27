@@ -26,10 +26,10 @@ early_commands:
 late_commands:
 {{ "{{" }}py:
 def find_ba_key(n):
-    tag_prefix = "%s_baid" % n.hostname
+    tag_prefix = "%s__baid" % n.hostname
     for t in n.tag_names():
         if t.startswith(tag_prefix):
-            prefix, ba_key = t.split('-')
+            prefix, ba_key = t.split('__baid__')
             return ba_key
     return False
 {{ "}}" }}
