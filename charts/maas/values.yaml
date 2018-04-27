@@ -66,6 +66,7 @@ manifests:
   region_statefulset: true
   rack_deployment: true
   test_maas_api: true
+  secret_ssh_key: false
 
 images:
   tags:
@@ -113,6 +114,13 @@ network:
     db_service_target: 5432
 
 conf:
+  ssh:
+    # A SSH private key strings to mount
+    # to allow MaaS access virsh over SSH
+    # The corresponding public key should be
+    # added to a authorized_keys file to a user
+    # in the libvirt group on the hypervisors
+    private_key: null
   bind:
     override:
     append:
@@ -202,6 +210,7 @@ secrets:
   maas_region:
     name: maas-region-secret
     value: 3858f62230ac3c915f300c664312c63f
+  ssh_key: ssh-private-key
 
 pod:
   affinity:

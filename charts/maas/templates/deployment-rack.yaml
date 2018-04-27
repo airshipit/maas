@@ -87,8 +87,23 @@ spec:
               mountPath: /lib/systemd/system/register-rack-controller.service
               subPath: register-rack-controller.service
               readOnly: true
+{{- if .Values.manifests.secret_ssh_key }}
+            - name: maas-ssh
+              mountPath: /var/lib/maas/.ssh
+            - name: priv-key
+              subPath: PRIVATE_KEY
+              mountPath: /var/lib/maas/.ssh/id_rsa
+{{- end }}
 {{ if $mounts_maas_rack.volumeMounts }}{{ toYaml $mounts_maas_rack.volumeMounts | indent 12 }}{{ end }}
       volumes:
+{{- if .Values.manifests.secret_ssh_key }}
+        - name: maas-ssh
+          emptyDir: {}
+        - name: priv-key
+          secret:
+            secretName: {{ .Release.Name}}-{{ .Values.secrets.ssh_key }}
+            defaultMode: 0400
+{{- end }}
         - name: maas-bin
           configMap:
             name: maas-bin
