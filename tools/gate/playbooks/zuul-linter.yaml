@@ -12,13 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-description: Chart to run Canonical MaaS
-name: maas
-version: 0.1.0
-home: https://docs.ubuntu.com/maas
-sources:
-  - https://git.launchpad.net/maas
-  - https://git.openstack.org/cgit/openstack/openstack-helm
-maintainers:
-  - name: Openstack Airship Contributors
+- hosts: primary
+  tasks:
+    - name: Execute a Whitespace Linter check
+      command: find . -not -path "*/\.*" -not -name "*.tgz" -not -name "*.patch"  -type f -exec egrep -l " +$" {} \;
+      register: result
+      failed_when: result.stdout != ""

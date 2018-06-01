@@ -22,11 +22,12 @@ CACHE_SUFFIX               ?= maas-cache
 CACHE_IMG_DIR              ?= images/sstream-cache
 IMAGE_PREFIX               ?= attcomdev
 IMAGE_TAG                  ?= latest
-HELM                       ?= helm
 PROXY                      ?= http://one.proxy.att.com:8080
 USE_PROXY                  ?= false
 LABEL                      ?= commit-id
 IMAGE_NAME                 := maas-rack-controller maas-region-controller sstream-cache
+BUILD_DIR                  := $(shell mktemp -d)
+HELM                       := $(BUILD_DIR)/helm
 
 .PHONY: images
 #Build all images in the list
@@ -54,6 +55,11 @@ dry-run: helm_lint
 
 # Make targets intended for use by the primary targets above.
 
+# Install helm binary
+.PHONY: helm-install
+helm-install:
+	tools/helm_install.sh $(HELM)
+
 .PHONY: build
 build:
 ifeq ($(USE_PROXY), true)
@@ -67,7 +73,7 @@ clean:
 	rm -rf build
 
 .PHONY: helm_lint
-helm_lint: clean
+helm_lint: clean helm-install
 	tools/helm_tk.sh $(HELM)
 	mkdir -p build/charts/maas
 	cp -R charts/maas build/charts/

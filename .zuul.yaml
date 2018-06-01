@@ -1,0 +1,45 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- project:
+    check:
+      jobs:
+        - airship-maas-lint-ws
+        - airship-maas-lint-chart
+    gate:
+      jobs:
+        - airship-maas-lint-ws
+        - airship-maas-lint-chart
+
+- nodeset:
+    name: airship-maas-single-node
+    nodes:
+      - name: primary
+        label: ubuntu-xenial
+
+- job:
+    name: airship-maas-lint-ws
+    description: |
+      Lints all files for trailing whitespace
+    run: tools/gate/playbooks/zuul-linter.yaml
+    timeout: 300
+    nodeset: airship-maas-single-node
+
+- job:
+    name: airship-maas-lint-chart
+    files:
+      - ^charts/.*$
+    description: |
+      Lints Helm charts for validity
+    run: tools/gate/playbooks/helm-linter.yaml
+    timeout: 600
+    nodeset: airship-maas-single-node

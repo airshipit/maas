@@ -16,13 +16,13 @@ $ make build
 Launching on Kubernetes
 =======================
 
-This will create the bridge necessary for MaaS provisioning (fixed with the name 'maas' rigt now) and launch the region controller 
-and rack controller containers on kubernetes using kubectl by leveraging the YAML manifests in maas/deployments. 
+This will create the bridge necessary for MaaS provisioning (fixed with the name 'maas' rigt now) and launch the region controller
+and rack controller containers on kubernetes using kubectl by leveraging the YAML manifests in maas/deployments.
 
 ```
 $ make kuber_bridge
  ...
- 
+
 $ make kuber_deploy
  sudo kubectl create -f deployment/maas-service.yaml
  service "maas-region-ui" created
@@ -54,7 +54,7 @@ $ make kuber_clean
 ```
 
 Once the region controller comes up, and you can login as admin/admin, you must configure a gateway within the UI on the
-10.7.200.0 network, setting that to 10.7.200.1.  You must also enable DHCP and set the primary rack controller to the 
+10.7.200.0 network, setting that to 10.7.200.1.  You must also enable DHCP and set the primary rack controller to the
 maas rack container booted (it will be a drop down choice).  This will eventually be automated.
 
 Running Containers
@@ -68,7 +68,7 @@ d7462aabf4d8982621c30d7df36adf6c3e0f634701c0a070f7214301829fa92e
 
 ```
 $ make run_rack
- sudo docker run -d -v /sys/fs/cgroup:/sys/fs/cgroup:ro --privileged --name maas-rack-controller maas-rack:dockerfile	
+ sudo docker run -d -v /sys/fs/cgroup:/sys/fs/cgroup:ro --privileged --name maas-rack-controller maas-rack:dockerfile
 fb36837cd68e56356cad2ad853ae517201ee3349fd1f80039185b71d052c5326
 ```
 
@@ -100,7 +100,7 @@ $ make get_region_api_key
 ksKQbjtTzjZrZy2yP7:jVq2g4x5FYdxDqBQ7P:KGfnURCrYSKmGE6k2SXWk4QVHVSJHBfr
 ```
 
-You can also retrieve the region secret and IP address, used to initialize the 
+You can also retrieve the region secret and IP address, used to initialize the
 rack controller:
 
 ```
@@ -125,8 +125,7 @@ will initiate an image sync with the rack.
 ```
 $ make register_rack -e URL=http://172.16.84.4 SECRET=2036ba7575697b03d73353fc72a01686
 sudo docker exec maas-rack-controller maas-rack register --url http://172.16.84.4 --secret 2036ba7575697b03d73353fc72a01686
-alan@hpdesktop:~/Workbench/att/attcomdev/dockerfiles/maas$ 
+alan@hpdesktop:~/Workbench/att/attcomdev/dockerfiles/maas$
 ```
 
 Finally, to access your MaaS UI, visit http://172.0.0.1:7777/MAAS/ and login as admin/admin.
-
