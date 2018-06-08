@@ -15,10 +15,15 @@
       jobs:
         - airship-maas-lint-ws
         - airship-maas-lint-chart
+        - airship-maas-docker-build-gate
     gate:
       jobs:
         - airship-maas-lint-ws
         - airship-maas-lint-chart
+        - airship-maas-docker-build-gate
+    post:
+      jobs:
+        - airship-maas-docker-publish
 
 - nodeset:
     name: airship-maas-single-node
@@ -43,3 +48,60 @@
     run: tools/gate/playbooks/helm-linter.yaml
     timeout: 600
     nodeset: airship-maas-single-node
+
+- job:
+    name: airship-maas-docker-build-gate
+    timeout: 1800
+    run: tools/gate/playbooks/docker-image-build.yaml
+    nodeset: airship-maas-single-node
+    files:
+      - '^images/.*'
+    vars:
+      publish: false
+      tags:
+        dynamic:
+          patch_set: true
+
+- job:
+    name: airship-maas-docker-publish
+    timeout: 1800
+    run: tools/gate/playbooks/docker-image-build.yaml
+    nodeset: airship-maas-single-node
+    secrets:
+      - airship_maas_quay_creds
+    irrelevant-files:
+      - '^images/.*'
+    vars:
+      publish: true
+      tags:
+        dynamic:
+          branch: true
+          commit: true
+        static:
+          - latest
+
+- secret:
+    name: airship_maas_quay_creds
+    data:
+      username: !encrypted/pkcs1-oaep
+        - C3OlPbC72jwWy2KO224B+JoIThvsAhEvNG2USHtIISHWQPTod3fA2rDut28dopMoBiit4
+          qRK3V0e93LsjfiVLYgdxnlkNcKH6iNk6YT6pkCGx5veVHUxJcfl+x0EAFwK0sEMHjLxvN
+          3nahnLQG67WUDGdz0lMFnDG8pLU/tOzD9E5rNnbZOYjyVdmWXWVHIQGkwnK7fTkLbBCfu
+          KQR2DfmbqNcXMAQpsAM7himvYcRO/Fh18bO0ebsNscV2C31KhZgBnmtnaYu7wJvTh2W9+
+          rCFpKzBwJlnD97KfMv4ZlWwSH9QvwUC2UO/vcED9yZDwVFHU5okwI0QSwLyoGRs7T+Flc
+          Rwk8xGghJDgcxRjH7HHS3pDHaB1kZucEN+g10o2IRFLUcS4w2zYPrXfOZDWKymsvdkUW8
+          4XRuqSAuDdTHcjDk7aKpnySb0hDcVf5zNNFA7GqLajkBmaH59fKx1MjNocO3KmpHQ6yb+
+          TTIn4aK8xhT/S/Azy0khTTN/w/4A6JZ+eRVtDsnP0X4yJvWiYUP80OKk7/Vr3EyV3s1WN
+          n7YRW8veKEqi9CqzfZtW1MeQ6Bu8VrIduc/XST6JyYd8AyjmliiSs7YNCbd/Sz+pjl4I8
+          rQW7vThr7W9CQCEi+UMoUebArOM9d+LBGtlqZBROI1P1QaSPcxPm3f1/Rl7aqM=
+      password: !encrypted/pkcs1-oaep
+        - Aun3qSkZsZT+d7Zk7sLR2QoVEhK95OEJjJ6TdPMeSfuhAyIwQ0b9sBUk1BAsrOjlIdQO1
+          AOYhSpunpaita2KP1nt67GQwuQZkcZIE3UMQAUjIkU1fyTGwa3ZYR2Z4/fTzuslzRzOcL
+          9lvTaULTeXEoxs413shUK1W6EpMb5GMVUW4DvKwy4ei9ZBNVO+540p741+GgDZEH6UDKc
+          KGtYbsGDRudAAded82NsaODvoIOiXq9oQxiBDepv6Hyah8gqMuKBpLIQIsBRPeANtEBLN
+          M5S9SG4PygAveOa2pQya+HfPXy03QCDJ1DKhq7JRQGXfegSFi3RA52EXOpMXwrubM8mB/
+          LItJngcTvvKAGhipd7bTkMSSzXEOrnBBFLz6uol2pJNQtAHf//9Q1sI1PiV4Uzq91k4Yb
+          rFw9aOWKzlR3p6uxI/h+lOBdJhweb3IDkSMTbaWwNXn0RHVwBQJ8lwuXmyLNcl1VA7JFL
+          6sHAsxpOY+KFOLee2SfH/5uoNZW9ElxAjdGxzvKo7a+xnwgctzadSzVSoXRODf3RTFqbY
+          AQfFdvKSs5s1ytan8O2orSm0OtAMSjlL45WO/WXOk8xh9NcHh3XnOdLHm++A0x5vRDx9S
+          XOd766NTksnmoHHWP27YvRXxxFA+EBjgLq+xCiKS2QlYtOp88aBO+0hVHDTcLE=

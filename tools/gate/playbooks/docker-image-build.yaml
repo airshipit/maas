@@ -1,0 +1,96 @@
+# Copyright 2018 AT&T Intellectual Property.  All other rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- hosts: primary
+  tasks:
+    - name: Debug tag generation inputs
+      block:
+        - debug:
+            var: publish
+        - debug:
+            var: tags
+        - debug:
+            var: zuul
+        - debug:
+            msg: "{{ tags | to_json }}"
+
+    - name: Determine tags
+      shell: echo '{{ tags | to_json }}' | python {{ zuul.project.src_dir }}/tools/image_tags.py
+      environment:
+        BRANCH: "{{ zuul.branch }}"
+        CHANGE: "{{ zuul.change }}"
+        COMMIT: "{{ zuul.newrev }}"
+        PATCHSET: "{{ zuul.patchset }}"
+      register: image_tags
+
+    - name: Debug computed tags
+      debug:
+        var: image_tags
+
+    - name: Install Docker (Debian)
+      block:
+        - apt:
+            name: "{{ item }}"
+          with_items:
+            - docker.io
+            - python-pip
+          when: ansible_os_family == 'Debian'
+        - pip:
+            name: docker
+            version: 2.7.0
+      become: True
+
+    - name: Make images
+      when: not publish
+      block:
+        - make:
+            chdir: "{{ zuul.project.src_dir }}"
+            target: images
+            params:
+              IMAGE_TAG: "{{ item }}"
+          with_items: "{{ image_tags.stdout_lines }}"
+
+        - shell: "docker images"
+          register: docker_images
+
+        - debug:
+            var: docker_images
+
+      become: True
+
+    - name: Publish images
+      block:
+        - docker_login:
+            username: "{{ airship_maas_quay_creds.username }}"
+            password: "{{ airship_maas_quay_creds.password }}"
+            registry_url: "https://quay.io/api/v1/"
+
+        - make:
+            chdir: "{{ zuul.project.src_dir }}"
+            target: images
+            params:
+              DOCKER_REGISTRY: "quay.io"
+              IMAGE_PREFIX: "airshipit"
+              IMAGE_TAG: "{{ item }}"
+              PUSH_IMAGE: "true"
+          with_items: "{{ image_tags.stdout_lines }}"
+
+        - shell: "docker images"
+          register: docker_images
+
+        - debug:
+            var: docker_images
+
+      when: publish
+      become: True

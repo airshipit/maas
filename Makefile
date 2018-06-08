@@ -20,10 +20,11 @@ RACK_SUFFIX                ?= maas-rack
 RACK_IMG_DIR               ?= images/maas-rack-controller
 CACHE_SUFFIX               ?= maas-cache
 CACHE_IMG_DIR              ?= images/sstream-cache
-IMAGE_PREFIX               ?= attcomdev
-IMAGE_TAG                  ?= latest
+IMAGE_PREFIX               ?= airshipit
+IMAGE_TAG                  ?= untagged
 PROXY                      ?= http://one.proxy.att.com:8080
 USE_PROXY                  ?= false
+PUSH_IMAGE                 ?= false
 LABEL                      ?= commit-id
 IMAGE_NAME                 := maas-rack-controller maas-region-controller sstream-cache
 BUILD_DIR                  := $(shell mktemp -d)
@@ -66,6 +67,9 @@ ifeq ($(USE_PROXY), true)
 	docker build -t $(IMAGE) --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY) $(IMAGE_DIR)
 else
 	docker build -t $(IMAGE) --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR)
+endif
+ifeq ($(PUSH_IMAGE), true)
+	docker push $(IMAGE)
 endif
 
 .PHONY: clean
