@@ -19,10 +19,18 @@ set -ex
 # show env
 env > /tmp/env
 
-if [[ -d ~maas/.ssh ]]
+# MAAS must be able to ssh to libvirt hypervisors
+# to control VMs
+
+if [[ -d ~maas/keys ]]
 then
+  mkdir -p ~maas/.ssh
+  cp ~maas/keys/* ~maas/.ssh/
   chown -R maas:maas ~maas/.ssh
+  chmod 700 ~maas/.ssh
+  chmod 600 ~maas/.ssh/*
 fi
+
 chsh -s /bin/bash maas
 
 exec /bin/systemd --system

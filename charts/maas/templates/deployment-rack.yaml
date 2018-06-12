@@ -89,10 +89,10 @@ spec:
               readOnly: true
 {{- if .Values.manifests.secret_ssh_key }}
             - name: maas-ssh
-              mountPath: /var/lib/maas/.ssh
+              mountPath: /var/lib/maas/keys
             - name: priv-key
               subPath: PRIVATE_KEY
-              mountPath: /var/lib/maas/.ssh/id_rsa
+              mountPath: /var/lib/maas/keys/id_rsa
 {{- end }}
 {{ if $mounts_maas_rack.volumeMounts }}{{ toYaml $mounts_maas_rack.volumeMounts | indent 12 }}{{ end }}
       volumes:
