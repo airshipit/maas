@@ -65,9 +65,9 @@ helm-install:
 .PHONY: build
 build:
 ifeq ($(USE_PROXY), true)
-	docker build -t $(IMAGE) --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile --build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY) $(IMAGE_DIR)
+	docker build -t $(IMAGE) --network=host --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile --build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY) $(IMAGE_DIR)
 else
-	docker build -t $(IMAGE) --label $(LABEL) --build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR)
+	docker build -t $(IMAGE) --network=host --label $(LABEL) --build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR)
 endif
 ifeq ($(PUSH_IMAGE), true)
 	docker push $(IMAGE)
