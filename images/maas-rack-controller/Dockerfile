@@ -45,5 +45,9 @@ RUN systemctl enable register-rack-controller.service
 RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump
 RUN ln -s /usr/bin/tcpdump /usr/sbin/tcpdump
 
+COPY scripts/journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
+RUN mkdir -p /etc/systemd/system/basic.target.wants ;\
+    ln -s /etc/systemd/system/journalctl-to-tty.service /etc/systemd/system/basic.target.wants/journalctl-to-tty.service
+
 # initalize systemd
-CMD ["/sbin/init"]
+CMD ["/bin/bash", "-c", "exec /sbin/init --log-target=console 3>&1"]

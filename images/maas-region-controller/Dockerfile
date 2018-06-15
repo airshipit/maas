@@ -62,5 +62,9 @@ RUN cd /usr/lib/python3/dist-packages/maasserver && patch compose_preseed.py < /
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.3_route.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver/models/signals && patch interfaces.py < /tmp/2.3_recursion_fix.patch
 
+COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
+RUN mkdir -p /etc/systemd/system/basic.target.wants ;\
+    ln -s /etc/systemd/system/journalctl-to-tty.service /etc/systemd/system/basic.target.wants/journalctl-to-tty.service
+
 # initalize systemd
-CMD ["/sbin/init"]
+CMD ["/bin/bash", "-c", "exec /sbin/init --log-target=console 3>&1"]

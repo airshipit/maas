@@ -33,4 +33,4 @@ fi
 
 chsh -s /bin/bash maas
 
-exec /bin/systemd --system
+exec /sbin/init --log-target=console 3>&1

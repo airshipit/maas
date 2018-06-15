@@ -14,6 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */}}
+
 {{- if .Values.manifests.rack_deployment }}
 {{- if empty .Values.conf.maas.url.maas_url -}}
 {{- tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | set .Values.conf.maas.url "maas_url" | quote | trunc 0 -}}
@@ -55,6 +56,7 @@ spec:
         - name: maas-rack
           image: {{ .Values.images.tags.maas_rack }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
+          tty: true
           env:
             - name: MAAS_ENDPOINT
               value: {{ .Values.conf.maas.url.maas_url }}
@@ -69,6 +71,15 @@ spec:
           securityContext:
             privileged: true
           volumeMounts:
+            - mountPath: /sys/fs/cgroup
+              name: host-sys-fs-cgroup
+              readOnly: true
+            - mountPath: /run
+              name: pod-run
+            - mountPath: /run/lock
+              name: pod-run-lock
+            - mountPath: /tmp
+              name: pod-tmp
 {{- if .Values.conf.maas.ntp.disable_ntpd_rack }}
             - name: maas-bin
               mountPath: /usr/sbin/ntpd
@@ -96,6 +107,15 @@ spec:
 {{- end }}
 {{ if $mounts_maas_rack.volumeMounts }}{{ toYaml $mounts_maas_rack.volumeMounts | indent 12 }}{{ end }}
       volumes:
+        - name: host-sys-fs-cgroup
+          hostPath:
+            path: /sys/fs/cgroup
+        - name: pod-run
+          emptyDir: {}
+        - name: pod-run-lock
+          emptyDir: {}
+        - name: pod-tmp
+          emptyDir: {}
 {{- if .Values.manifests.secret_ssh_key }}
         - name: maas-ssh
           emptyDir: {}

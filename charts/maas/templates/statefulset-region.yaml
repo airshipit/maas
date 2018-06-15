@@ -52,6 +52,7 @@ spec:
         - name: maas-region
           image: {{ .Values.images.tags.maas_region }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
+          tty: true
 {{ tuple $envAll $envAll.Values.pod.resources.maas_region | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           ports:
             - name: r-ui
@@ -64,6 +65,15 @@ spec:
           command:
             - /tmp/start.sh
           volumeMounts:
+            - mountPath: /sys/fs/cgroup
+              name: host-sys-fs-cgroup
+              readOnly: true
+            - mountPath: /run
+              name: pod-run
+            - mountPath: /run/lock
+              name: pod-run-lock
+            - mountPath: /tmp
+              name: pod-tmp
             - name: maas-region-secret
               mountPath: /var/lib/maas/secret
               subPath: REGION_SECRET
@@ -104,6 +114,15 @@ spec:
 {{- end }}
 {{- if $mounts_maas_region.volumeMounts }}{{ toYaml $mounts_maas_region.volumeMounts | indent 12 }}{{ end }}
       volumes:
+        - name: host-sys-fs-cgroup
+          hostPath:
+            path: /sys/fs/cgroup
+        - name: pod-run
+          emptyDir: {}
+        - name: pod-run-lock
+          emptyDir: {}
+        - name: pod-tmp
+          emptyDir: {}
         - name: maas-etc
           configMap:
             name: maas-etc
