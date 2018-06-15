@@ -1,6 +1,7 @@
 FROM ubuntu:16.04
 
-ENV IMAGE_SRC https://images.maas.io/ephemeral-v3/daily/
+ARG SSTREAM_IMAGE=https://images.maas.io/ephemeral-v3/daily/
+ENV IMAGE_SRC ${SSTREAM_IMAGE}
 
 RUN apt-get -qq update && \
     apt install -y simplestreams \

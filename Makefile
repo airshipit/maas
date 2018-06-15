@@ -29,6 +29,7 @@ LABEL                      ?= commit-id
 IMAGE_NAME                 := maas-rack-controller maas-region-controller sstream-cache
 BUILD_DIR                  := $(shell mktemp -d)
 HELM                       := $(BUILD_DIR)/helm
+SSTREAM_IMAGE              := "https://images.maas.io/ephemeral-v3/daily/"
 
 .PHONY: images
 #Build all images in the list
@@ -64,9 +65,9 @@ helm-install:
 .PHONY: build
 build:
 ifeq ($(USE_PROXY), true)
-	docker build -t $(IMAGE) --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY) $(IMAGE_DIR)
+	docker build -t $(IMAGE) --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile --build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY) $(IMAGE_DIR)
 else
-	docker build -t $(IMAGE) --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR)
+	docker build -t $(IMAGE) --label $(LABEL) --build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR)
 endif
 ifeq ($(PUSH_IMAGE), true)
 	docker push $(IMAGE)
