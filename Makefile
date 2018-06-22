@@ -12,24 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DOCKER_REGISTRY            ?= quay.io
-REGION_SUFFIX              ?= maas-region
-IMG_COMMON_DIR             ?= images
-REGION_IMG_DIR             ?= images/maas-region-controller
-RACK_SUFFIX                ?= maas-rack
-RACK_IMG_DIR               ?= images/maas-rack-controller
-CACHE_SUFFIX               ?= maas-cache
-CACHE_IMG_DIR              ?= images/sstream-cache
-IMAGE_PREFIX               ?= airshipit
-IMAGE_TAG                  ?= untagged
-PROXY                      ?= http://one.proxy.att.com:8080
-USE_PROXY                  ?= false
-PUSH_IMAGE                 ?= false
-LABEL                      ?= commit-id
-IMAGE_NAME                 := maas-rack-controller maas-region-controller sstream-cache
-BUILD_DIR                  := $(shell mktemp -d)
-HELM                       := $(BUILD_DIR)/helm
-SSTREAM_IMAGE              := "https://images.maas.io/ephemeral-v3/daily/"
+DOCKER_REGISTRY ?= quay.io
+REGION_SUFFIX   ?= maas-region
+IMG_COMMON_DIR  ?= images
+REGION_IMG_DIR  ?= images/maas-region-controller
+RACK_SUFFIX     ?= maas-rack
+RACK_IMG_DIR    ?= images/maas-rack-controller
+CACHE_SUFFIX    ?= maas-cache
+CACHE_IMG_DIR   ?= images/sstream-cache
+IMAGE_PREFIX    ?= airshipit
+IMAGE_TAG       ?= untagged
+PROXY           ?= http://proxy.foo.com:8000
+NO_PROXY        ?= localhost,127.0.0.1,.svc.cluster.local
+USE_PROXY       ?= false
+PUSH_IMAGE      ?= false
+LABEL           ?= commit-id
+IMAGE_NAME      := maas-rack-controller maas-region-controller sstream-cache
+BUILD_DIR       := $(shell mktemp -d)
+HELM            := $(BUILD_DIR)/helm
+SSTREAM_IMAGE   := "https://images.maas.io/ephemeral-v3/daily/"
 
 .PHONY: images
 #Build all images in the list
@@ -65,7 +66,14 @@ helm-install:
 .PHONY: build
 build:
 ifeq ($(USE_PROXY), true)
-	docker build -t $(IMAGE) --network=host --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile --build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) --build-arg http_proxy=$(PROXY) --build-arg https_proxy=$(PROXY) $(IMAGE_DIR)
+	docker build -t $(IMAGE) --network=host --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile --build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) \
+		--build-arg http_proxy=$(PROXY) \
+		--build-arg https_proxy=$(PROXY) \
+		--build-arg HTTP_PROXY=$(PROXY) \
+		--build-arg HTTPS_PROXY=$(PROXY) \
+		--build-arg no_proxy=$(NO_PROXY) \
+		--build-arg NO_PROXY=$(NO_PROXY) \
+		$(IMAGE_DIR)
 else
 	docker build -t $(IMAGE) --network=host --label $(LABEL) --build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) -f $(IMAGE_DIR)/Dockerfile $(IMAGE_DIR)
 endif
