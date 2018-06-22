@@ -28,11 +28,14 @@ limitations under the License.
 {{ tuple $envAll $dependencies $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
 apiVersion: apps/v1beta1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: maas-rack
 spec:
+  serviceName: maas-rack
   replicas: {{ .Values.pod.replicas.rack }}
+  updateStrategy:
+    type: 'RollingUpdate'
   template:
     metadata:
       labels:
@@ -98,12 +101,18 @@ spec:
               mountPath: /lib/systemd/system/register-rack-controller.service
               subPath: register-rack-controller.service
               readOnly: true
+            - name: rackd-state
+              mountPath: /etc/maas
+              subPath: etc
+              readOnly: false
+            - name: rackd-state
+              mountPath: /var/lib/maas
+              subPath: home
+              readOnly: false
 {{- if .Values.manifests.secret_ssh_key }}
-            - name: maas-ssh
-              mountPath: /var/lib/maas/keys
             - name: priv-key
               subPath: PRIVATE_KEY
-              mountPath: /var/lib/maas/keys/id_rsa
+              mountPath: /var/lib/maas/id_rsa
 {{- end }}
 {{ if $mounts_maas_rack.volumeMounts }}{{ toYaml $mounts_maas_rack.volumeMounts | indent 12 }}{{ end }}
       volumes:
@@ -117,8 +126,6 @@ spec:
         - name: pod-tmp
           emptyDir: {}
 {{- if .Values.manifests.secret_ssh_key }}
-        - name: maas-ssh
-          emptyDir: {}
         - name: priv-key
           secret:
             secretName: {{ .Release.Name}}-{{ .Values.secrets.ssh_key }}
@@ -133,4 +140,14 @@ spec:
             name: maas-etc
             defaultMode: 0444
 {{ if $mounts_maas_rack.volumes }}{{ toYaml $mounts_maas_rack.volumes | indent 8 }}{{ end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: rackd-state
+        annotations:
+          {{ .Values.storage.rackd.pvc.class_path }}: {{ .Values.storage.rackd.pvc.class_name }}
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.storage.rackd.pvc.size }}
 {{- end }}

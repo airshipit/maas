@@ -2,6 +2,12 @@
 
 set -x
 
+if [[ -r ~maas/maas_id && -r ~maas/secret ]]
+then
+  echo "Found existing maas_id and secret, assuming already registered."
+  exit 0
+fi
+
 echo "register-rack-controller URL: ${MAAS_ENDPOINT}"
 
 # register forever

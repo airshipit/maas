@@ -99,6 +99,7 @@ network:
   proxy:
     node_port:
       enabled: true
+      # Do not change the port, hardcoded in MAAS source
       port: 31800
   gui:
     node_port:
@@ -112,6 +113,13 @@ network:
     service_proxy_target: 8000
     db_service: 5432
     db_service_target: 5432
+
+storage:
+  rackd:
+    pvc:
+      class_path: volume.beta.kubernetes.io/storage-class
+      class_name: general
+      size: 5Gi
 
 conf:
   ssh:

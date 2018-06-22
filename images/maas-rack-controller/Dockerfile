@@ -11,7 +11,8 @@ RUN apt-get -qq update && \
     sudo \
     software-properties-common \
     libvirt-bin \
-    systemd
+    systemd \
+    patch
 # Don't start any optional services except for the few we need.
 
 RUN find /etc/systemd/system \
@@ -41,6 +42,10 @@ RUN systemctl enable register-rack-controller.service
 
 RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump
 RUN ln -s /usr/bin/tcpdump /usr/sbin/tcpdump
+
+# Patch so that Calico interfaces are ignored
+COPY 2.3_nic_filter.patch /tmp/2.3_nic_filter.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch network.py < /tmp/2.3_nic_filter.patch
 
 # echo journalctl logs to the container's stdout
 COPY scripts/journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service

@@ -19,14 +19,19 @@ set -ex
 # show env
 env > /tmp/env
 
+# Ensure PVC volumes have correct ownership
+
+chown maas:maas ~maas/
+chown maas:maas /etc/maas
+
 # MAAS must be able to ssh to libvirt hypervisors
 # to control VMs
 
-if [[ -d ~maas/keys ]]
+if [[ -r ~maas/id_rsa ]]
 then
   mkdir -p ~maas/.ssh
-  cp ~maas/keys/* ~maas/.ssh/
-  chown -R maas:maas ~maas/.ssh
+  cp ~maas/id_rsa ~maas/.ssh/
+  chown -R maas:maas ~maas/.ssh/
   chmod 700 ~maas/.ssh
   chmod 600 ~maas/.ssh/*
 fi
