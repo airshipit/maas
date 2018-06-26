@@ -1,4 +1,5 @@
-FROM ubuntu:16.04
+ARG FROM=ubuntu:16.04
+FROM ${FROM}
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV container docker

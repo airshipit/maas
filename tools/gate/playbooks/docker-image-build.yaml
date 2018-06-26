@@ -14,6 +14,8 @@
 
 - hosts: primary
   tasks:
+    - include_vars: vars.yaml
+
     - name: Debug tag generation inputs
       block:
         - debug:
@@ -39,16 +41,47 @@
         var: image_tags
 
     - name: Install Docker (Debian)
+      when: ansible_os_family == 'Debian'
       block:
+        - file:
+            path: "{{ item }}"
+            state: directory
+          with_items:
+            - /etc/docker/
+            - /etc/systemd/system/docker.service.d/
+            - /var/lib/docker/
+        - mount:
+            path: /var/lib/docker/
+            src: tmpfs
+            fstype: tmpfs
+            opts: size=25g
+            state: mounted
+        - copy: "{{ item }}"
+          with_items:
+            - content: "{{ docker_daemon | to_json }}"
+              dest: /etc/docker/daemon.json
+            - src: files/docker-systemd.conf
+              dest: /etc/systemd/system/docker.service.d/
+        - apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+        - apt_repository:
+            repo: deb http://{{ zuul_site_mirror_fqdn }}/deb-docker xenial stable
         - apt:
             name: "{{ item }}"
+            allow_unauthenticated: True
           with_items:
-            - docker.io
+            - docker-ce
             - python-pip
-          when: ansible_os_family == 'Debian'
         - pip:
             name: docker
             version: 2.7.0
+        # NOTE(SamYaple): Allow all connections from containers to host so the
+        # containers can access the http server for git and wheels
+        - iptables:
+            action: insert
+            chain: INPUT
+            in_interface: docker0
+            jump: ACCEPT
       become: True
 
     - name: Make images
