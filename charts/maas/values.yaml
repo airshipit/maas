@@ -77,7 +77,7 @@ images:
     bootstrap: quay.io/attcomdev/maas-region-controller:latest
     export_api_key: quay.io/attcomdev/maas-region-controller:latest
     maas_cache: quay.io/attcomdev/sstream-cache:latest
-    dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.2.1
+    dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
   pull_policy: IfNotPresent
 
 jobs:
