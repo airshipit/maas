@@ -11,11 +11,13 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License. */}}
+# limitations under the License.
+*/}}
 {{/*
 Test that the API is up and can be logged into
 and that an boot image and rack controller are available*/}}
 {{- if .Values.manifests.test_maas_api }}
+{{- $envAll := . }}
 ---
 apiVersion: v1
 kind: Pod
@@ -23,6 +25,8 @@ metadata:
   name: "{{ .Release.Name }}-api-test"
   annotations:
     "helm.sh/hook": "test-success"
+  labels:
+{{ tuple $envAll "maas" "init-test" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
 spec:
   restartPolicy: Never
   containers:
