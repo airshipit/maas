@@ -1,4 +1,5 @@
-FROM ubuntu:16.04
+ARG FROM=ubuntu:16.04
+FROM ${FROM}
 
 ARG SSTREAM_IMAGE=https://images.maas.io/ephemeral-v3/daily/
 ENV IMAGE_SRC ${SSTREAM_IMAGE}
