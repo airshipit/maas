@@ -16,9 +16,8 @@ limitations under the License.
 */}}
 
 {{- $envAll := . }}
-{{- $dependencies := .Values.dependencies.bootstrap_admin_user }}
 {{- $serviceAccountName := "maas-bootstrap-admin-user" }}
-{{ tuple $envAll $dependencies $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
+{{ tuple $envAll "bootstrap_admin_user" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -35,7 +34,7 @@ spec:
       nodeSelector:
         {{ .Values.labels.region.node_selector_key }}: {{ .Values.labels.region.node_selector_value }}
       initContainers:
-{{ tuple $envAll $dependencies list | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+{{ tuple $envAll "bootstrap_admin_user" list | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: maas-bootstrap-admin-user
           image: {{ .Values.images.tags.bootstrap }}

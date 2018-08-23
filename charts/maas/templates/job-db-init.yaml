@@ -16,9 +16,8 @@ limitations under the License.
 */}}
 
 {{- $envAll := . }}
-{{- $dependencies := .Values.dependencies.db_init }}
 {{- $serviceAccountName := "maas-db-init" }}
-{{ tuple $envAll $dependencies $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
+{{ tuple $envAll "db_init" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -35,12 +34,12 @@ spec:
       nodeSelector:
         {{ .Values.labels.region.node_selector_key }}: {{ .Values.labels.region.node_selector_value }}
       initContainers:
-{{ tuple $envAll $dependencies list | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+{{ tuple $envAll "db_init" list | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: maas-db-init
           image: {{ .Values.images.tags.db_init | quote }}
           imagePullPolicy: {{ .Values.images.pull_policy | quote }}
-{{ tuple $envAll $envAll.Values.pod.resources.jobs.db_init | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+{{ tuple $envAll "db_init" | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           env:
             - name: ROOT_DB_USER
               valueFrom:

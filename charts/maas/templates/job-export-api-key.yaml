@@ -16,25 +16,19 @@ limitations under the License.
 */}}
 
 {{- $envAll := . }}
-{{- $dependencies := .Values.dependencies.export_api_key }}
 {{- $initMounts := .Values.pod.mounts.export_api_key.export_api_key }}
 {{- $serviceAccountName := "maas-export-api-key" }}
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: {{ $serviceAccountName }}
-  namespace: {{ $envAll.Release.Namespace }}
+{{ tuple $envAll "export_api_key" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
-  name: {{ $envAll.Release.Name }}-{{ $serviceAccountName }}
+  name: {{ $envAll.Release.Name }}-{{ $serviceAccountName }}-job
   namespace: {{ $envAll.Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ $envAll.Release.Name }}-{{ $envAll.Release.Namespace }}-{{ $serviceAccountName }}
+  name: {{ $envAll.Release.Name }}-{{ $envAll.Release.Namespace }}-{{ $serviceAccountName }}}-job
 subjects:
   - kind: ServiceAccount
     name: {{ $serviceAccountName }}
@@ -43,7 +37,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
-  name: {{ $envAll.Release.Name }}-{{ $envAll.Release.Namespace }}-{{ $serviceAccountName }}
+  name: {{ $envAll.Release.Name }}-{{ $envAll.Release.Namespace }}-{{ $serviceAccountName }}}-job
   namespace: {{ $envAll.Release.Namespace }}
 rules:
   - apiGroups:
@@ -84,7 +78,7 @@ spec:
       nodeSelector:
         {{ .Values.labels.region.node_selector_key }}: {{ .Values.labels.region.node_selector_value }}
       initContainers:
-{{ tuple $envAll $dependencies $initMounts | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+{{ tuple $envAll "export_api_key" $initMounts | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: exporter
           image: {{ .Values.images.tags.export_api_key }}

@@ -18,49 +18,50 @@
 # Declare variables to be passed into your templates.
 
 dependencies:
-  rack_controller:
-    jobs:
-      - maas-db-sync
-    services:
-      - service: maas_region_ui
-        endpoint: internal
-  region_controller:
-    jobs:
-      - maas-db-sync
-    services:
-      - service: maas_db
-        endpoint: internal
-  db_init:
-    services:
-      - service: maas_db
-        endpoint: internal
-  db_sync:
-    jobs:
-      - maas-db-init
-  bootstrap_admin_user:
-    jobs:
-      - maas-db-sync
-    services:
-      - service: maas_region_ui
-        endpoint: internal
-      - service: maas_db
-        endpoint: internal
-  import_resources:
-    jobs:
-      - maas-db-sync
-    services:
-      - service: maas_region_ui
-        endpoint: internal
-      - service: maas_db
-        endpoint: internal
-  export_api_key:
-    jobs:
-      - maas-db-sync
-    services:
-      - service: maas_region_ui
-        endpoint: internal
-      - service: maas_db
-        endpoint: internal
+  static:
+    rack_controller:
+      jobs:
+        - maas-db-sync
+      services:
+        - service: maas_region_ui
+          endpoint: internal
+    region_controller:
+      jobs:
+        - maas-db-sync
+      services:
+        - service: maas_db
+          endpoint: internal
+    db_init:
+      services:
+        - service: maas_db
+          endpoint: internal
+    db_sync:
+      jobs:
+        - maas-db-init
+    bootstrap_admin_user:
+      jobs:
+        - maas-db-sync
+      services:
+        - service: maas_region_ui
+          endpoint: internal
+        - service: maas_db
+          endpoint: internal
+    import_resources:
+      jobs:
+        - maas-db-sync
+      services:
+        - service: maas_region_ui
+          endpoint: internal
+        - service: maas_db
+          endpoint: internal
+    export_api_key:
+      jobs:
+        - maas-db-sync
+      services:
+        - service: maas_region_ui
+          endpoint: internal
+        - service: maas_db
+          endpoint: internal
 
 manifests:
   region_statefulset: true
@@ -79,6 +80,11 @@ images:
     maas_cache: quay.io/attcomdev/sstream-cache:latest
     dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
   pull_policy: IfNotPresent
+  local_registry:
+    # TODO(portdirect): this chart does not yet support local image cacheing
+    active: false
+    exclude:
+      - dep_check
 
 jobs:
   import_boot_resources:

@@ -20,12 +20,11 @@ limitations under the License.
 {{- tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | set .Values.conf.maas.url "maas_url" | quote | trunc 0 -}}
 {{- end -}}
 {{- $envAll := . }}
-{{- $dependencies := .Values.dependencies.rack_controller }}
 {{- $serviceAccountName := "maas-rack" }}
 {{- $mounts_maas_rack := .Values.pod.mounts.maas_rack }}
 {{- $mounts_maas_rack_init := .Values.pod.mounts.maas_rack.init_container }}
 
-{{ tuple $envAll $dependencies $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
+{{ tuple $envAll "rack_controller" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
@@ -52,7 +51,7 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirst
       initContainers:
-{{ tuple $envAll $dependencies $mounts_maas_rack_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+{{ tuple $envAll "rack_controller" $mounts_maas_rack_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: maas-rack
           image: {{ .Values.images.tags.maas_rack }}

@@ -14,12 +14,11 @@
 # limitations under the License. */}}
 {{- if .Values.manifests.region_statefulset }}
 {{- $envAll := . }}
-{{- $dependencies := .Values.dependencies.region_controller }}
 {{- $serviceAccountName := "maas-region" }}
 {{- $mounts_maas_region := .Values.pod.mounts.maas_region.maas_region }}
 {{- $mounts_maas_region_init := .Values.pod.mounts.maas_region.init_container }}
 
-{{ tuple $envAll $dependencies $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
+{{ tuple $envAll "region_controller" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
@@ -42,7 +41,7 @@ spec:
       nodeSelector:
         {{ .Values.labels.region.node_selector_key }}: {{ .Values.labels.region.node_selector_value }}
       initContainers:
-{{ tuple $envAll $dependencies $mounts_maas_region_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+{{ tuple $envAll "region_controller" $mounts_maas_region_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
 {{- if .Values.conf.cache.enabled }}
         - name: maas-cache
