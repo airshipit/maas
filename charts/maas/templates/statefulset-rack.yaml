@@ -49,12 +49,10 @@ spec:
 {{ tuple $envAll "maas" "rack" | include "helm-toolkit.snippets.kubernetes_pod_anti_affinity" | indent 8 }}
       nodeSelector:
         {{ .Values.labels.rack.node_selector_key }}: {{ .Values.labels.rack.node_selector_value }}
-      initContainers:
-{{ tuple $envAll $dependencies $mounts_maas_rack_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       hostNetwork: true
       dnsPolicy: ClusterFirst
       initContainers:
-{{ tuple $envAll $dependencies list | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+{{ tuple $envAll $dependencies $mounts_maas_rack_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: maas-rack
           image: {{ .Values.images.tags.maas_rack }}
