@@ -41,3 +41,9 @@ data:
 {{ tuple "bin/_maas-test.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   ntpd.sh: |
 {{ tuple "bin/_ntpd.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  maas-ingress: |
+{{ tuple "bin/_maas-ingress.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  maas-ingress-errors: |
+{{ tuple "bin/_maas-ingress-errors.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  maas-vip-configure: |
+{{ tuple "bin/_maas-vip-configure.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}

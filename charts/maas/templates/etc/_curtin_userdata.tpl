@@ -1,3 +1,4 @@
+{{- $drydock_url := tuple "physicalprovisioner" "public" "api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" -}}
 #cloud-config
 debconf_selections:
  maas: |
@@ -34,8 +35,8 @@ def find_ba_key(n):
     return False
 {{ "}}" }}
 {{ "{{" }}py: ba_key = find_ba_key(node){{ "}}" }}
-{{ "{{" }}py: ba_units_url = ''.join([{{ .Values.conf.drydock.bootaction_url | quote }},node.hostname,'/units']){{ "}}" }}
-{{ "{{" }}py: ba_files_url = ''.join([{{ .Values.conf.drydock.bootaction_url | quote }},node.hostname,'/files']){{ "}}" }}
+{{ "{{" }}py: ba_units_url = ''.join([{{ quote $drydock_url }},'/bootactions/nodes/',node.hostname,'/units']){{ "}}" }}
+{{ "{{" }}py: ba_files_url = ''.join([{{ quote $drydock_url }},'/bootactions/nodes/',node.hostname,'/files']){{ "}}" }}
 {{ "{{" }}if ba_key{{ "}}" }}
   drydock_00: ["sh", "-c", "echo Installing Drydock Boot Actions."]
   drydock_01: ["curtin", "in-target", "--", "wget", "--no-proxy", "--header=X-Bootaction-Key: {{ "{{" }}ba_key{{ "}}" }}", "{{ "{{" }}ba_units_url{{ "}}" }}", "-O", "/tmp/bootaction-units.tar.gz"]
