@@ -25,6 +25,8 @@ kind: RoleBinding
 metadata:
   name: {{ $envAll.Release.Name }}-{{ $serviceAccountName }}-job
   namespace: {{ $envAll.Release.Namespace }}
+  annotations:
+    {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role

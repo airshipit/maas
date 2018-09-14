@@ -30,6 +30,8 @@ apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
   name: maas-rack
+  annotations:
+    {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
 spec:
   serviceName: maas-rack
   replicas: {{ .Values.pod.replicas.rack }}

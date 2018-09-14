@@ -25,6 +25,7 @@ metadata:
   name: "{{ .Release.Name }}-api-test"
   annotations:
     "helm.sh/hook": "test-success"
+    {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
   labels:
 {{ tuple $envAll "maas" "init-test" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
 spec:
