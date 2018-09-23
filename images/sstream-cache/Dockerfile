@@ -9,7 +9,8 @@ RUN apt-get -qq update && \
                    apache2 \
                    gpgv \
                    ubuntu-cloudimage-keyring \
-                   python-certifi --no-install-recommends
+                   python-certifi --no-install-recommends \
+                   file
 
 RUN sstream-mirror --keyring=/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg $IMAGE_SRC \
     /var/www/html/maas/images/ephemeral-v3/daily 'arch=amd64' 'release~xenial' --max=1 --progress
