@@ -33,6 +33,6 @@ metadata:
 data:
   enable-underscores-in-headers: "true"
   bind-address: {{ index $bind_address_cidr 0 | quote }}
-  diable-ipv6: "true"
+  disable-ipv6: "true"
 ...
 {{- end }}

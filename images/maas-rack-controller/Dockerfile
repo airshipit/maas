@@ -40,13 +40,6 @@ ENV MAAS_VERSION 2.3.5-6511-gf466fdb-0ubuntu1
 # install maas
 RUN rsyslogd; apt-get install -y maas-cli=$MAAS_VERSION maas-rack-controller=$MAAS_VERSION
 
-COPY scripts/register-rack-controller.sh /usr/local/bin
-RUN chmod +x /usr/local/bin/register-rack-controller.sh
-
-# register ourselves with the region controller
-COPY scripts/register-rack-controller.service /lib/systemd/system/register-rack-controller.service
-RUN systemctl enable register-rack-controller.service
-
 RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump
 RUN ln -s /usr/bin/tcpdump /usr/sbin/tcpdump
 

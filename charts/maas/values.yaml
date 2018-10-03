@@ -19,10 +19,13 @@
 
 dependencies:
   static:
+    maas_ingress: {}
     rack_controller:
       services:
         - service: maas_region
           endpoint: internal
+      jobs:
+        - maas-export-api-key
     region_controller:
       jobs:
         - maas-db-sync
@@ -64,6 +67,7 @@ manifests:
   secret_ssh_key: false
   ingress_region: true
   configmap_ingress: true
+  maas_ingress: true
 
 images:
   tags:
@@ -96,6 +100,9 @@ labels:
     node_selector_key: ucp-control-plane
     node_selector_value: enabled
   region:
+    node_selector_key: ucp-control-plane
+    node_selector_value: enabled
+  ingress:
     node_selector_key: ucp-control-plane
     node_selector_value: enabled
 
@@ -226,6 +233,7 @@ pod:
   affinity:
     anti:
       type:
+        rack: requiredDuringSchedulingIgnoredDuringExecution
         default: preferredDuringSchedulingIgnoredDuringExecution
       topologyKey:
         default: kubernetes.io/hostname
@@ -239,9 +247,12 @@ pod:
     export_api_key:
       init_container: []
       export_api_key:
+    maas_ingress:
+      init_container: []
+      maas_region:
   replicas:
-    rack: 1
-    region: 1
+    rack: 2
+    region: 2
   resources:
     enabled: false
     test:

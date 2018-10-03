@@ -1,0 +1,267 @@
+
+{{/*
+Copyright (c) 2018 AT&T Intellectual Property. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/}}
+
+{{- if .Values.manifests.maas_ingress }}
+{{- $envAll := . }}
+{{- $serviceAccountName := "maas-ingress" }}
+{{- $mounts_maas_ingress := .Values.pod.mounts.maas_ingress }}
+{{- $mounts_maas_ingress_init := .Values.pod.mounts.maas_ingress.init_container }}
+
+{{ tuple $envAll "maas_ingress" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: {{ $serviceAccountName }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - endpoints
+      - nodes
+      - pods
+      - secrets
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "extensions"
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+        - events
+    verbs:
+        - create
+        - patch
+  - apiGroups:
+      - "extensions"
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $serviceAccountName }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $serviceAccountName }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $serviceAccountName }}
+    namespace: {{ $envAll.Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: {{ $serviceAccountName }}
+  namespace: {{ $envAll.Release.Namespace }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - pods
+      - secrets
+      - namespaces
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    resourceNames:
+      - {{ printf "%s-maas-ingress" .Release.Name | quote }}
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+    verbs:
+      - get
+      - create
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: {{ $serviceAccountName }}
+  namespace: {{ $envAll.Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $serviceAccountName }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $serviceAccountName }}
+    namespace: {{ $envAll.Release.Namespace }}
+---
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: maas-ingress
+  annotations:
+    {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
+spec:
+  replicas: {{ .Values.pod.replicas.ingress }}
+  template:
+    metadata:
+      labels:
+{{ tuple $envAll "maas" "ingress" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-bin-hash: {{ tuple "configmap-bin.yaml" . | include "helm-toolkit.utils.hash" }}
+        configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}
+    spec:
+      serviceAccountName: {{ $serviceAccountName }}
+      affinity:
+{{- tuple $envAll "maas" "ingress" | include "helm-toolkit.snippets.kubernetes_pod_anti_affinity" | indent 8 }}
+      nodeSelector:
+        {{ .Values.labels.ingress.node_selector_key }}: {{ .Values.labels.rack.node_selector_value }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      initContainers:
+{{ tuple $envAll "maas_ingress" $mounts_maas_ingress_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+        - name: maas-ingress-vip-init
+          image: {{ .Values.images.tags.ingress }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+{{ tuple $envAll $envAll.Values.pod.resources.maas_ingress_vip | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+          securityContext:
+            capabilities:
+              add:
+                - 'NET_ADMIN'
+                - 'SYS_MODULE'
+            runAsUser: 0
+          command:
+            - /tmp/maas-vip-configure.sh
+            - start
+          env:
+{{ include "helm-toolkit.utils.to_k8s_env_vars" .Values.network.maas_ingress | indent 12 }}
+          volumeMounts:
+            - mountPath: /tmp/maas-vip-configure.sh
+              name: maas-bin
+              subPath: maas-vip-configure
+              readOnly: true
+            - mountPath: /mnt/host-rootfs
+              name: host-rootfs
+              readOnly: true
+      containers:
+        - name: maas-ingress-vip
+          image: {{ .Values.images.tags.ingress }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+{{ tuple $envAll $envAll.Values.pod.resources.maas_ingress_vip | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+          securityContext:
+            capabilities:
+              add:
+                - 'NET_ADMIN'
+            runAsUser: 0
+          command:
+            - /tmp/maas-vip-configure.sh
+            - sleep
+          env:
+{{ include "helm-toolkit.utils.to_k8s_env_vars" .Values.network.maas_ingress | indent 12 }}
+          volumeMounts:
+            - mountPath: /tmp/maas-vip-configure.sh
+              name: maas-bin
+              subPath: maas-vip-configure
+              readOnly: true
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /tmp/maas-vip-configure.sh
+                  - stop
+        - name: maas-ingress
+          image: {{ .Values.images.tags.ingress }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+{{ tuple $envAll $envAll.Values.pod.resources.maas_ingress | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+          securityContext:
+            capabilities:
+              add:
+                - 'NET_BIND_SERVICE'
+            runAsUser: 0
+          command:
+            - /tmp/maas-ingress.sh
+            - start
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: RELEASE_NAME
+              value: {{ .Release.Name | quote }}
+            - name: HTTP_PORT
+              value: "8808"
+            - name: HTTPS_PORT
+              value: "8543"
+            - name: HEALTHZ_PORT
+              value: {{ tuple "maas_ingress" "podport" "healthz" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
+            - name: STATUS_PORT
+              value: {{ tuple "maas_ingress" "podport" "status" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
+            - name: ERROR_PAGE_SERVICE
+              value: {{ tuple "maas_ingress" "error_pages" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" | quote }}
+          volumeMounts:
+            - mountPath: /tmp/maas-ingress.sh
+              name: maas-bin
+              subPath: maas-ingress
+              readOnly: true
+{{ if $mounts_maas_ingress.volumeMounts }}{{ toYaml $mounts_maas_ingress.volumeMounts | indent 12 }}{{ end }}
+      volumes:
+        - name: maas-bin
+          configMap:
+            name: maas-bin
+            defaultMode: 0555
+        - name: host-rootfs
+          hostPath:
+            path: /
+{{ if $mounts_maas_ingress.volumes }}{{ toYaml $mounts_maas_ingress.volumes | indent 8 }}{{ end }}
+{{- end }}

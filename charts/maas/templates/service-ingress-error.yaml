@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */}}
+{{- if .Values.manifests.maas_ingress }}
 ---
 apiVersion: v1
 kind: Service
@@ -26,3 +27,4 @@ spec:
   selector:
 {{ tuple . "maas" "ingress-errors" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
 ...
+{{- end }}
