@@ -30,7 +30,7 @@ RUN apt-get install -y systemd
 RUN apt-get install -y rsyslog
 RUN systemctl enable rsyslog.service
 
-ENV MAAS_VERSION 2.3.0-6434-gd354690-0ubuntu1~16.04.1
+ENV MAAS_VERSION 2.3.5-6511-gf466fdb-0ubuntu1
 
 # install maas
 RUN rsyslogd; apt-get install -y maas-cli=$MAAS_VERSION \
@@ -54,14 +54,10 @@ RUN apt-get download maas-region-controller=$MAAS_VERSION && \
     pg_dropcluster --stop 9.5 main
 
 # 2.3 workarounds
-COPY 2.3_nat_fix.patch /tmp/2.3_nat_fix.patch
 COPY 2.3_proxy_port.patch /tmp/2.3_proxy_port.patch
 COPY 2.3_route.patch /tmp/2.3_route.patch
-COPY 2.3_recursion_fix.patch /tmp/2.3_recursion_fix.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver/utils && patch __init__.py < /tmp/2.3_nat_fix.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch compose_preseed.py < /tmp/2.3_proxy_port.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.3_route.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver/models/signals && patch interfaces.py < /tmp/2.3_recursion_fix.patch
 
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
 RUN mkdir -p /etc/systemd/system/basic.target.wants ;\

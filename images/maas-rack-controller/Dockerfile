@@ -29,7 +29,7 @@ RUN systemctl set-default multi-user.target
 RUN apt-get install -y rsyslog
 RUN systemctl enable rsyslog.service
 
-ENV MAAS_VERSION 2.3.0-6434-gd354690-0ubuntu1~16.04.1
+ENV MAAS_VERSION 2.3.5-6511-gf466fdb-0ubuntu1
 
 # install maas
 RUN rsyslogd; apt-get install -y maas-cli=$MAAS_VERSION maas-rack-controller=$MAAS_VERSION
@@ -45,6 +45,7 @@ RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump
 RUN ln -s /usr/bin/tcpdump /usr/sbin/tcpdump
 
 # Patch so that Calico interfaces are ignored
+# dc6350: this appears to be fixed in maas master as of 10/4/2018, but that change is not in 2.3.5
 COPY 2.3_nic_filter.patch /tmp/2.3_nic_filter.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch network.py < /tmp/2.3_nic_filter.patch
 
