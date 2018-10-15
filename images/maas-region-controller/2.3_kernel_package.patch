@@ -1,0 +1,27 @@
+--- preseed.py	2018-10-15 12:52:41.611027184 -0700
++++ preseed2.py	2018-10-16 13:42:51.824755746 -0700
+@@ -317,7 +317,23 @@
+     The BootResourceFile table contains a mapping between hwe kernels and
+     Ubuntu package names. If this mapping is missing we fall back to letting
+     Curtin figure out which kernel should be installed"""
+-    kpackage = BootResource.objects.get_kpackage_for_node(node)
++
++    # determine if this node has kernel parameters applied by drydock
++    kernel_opt_tag = "%s_kp" % (node.hostname)
++    if kernel_opt_tag in node.tag_names():
++
++        # the tag exists, retrieve it
++        kernel_opts = node.tags.get(name=kernel_opt_tag).kernel_opts
++
++        # parse the string and find our package param value
++        # e.g. kernel_package=linux-image-4.15.0-34-generic
++        kparams = kernel_opts.split()
++        kdict = dict(kparam.split('=') for kparam in kparams)
++        if 'kernel_package' in kdict:
++            kpackage = kdict['kernel_package']
++    else:
++        kpackage = BootResource.objects.get_kpackage_for_node(node)
++
+     if kpackage:
+         kernel_config = {
+             'kernel': {

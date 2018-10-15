@@ -56,8 +56,10 @@ RUN apt-get download maas-region-controller=$MAAS_VERSION && \
 # 2.3 workarounds
 COPY 2.3_proxy_port.patch /tmp/2.3_proxy_port.patch
 COPY 2.3_route.patch /tmp/2.3_route.patch
+COPY 2.3_kernel_package.patch /tmp/2.3_kernel_package.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch compose_preseed.py < /tmp/2.3_proxy_port.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.3_route.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/2.3_kernel_package.patch
 
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
 RUN mkdir -p /etc/systemd/system/basic.target.wants ;\
