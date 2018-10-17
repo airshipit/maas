@@ -116,6 +116,7 @@
               DOCKER_REGISTRY: "quay.io"
               IMAGE_PREFIX: "airshipit"
               IMAGE_TAG: "{{ item }}"
+              COMMIT: "{{ zuul.newrev }}"
               PUSH_IMAGE: "true"
           with_items: "{{ image_tags.stdout_lines }}"
 

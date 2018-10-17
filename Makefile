@@ -26,7 +26,7 @@ PROXY             ?= http://proxy.foo.com:8000
 NO_PROXY          ?= localhost,127.0.0.1,.svc.cluster.local
 USE_PROXY         ?= false
 PUSH_IMAGE        ?= false
-LABEL             ?= commit-id
+COMMIT            ?= commit-id
 IMAGE_NAME        := maas-rack-controller maas-region-controller sstream-cache
 BUILD_DIR         := $(shell mktemp -d)
 HELM              := $(BUILD_DIR)/helm
@@ -67,7 +67,11 @@ helm-install:
 .PHONY: build
 build:
 ifeq ($(USE_PROXY), true)
-	docker build -t $(IMAGE) --network=host --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile \
+	docker build -t $(IMAGE) --network=host \
+		--label "org.opencontainers.image.revision=$(COMMIT)" \
+		--label "org.opencontainers.image.created=$(shell date --rfc-3339=seconds --utc)" \
+		--label "org.opencontainers.image.title=$(IMAGE_NAME)" \
+		-f $(IMAGE_DIR)/Dockerfile \
 		--build-arg FROM=$(UBUNTU_BASE_IMAGE) \
 		--build-arg http_proxy=$(PROXY) \
 		--build-arg https_proxy=$(PROXY) \
@@ -75,10 +79,14 @@ ifeq ($(USE_PROXY), true)
 		--build-arg HTTPS_PROXY=$(PROXY) \
 		--build-arg no_proxy=$(NO_PROXY) \
 		--build-arg NO_PROXY=$(NO_PROXY) \
-                --build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) \
+		--build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) \
 		$(IMAGE_DIR)
 else
-	docker build -t $(IMAGE) --network=host --label $(LABEL) -f $(IMAGE_DIR)/Dockerfile \
+	docker build -t $(IMAGE) --network=host \
+		--label "org.opencontainers.image.revision=$(COMMIT)" \
+		--label "org.opencontainers.image.created=$(shell date --rfc-3339=seconds --utc)" \
+		--label "org.opencontainers.image.title=$(IMAGE_NAME)" \
+		-f $(IMAGE_DIR)/Dockerfile \
 		--build-arg FROM=$(UBUNTU_BASE_IMAGE) \
 		--build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) \
 		$(IMAGE_DIR)
