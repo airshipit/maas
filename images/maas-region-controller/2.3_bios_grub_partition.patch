@@ -1,0 +1,23 @@
+--- partition.py	2018-10-18 09:04:40.300721829 -0700
++++ partition2.py	2018-10-18 09:08:27.952565248 -0700
+@@ -179,6 +179,8 @@
+
+     def get_partition_number(self):
+         """Return the partition number in the table."""
++        # Circular imports.
++        from maasserver.models.partitiontable import GPT_REQUIRED_SIZE
+         # Sort manually instead of with `order_by`, this will prevent django
+         # from making a query if the partitions are already cached.
+         partitions_in_table = self.partition_table.partitions.all()
+@@ -196,7 +198,10 @@
+             block_device = self.partition_table.block_device
+             if (arch == "ppc64el" and block_device.id == boot_disk.id):
+                 return idx + 2
+-            elif arch == "amd64" and bios_boot_method != "uefi":
++            elif (arch == "amd64" and
++                    self.partition_table.block_device.id == boot_disk.id and
++                    bios_boot_method != "uefi" and
++                    boot_disk.size >= GPT_REQUIRED_SIZE):
+                 return idx + 2
+             else:
+                 return idx + 1

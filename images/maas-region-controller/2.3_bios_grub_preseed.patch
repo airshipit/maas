@@ -1,0 +1,22 @@
+--- preseed_storage.py	2018-10-18 09:09:24.372519602 -0700
++++ preseed_storage2.py	2018-10-18 09:10:30.112463704 -0700
+@@ -22,6 +22,7 @@
+ from maasserver.models.partition import Partition
+ from maasserver.models.partitiontable import (
+     BIOS_GRUB_PARTITION_SIZE,
++    GPT_REQUIRED_SIZE,
+     INITIAL_PARTITION_OFFSET,
+     PARTITION_TABLE_EXTRA_SPACE,
+     PREP_PARTITION_SIZE,
+@@ -127,7 +128,10 @@
+         """Return True if block device requires the bios_grub partition."""
+         arch, _ = self.node.split_arch()
+         bios_boot_method = self.node.get_bios_boot_method()
+-        return arch == "amd64" and bios_boot_method != "uefi"
++        return (
++            arch == "amd64" and
++            bios_boot_method != "uefi" and
++            block_device.size >= GPT_REQUIRED_SIZE)
+
+     def _add_partition_operations(self):
+         """Add all the partition operations.
