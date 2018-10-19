@@ -105,8 +105,6 @@ network:
   proxy:
     node_port:
       enabled: true
-      # Do not change the port, hardcoded in MAAS source
-      port: 31800
   gui:
     node_port:
       enabled: true
@@ -115,8 +113,7 @@ network:
     region_container: 80
     service_gui: 80
     service_gui_target: 80
-    service_proxy: 8000
-    service_proxy_target: 8000
+    service_proxy: 31800
     db_service: 5432
     db_service_target: 5432
 

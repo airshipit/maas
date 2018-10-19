@@ -118,6 +118,7 @@ function configure_proxy {
   check_then_set enable_http_proxy ${MAAS_PROXY_ENABLED}
   check_then_set use_peer_proxy ${MAAS_PEER_PROXY_ENABLED}
   check_then_set http_proxy ${MAAS_PROXY_SERVER}
+  check_then_set maas_proxy_port ${MAAS_INTERNAL_PROXY_PORT}
 }
 
 function configure_ntp {

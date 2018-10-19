@@ -63,6 +63,8 @@ spec:
               value: {{ .Values.conf.maas.proxy.peer_proxy_enabled | quote }}
             - name: MAAS_PROXY_SERVER
               value: {{ .Values.conf.maas.proxy.proxy_server }}
+            - name: MAAS_INTERNAL_PROXY_PORT
+              value: {{ .Values.network.port.service_proxy }}
             - name: MAAS_HTTP_BOOT
               value: {{ .Values.conf.maas.http_boot | quote }}
             - name: MAAS_NTP_SERVERS

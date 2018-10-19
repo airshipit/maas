@@ -30,9 +30,9 @@ spec:
     nodePort: {{ .Values.network.gui.node_port.port }}
     {{ end }}
   - port: {{ .Values.network.port.service_proxy }}
-    targetPort: {{ .Values.network.port.service_proxy_target }}
+    targetPort: {{ .Values.network.port.service_proxy }}
     {{ if .Values.network.proxy.node_port.enabled }}
-    nodePort:  {{ .Values.network.proxy.node_port.port }}
+    nodePort:  {{ .Values.network.port.service_proxy }}
     {{ end }}
     name: proxy
   selector:

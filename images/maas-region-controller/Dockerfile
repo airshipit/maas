@@ -54,12 +54,10 @@ RUN apt-get download maas-region-controller=$MAAS_VERSION && \
     pg_dropcluster --stop 9.5 main
 
 # 2.3 workarounds
-COPY 2.3_proxy_port.patch /tmp/2.3_proxy_port.patch
 COPY 2.3_route.patch /tmp/2.3_route.patch
 COPY 2.3_kernel_package.patch /tmp/2.3_kernel_package.patch
 COPY 2.3_bios_grub_partition.patch /tmp/2.3_bios_grub_partition.patch
 COPY 2.3_bios_grub_preseed.patch /tmp/2.3_bios_grub_preseed.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver && patch compose_preseed.py < /tmp/2.3_proxy_port.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.3_route.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/2.3_kernel_package.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch partition.py < /tmp/2.3_bios_grub_partition.patch
