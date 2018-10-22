@@ -157,11 +157,11 @@ conf:
       # Use external only points region and rack serves and deployed nodes directly
       # at external NTP servers. Otherwise we have nodes -> rack -> region -> external
       use_external_only: false
-      ntp_servers: null
+      ntp_servers: []
     dns:
       require_dnssec: no
       # These are upstream servers
-      dns_servers: null
+      dns_servers: []
     proxy:
       # Whether deploying nodes should use MaaS region as an APT proxy
       proxy_enabled: false
