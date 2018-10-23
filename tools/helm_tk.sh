@@ -18,7 +18,7 @@
 HELM=$1
 HTK_REPO=${HTK_REPO:-"https://github.com/openstack/openstack-helm-infra"}
 HTK_PATH=${HTK_PATH:-""}
-HTK_STABLE_COMMIT=${HTK_COMMIT:-"4cd00f3ac539f625e7cd9733ae46232b2082027a"}
+HTK_STABLE_COMMIT=${HTK_COMMIT:-"5316586d9efeec2c1e2c5f282fc03b51c3fee9aa"}
 DEP_UP_LIST=${DEP_UP_LIST:-"maas"}
 
 if [[ ! -z $(echo $http_proxy) ]]

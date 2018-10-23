@@ -230,6 +230,12 @@ secrets:
   ssh_key: ssh-private-key
 
 pod:
+  mandatory_access_control:
+    type: apparmor
+    maas-rack:
+      maas-rack: localhost/docker-default
+    maas-region:
+      maas-region: localhost/docker-default
   affinity:
     anti:
       type:
