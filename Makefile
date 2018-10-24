@@ -26,7 +26,9 @@ PROXY             ?= http://proxy.foo.com:8000
 NO_PROXY          ?= localhost,127.0.0.1,.svc.cluster.local
 USE_PROXY         ?= false
 PUSH_IMAGE        ?= false
-COMMIT            ?= commit-id
+# use this variable for image labels added in internal build process
+LABEL             ?= com.internal
+COMMIT            ?= $(shell git rev-parse HEAD)
 IMAGE_NAME        := maas-rack-controller maas-region-controller sstream-cache
 BUILD_DIR         := $(shell mktemp -d)
 HELM              := $(BUILD_DIR)/helm
@@ -67,7 +69,7 @@ helm-install:
 .PHONY: build
 build:
 ifeq ($(USE_PROXY), true)
-	docker build -t $(IMAGE) --network=host \
+	docker build -t $(IMAGE) --label $(LABEL) --network=host \
 		--label "org.opencontainers.image.revision=$(COMMIT)" \
 		--label "org.opencontainers.image.created=$(shell date --rfc-3339=seconds --utc)" \
 		--label "org.opencontainers.image.title=$(IMAGE_NAME)" \
@@ -82,7 +84,7 @@ ifeq ($(USE_PROXY), true)
 		--build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) \
 		$(IMAGE_DIR)
 else
-	docker build -t $(IMAGE) --network=host \
+	docker build -t $(IMAGE) --label $(LABEL) --network=host \
 		--label "org.opencontainers.image.revision=$(COMMIT)" \
 		--label "org.opencontainers.image.created=$(shell date --rfc-3339=seconds --utc)" \
 		--label "org.opencontainers.image.title=$(IMAGE_NAME)" \
