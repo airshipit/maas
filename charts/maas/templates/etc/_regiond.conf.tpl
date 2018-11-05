@@ -14,12 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 */}}
-{{- if empty .Values.conf.maas.url.maas_url -}}
-{{- tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | set .Values.conf.maas.url "maas_url" | quote | trunc 0 -}}
-{{- end }}
-
 database_host: {{ tuple "maas_db" "internal" . | include "helm-toolkit.endpoints.hostname_fqdn_endpoint_lookup" }}
 database_name: {{ .Values.endpoints.maas_db.auth.user.database }}
 database_pass: {{ .Values.endpoints.maas_db.auth.user.password }}
 database_user: {{ .Values.endpoints.maas_db.auth.user.username }}
-maas_url: {{ .Values.conf.maas.url.maas_url }}
+maas_url: {{ tuple "maas_region" "public" "region_api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | quote }}

@@ -56,11 +56,13 @@ spec:
           tty: true
 {{ tuple $envAll $envAll.Values.pod.resources.maas_region | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           ports:
-            - name: r-ui
-              containerPort: {{ .Values.network.port.region_container }}
+            - name: region-api
+              containerPort: {{ tuple "maas_region" "podport" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+            - name: region-proxy
+              containerPort: {{ tuple "maas_region" "podport" "region_proxy" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
           readinessProbe:
             tcpSocket:
-              port: {{ .Values.network.port.region_container }}
+              port: {{ tuple "maas_region" "podport" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
           securityContext:
             privileged: true
           command:

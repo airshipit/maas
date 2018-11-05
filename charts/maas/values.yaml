@@ -20,10 +20,8 @@
 dependencies:
   static:
     rack_controller:
-      jobs:
-        - maas-db-sync
       services:
-        - service: maas_region_ui
+        - service: maas_region
           endpoint: internal
     region_controller:
       jobs:
@@ -42,23 +40,19 @@ dependencies:
       jobs:
         - maas-db-sync
       services:
-        - service: maas_region_ui
+        - service: maas_region
           endpoint: internal
         - service: maas_db
           endpoint: internal
     import_resources:
-      jobs:
-        - maas-db-sync
       services:
-        - service: maas_region_ui
+        - service: maas_region
           endpoint: internal
         - service: maas_db
           endpoint: internal
     export_api_key:
-      jobs:
-        - maas-db-sync
       services:
-        - service: maas_region_ui
+        - service: maas_region
           endpoint: internal
         - service: maas_db
           endpoint: internal
@@ -68,6 +62,8 @@ manifests:
   rack_deployment: true
   test_maas_api: true
   secret_ssh_key: false
+  ingress_region: true
+  configmap_ingress: true
 
 images:
   tags:
@@ -79,6 +75,8 @@ images:
     export_api_key: quay.io/airshipit/maas-region-controller:latest
     maas_cache: quay.io/airshipit/sstream-cache:latest
     dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
+    ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.9.0
+    error_pages: gcr.io/google_containers/defaultbackend:1.0
   pull_policy: IfNotPresent
   local_registry:
     # TODO(portdirect): this chart does not yet support local image cacheing
@@ -102,20 +100,23 @@ labels:
     node_selector_value: enabled
 
 network:
-  proxy:
+  maas_ingress:
+    mode: routed
+    interface: maas-vip
+    addr: 172.18.0.2/32
+  region_proxy:
     node_port:
-      enabled: true
-  gui:
+      enabled: false
+  region_api:
+    ingress:
+      public: true
+      classes:
+        namespace: "maas-ingress"
+        cluster: "maas-ingress"
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: "/"
     node_port:
-      enabled: true
-      port: 31900
-  port:
-    region_container: 80
-    service_gui: 80
-    service_gui_target: 80
-    service_proxy: 31800
-    db_service: 5432
-    db_service_target: 5432
+      enabled: false
 
 storage:
   rackd:
@@ -145,8 +146,6 @@ conf:
     override:
     append:
     http_boot: true
-    url:
-      maas_url: null
     ntp:
       # These options allow you to mock out the ntpd binary within the container
       # by overwriting it with a script that simply sleeps - this is useful in
@@ -266,6 +265,27 @@ pod:
       requests:
         memory: "128Mi"
         cpu: "500m"
+    maas_ingress_vip:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+      requests:
+        memory: "128Mi"
+        cpu: "500m"
+    maas_ingress:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+      requests:
+        memory: "128Mi"
+        cpu: "500m"
+    maas_ingress_errors:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+      requests:
+        memory: "128Mi"
+        cpu: "500m"
     jobs:
       db_init:
         requests:
@@ -305,6 +325,24 @@ pod:
 
 endpoints:
   cluster_domain_suffix: cluster.local
+  maas_ingress:
+    hosts:
+      default: maas-ingress
+      error_pages: maas-ingress-error
+    host_fqdn_override:
+      default: null
+    port:
+      http:
+        default: 80
+      https:
+        default: 443
+      error_pages:
+        default: 8080
+        podport: 10080
+      healthz:
+        podport: 10254
+      status:
+        podport: 18080
   maas_db:
     auth:
       admin:
@@ -322,23 +360,45 @@ endpoints:
         default: 5432
     host_fqdn_override:
       default: null
-  maas_region_ui:
-    name: maas-region-ui
+  maas_region:
+    name: maas-region
     auth:
       admin:
         username: admin
         password: admin
         email: none@none
     hosts:
-      default: maas-region-ui
+      default: maas-region
       public: maas
     path:
       default: /MAAS
     scheme:
       default: 'http'
     port:
-      region_ui:
+      region_api:
         default: 80
+        nodeport: 31900
+        podport: 80
         public: 80
+      region_proxy:
+        default: 8000
+        # podport and public need to be the same as of MAAS 2.3.4, so
+        # comment them out and let the default rule
+        # podport: 8000
+        # public: 8000
+    host_fqdn_override:
+      default: null
+  physicalprovisioner:
+    name: drydock
+    hosts:
+      default: drydock-api
+    port:
+      api:
+        default: 9000
+        nodeport: 31900
+    path:
+      default: /api/v1.0
+    scheme:
+      default: http
     host_fqdn_override:
       default: null
