@@ -65,10 +65,16 @@ COPY 2.3_route.patch /tmp/2.3_route.patch
 COPY 2.3_kernel_package.patch /tmp/2.3_kernel_package.patch
 COPY 2.3_bios_grub_partition.patch /tmp/2.3_bios_grub_partition.patch
 COPY 2.3_bios_grub_preseed.patch /tmp/2.3_bios_grub_preseed.patch
+# sh8121att: patch so that maas-enlist works with domains that contain '-'
+COPY 2.3_maas_enlist.patch /tmp/2.3_maas_enlist.patch
+# sh8121att: patch so that interfaces with MAC 00:00:00:00:00:00 omit the MAC address
+COPY 2.3_mac_address.patch /tmp/2.3_mac_address.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.3_route.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/2.3_kernel_package.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch partition.py < /tmp/2.3_bios_grub_partition.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_storage.py < /tmp/2.3_bios_grub_preseed.patch
+RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets && patch maas_enlist.sh < /tmp/2.3_maas_enlist.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch ipaddr.py < /tmp/2.3_mac_address.patch
 
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
 RUN mkdir -p /etc/systemd/system/basic.target.wants ;\

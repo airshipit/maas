@@ -46,7 +46,10 @@ RUN ln -s /usr/bin/tcpdump /usr/sbin/tcpdump
 # Patch so that Calico interfaces are ignored
 # dc6350: this appears to be fixed in maas master as of 10/4/2018, but that change is not in 2.3.5
 COPY 2.3_nic_filter.patch /tmp/2.3_nic_filter.patch
+# sh8121att: patch so that interfaces with MAC 00:00:00:00:00:00 omit the MAC address
+COPY 2.3_mac_address.patch /tmp/2.3_mac_address.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch network.py < /tmp/2.3_nic_filter.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch ipaddr.py < /tmp/2.3_mac_address.patch
 
 # echo journalctl logs to the container's stdout
 COPY scripts/journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
