@@ -90,11 +90,11 @@ function check_then_set {
 }
 
 function check_for_rack_sync {
-  rack_list=$(maas ${ADMIN_USERNAME} rack-controllers read | tail -n +1 | jq -r '.[] | .system_id')
   sync_list=""
 
   while [[ ${JOB_TIMEOUT} -gt 0 ]]
   do
+      rack_list=$(maas ${ADMIN_USERNAME} rack-controllers read | tail -n +1 | jq -r '.[] | .system_id')
       for rack_id in ${rack_list}
       do
         selected_imgs=$(maas ${ADMIN_USERNAME} rack-controller list-boot-images ${rack_id} | tail -n +1 | jq ".images[] | select( .name | contains(\"${MAAS_DEFAULT_DISTRO}\")) | .name")

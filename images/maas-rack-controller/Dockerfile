@@ -43,6 +43,10 @@ RUN rsyslogd; apt-get install -y maas-cli=$MAAS_VERSION maas-rack-controller=$MA
 RUN mv /usr/sbin/tcpdump /usr/bin/tcpdump
 RUN ln -s /usr/bin/tcpdump /usr/sbin/tcpdump
 
+# register ourselves with the region controller
+COPY scripts/register-rack-controller.service /lib/systemd/system/register-rack-controller.service
+RUN systemctl enable register-rack-controller.service
+
 # Patch so that Calico interfaces are ignored
 # dc6350: this appears to be fixed in maas master as of 10/4/2018, but that change is not in 2.3.5
 COPY 2.3_nic_filter.patch /tmp/2.3_nic_filter.patch
