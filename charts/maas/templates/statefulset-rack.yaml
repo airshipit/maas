@@ -103,10 +103,6 @@ spec:
               mountPath: /usr/local/bin/register-rack-controller.sh
               subPath: register-rack-controller.sh
               readOnly: true
-            - name: maas-etc
-              mountPath: /lib/systemd/system/register-rack-controller.service
-              subPath: register-rack-controller.service
-              readOnly: true
             - name: rackd-state
               mountPath: /etc/maas
               subPath: etc

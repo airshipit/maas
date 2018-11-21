@@ -168,7 +168,7 @@ spec:
       initContainers:
 {{ tuple $envAll "maas_ingress" $mounts_maas_ingress_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
         - name: maas-ingress-vip-init
-          image: {{ .Values.images.tags.ingress }}
+          image: {{ .Values.images.tags.ingress_vip }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
 {{ tuple $envAll $envAll.Values.pod.resources.maas_ingress_vip | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           securityContext:
@@ -192,7 +192,7 @@ spec:
               readOnly: true
       containers:
         - name: maas-ingress-vip
-          image: {{ .Values.images.tags.ingress }}
+          image: {{ .Values.images.tags.ingress_vip }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
 {{ tuple $envAll $envAll.Values.pod.resources.maas_ingress_vip | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           securityContext:
@@ -201,14 +201,17 @@ spec:
                 - 'NET_ADMIN'
             runAsUser: 0
           command:
-            - /tmp/maas-vip-configure.sh
-            - sleep
+            - /bin/init
           env:
 {{ include "helm-toolkit.utils.to_k8s_env_vars" .Values.network.maas_ingress | indent 12 }}
           volumeMounts:
             - mountPath: /tmp/maas-vip-configure.sh
               name: maas-bin
               subPath: maas-vip-configure
+              readOnly: true
+            - mountPath: /etc/inittab
+              name: maas-etc
+              subPath: sleep-inittab
               readOnly: true
           lifecycle:
             preStop:
@@ -240,9 +243,9 @@ spec:
             - name: RELEASE_NAME
               value: {{ .Release.Name | quote }}
             - name: HTTP_PORT
-              value: "8808"
+              value: {{ tuple "maas_ingress" "podport" "http" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
             - name: HTTPS_PORT
-              value: "8543"
+              value: {{ tuple "maas_ingress" "podport" "https" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
             - name: HEALTHZ_PORT
               value: {{ tuple "maas_ingress" "podport" "healthz" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
             - name: STATUS_PORT
@@ -260,6 +263,10 @@ spec:
           configMap:
             name: maas-bin
             defaultMode: 0555
+        - name: maas-etc
+          configMap:
+            name: maas-etc
+            defaultMode: 0444
         - name: host-rootfs
           hostPath:
             path: /

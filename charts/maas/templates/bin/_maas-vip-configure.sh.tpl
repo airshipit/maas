@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 {{/*
 Copyright 2018 The Openstack-Helm Authors.
@@ -18,20 +18,20 @@ limitations under the License.*/}}
 
 set -ex
 
-COMMAND="${@:-start}"
+COMMAND="${*:-start}"
 
-function kernel_modules () {
+kernel_modules () {
   chroot /mnt/host-rootfs modprobe dummy
 }
 
-function test_vip () {
+test_vip () {
   ip addr show ${interface} | \
     awk "/inet / && /${interface}/{print \$2 }" | \
     awk -F '/' '{ print $1 }' | \
     grep -q "${addr%/*}"
 }
 
-function start () {
+start () {
   kernel_modules
   ip link show ${interface} > /dev/null || ip link add ${interface} type dummy
   if ! test_vip; then
@@ -40,11 +40,11 @@ function start () {
   ip link set ${interface} up
 }
 
-function sleep () {
-  exec /usr/bin/dumb-init bash -c "while :; do sleep 2073600; done"
+sleep () {
+  exec /bin/sh -c "while :; do sleep 2073600; done"
 }
 
-function stop () {
+stop () {
   ip link show ${interface} > /dev/null || exit 0
   if test_vip; then
    ip addr del ${addr} dev ${interface}

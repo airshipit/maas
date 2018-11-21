@@ -79,7 +79,8 @@ images:
     export_api_key: quay.io/airshipit/maas-region-controller:latest
     maas_cache: quay.io/airshipit/sstream-cache:latest
     dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
-    ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.9.0
+    ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.20.0
+    ingress_vip: docker.io/busybox:latest
     error_pages: gcr.io/google_containers/defaultbackend:1.0
   pull_policy: IfNotPresent
   local_registry:

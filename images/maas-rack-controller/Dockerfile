@@ -52,8 +52,12 @@ RUN systemctl enable register-rack-controller.service
 COPY 2.3_nic_filter.patch /tmp/2.3_nic_filter.patch
 # sh8121att: patch so that interfaces with MAC 00:00:00:00:00:00 omit the MAC address
 COPY 2.3_mac_address.patch /tmp/2.3_mac_address.patch
+# sh8121att: patch so query for RPC info contains proper Host header
+copy 2.3_hostheader.patch /tmp/2.3_hostheader.patch
+
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch network.py < /tmp/2.3_nic_filter.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch ipaddr.py < /tmp/2.3_mac_address.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/rpc && patch clusterservice.py < /tmp/2.3_hostheader.patch
 
 # echo journalctl logs to the container's stdout
 COPY scripts/journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service

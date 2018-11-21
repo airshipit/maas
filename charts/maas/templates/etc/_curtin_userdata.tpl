@@ -39,8 +39,8 @@ def find_ba_key(n):
 {{ "{{" }}py: ba_files_url = ''.join([{{ quote $drydock_url }},'/bootactions/nodes/',node.hostname,'/files']){{ "}}" }}
 {{ "{{" }}if ba_key{{ "}}" }}
   drydock_00: ["sh", "-c", "echo Installing Drydock Boot Actions."]
-  drydock_01: ["curtin", "in-target", "--", "wget", "--no-proxy", "--header=X-Bootaction-Key: {{ "{{" }}ba_key{{ "}}" }}", "{{ "{{" }}ba_units_url{{ "}}" }}", "-O", "/tmp/bootaction-units.tar.gz"]
-  drydock_02: ["curtin", "in-target", "--", "wget", "--no-proxy", "--header=X-Bootaction-Key: {{ "{{" }}ba_key{{ "}}" }}", "{{ "{{" }}ba_files_url{{ "}}" }}", "-O", "/tmp/bootaction-files.tar.gz"]
+  drydock_01: ["curtin", "in-target", "--", "wget", "--no-proxy", "--no-check-certificate", "--header=X-Bootaction-Key: {{ "{{" }}ba_key{{ "}}" }}", "{{ "{{" }}ba_units_url{{ "}}" }}", "-O", "/tmp/bootaction-units.tar.gz"]
+  drydock_02: ["curtin", "in-target", "--", "wget", "--no-proxy", "--no-check-certificate", "--header=X-Bootaction-Key: {{ "{{" }}ba_key{{ "}}" }}", "{{ "{{" }}ba_files_url{{ "}}" }}", "-O", "/tmp/bootaction-files.tar.gz"]
   drydock_03: ["curtin", "in-target", "--", "sh", "-c", "tar --owner=root -xPzvf /tmp/bootaction-units.tar.gz > /tmp/bootaction-unit-names.txt"]
   drydock_04: ["curtin", "in-target", "--", "sh", "-c", "tar --owner=root -xPzvf /tmp/bootaction-files.tar.gz > /tmp/bootaction-file-names.txt"]
   drydock_05: ["curtin", "in-target", "--", "sh", "-c", "xargs -a /tmp/bootaction-unit-names.txt -n 1 basename > /tmp/bootaction-unit-basenames.txt || echo 'Did not run basenames on units'"]
