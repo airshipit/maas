@@ -68,13 +68,13 @@ spec:
             - name: MAAS_HTTP_BOOT
               value: {{ .Values.conf.maas.http_boot | quote }}
             - name: MAAS_NTP_SERVERS
-              value: {{ .Values.conf.maas.ntp.ntp_servers }}
+              value: {{ .Values.conf.maas.ntp.ntp_servers | join "," | quote }}
             - name: MAAS_NTP_EXTERNAL_ONLY
               value: {{ .Values.conf.maas.ntp.use_external_only | quote }}
             - name: MAAS_DNS_DNSSEC_REQUIRED
               value: {{ .Values.conf.maas.dns.require_dnssec | quote }}
             - name: MAAS_DNS_SERVERS
-              value: {{ .Values.conf.maas.dns.dns_servers }}
+              value: {{ .Values.conf.maas.dns.dns_servers | join "," | quote }}
             - name: MAAS_DEFAULT_OS
               value: {{ .Values.conf.maas.images.default_os | quote }}
             - name: MAAS_DEFAULT_DISTRO
