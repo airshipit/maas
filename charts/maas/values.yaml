@@ -357,6 +357,8 @@ endpoints:
       error_pages:
         default: 8080
         podport: 10080
+      ingress_default_server:
+        default: 8181
       healthz:
         podport: 10254
       status:

@@ -252,6 +252,9 @@ spec:
               value: {{ tuple "maas_ingress" "podport" "status" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
             - name: ERROR_PAGE_SERVICE
               value: {{ tuple "maas_ingress" "error_pages" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" | quote }}
+            - name: DEFAULT_ERROR_PORT
+              value: {{ tuple "maas_ingress" "default" "ingress_default_server" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
+
           volumeMounts:
             - mountPath: /tmp/maas-ingress.sh
               name: maas-bin

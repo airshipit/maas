@@ -28,6 +28,7 @@ function start () {
       --status-port="${STATUS_PORT}" \
       --healthz-port="${HEALTHZ_PORT}" \
       --election-id=${RELEASE_NAME} \
+      --default-server-port=${DEFAULT_ERROR_PORT} \
       --ingress-class=maas-ingress \
       --default-backend-service=${POD_NAMESPACE}/${ERROR_PAGE_SERVICE} \
       --configmap=${POD_NAMESPACE}/maas-ingress-config \
