@@ -20,13 +20,18 @@
 
 {{ tuple $envAll "region_controller" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: maas-region
   annotations:
     {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
+  labels:
+{{ tuple $envAll "maas" "region" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
 spec:
+  selector:
+    matchLabels:
+{{ tuple $envAll "maas" "region" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 6 }}
   serviceName: maas-region-ui
   replicas: {{ .Values.pod.replicas.region }}
   updateStrategy:
@@ -54,10 +59,35 @@ spec:
           image: {{ .Values.images.tags.maas_cache }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
 {{- end }}
+{{- if .Values.manifests.maas_syslog }}
+        - name: maas-syslog
+          image: {{ .Values.images.tags.maas_region }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+          command:
+            - /tmp/start-syslog.sh
+          env:
+            - name: RSYSLOG_CONFFILE
+              value: "/etc/rsyslog.conf"
+            - name: LOGFILE
+              value: {{ printf "%s/%s" .Values.conf.syslog.logpath .Values.conf.syslog.logfile | quote }}
+          volueMounts:
+            - mountPath: /etc/rsyslog.conf
+              name: maas-etc
+              subPath: rsyslog.conf
+              readOnly: true
+            - mountPath: /tmp/start-syslog.sh
+              name: maas-bin
+              subPath: start-syslog.sh
+              readOnly: true
+            - mountPath: {{ .Values.conf.syslog.logpath }}
+              name: syslog-archive
+              readOnly: false
+{{- end }}
         - name: maas-region
           image: {{ .Values.images.tags.maas_region }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
           tty: true
+
 {{ tuple $envAll $envAll.Values.pod.resources.maas_region | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           ports:
             - name: region-api
@@ -149,5 +179,17 @@ spec:
           secret:
             secretName: {{ .Values.secrets.maas_region.name }}
 {{- if $mounts_maas_region.volumes }}{{ toYaml $mounts_maas_region.volumes | indent 8 }}{{ end }}
+{{- if .Values.manifests.maas_syslog }}
+  volumeClaimTemplates:
+    - metadata:
+        name: syslog-archive
+        annotations:
+          {{ .Values.storage.syslog.pvc.class_path }}: {{ .Values.storage.syslog.pvc.class_name }}
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.storage.syslog.pvc.size }}
+{{- end }}
 ...
 {{- end }}

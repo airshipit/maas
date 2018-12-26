@@ -1,0 +1,129 @@
+{{/*
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License. */}}
+{{- if .Values.manifests.syslog_statefulset }}
+{{- $envAll := . }}
+{{- $serviceAccountName := "maas-syslog" }}
+{{- $mounts_maas_syslog := .Values.pod.mounts.maas_syslog.syslog }}
+{{- $mounts_maas_syslog_init := .Values.pod.mounts.maas_syslog.init_container }}
+
+{{ tuple $envAll "syslog" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: maas-syslog
+  annotations:
+    {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
+  labels:
+{{ tuple $envAll "maas" "syslog" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
+spec:
+  replicas: {{ .Values.pod.replicas.syslog }}
+  podManagementPolicy: 'Parallel'
+  updateStrategy:
+    type: 'RollingUpdate'
+  selector:
+    matchLabels:
+{{ tuple $envAll "maas" "syslog" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 6 }}
+  template:
+    metadata:
+      labels:
+{{ tuple $envAll "maas" "syslog" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-bin-hash: {{ tuple "configmap-bin.yaml" . | include "helm-toolkit.utils.hash" }}
+        configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}
+{{ dict "envAll" $envAll "podName" "maas-syslog" "containerNames" (list "syslog") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
+    spec:
+      serviceAccountName: {{ $serviceAccountName }}
+      shareProcessNamespace: true
+      affinity:
+{{ tuple $envAll "maas" "syslog" | include "helm-toolkit.snippets.kubernetes_pod_anti_affinity" | indent 8 }}
+      nodeSelector:
+        {{ .Values.labels.syslog.node_selector_key }}: {{ .Values.labels.syslog.node_selector_value }}
+      initContainers:
+{{ tuple $envAll "maas_syslog" $mounts_maas_syslog_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      containers:
+        - name: syslog
+          image: {{ .Values.images.tags.maas_syslog }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+          command:
+            - /tmp/start-syslog.sh
+          env:
+            - name: RSYSLOG_CONFFILE
+              value: "/etc/rsyslog.conf"
+            - name: LOGFILE
+              value: {{ printf "%s/%s" .Values.conf.syslog.logpath .Values.conf.syslog.logfile | quote }}
+          volumeMounts:
+            - mountPath: /tmp
+              name: pod-tmp
+            - mountPath: /etc/rsyslog.conf
+              name: maas-etc
+              subPath: rsyslog.conf
+              readOnly: true
+            - mountPath: /tmp/start-syslog.sh
+              name: maas-bin
+              subPath: start-syslog.sh
+              readOnly: true
+            - mountPath: {{ .Values.conf.syslog.logpath }}
+              name: syslog-archive
+              readOnly: false
+        - name: logrotate
+          image: {{ .Values.images.tags.maas_syslog }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+          # Run cron in the foreground and only log failed cronjobs (when logrotate fails)
+          command:
+            - "cron"
+            - "-f"
+            - "-L"
+            - "4"
+          volumeMounts:
+            - mountPath: /tmp
+              name: pod-tmp
+            - mountPath: /etc/logrotate.conf
+              name: maas-etc
+              subPath: logrotate.conf
+              readOnly: true
+            - mountPath: /etc/crontab
+              name: maas-etc
+              subPath: logrotate.cron
+              readOnly: true
+            - mountPath: /var/lib/logrotate
+              name: logrotate-state
+              readOnly: false
+            - mountPath: {{ .Values.conf.syslog.logpath }}
+              name: syslog-archive
+              readOnly: false
+      volumes:
+        - name: pod-tmp
+          emptyDir: {}
+        - name: logrotate-state
+          emptyDir: {}
+        - name: maas-etc
+          configMap:
+            name: maas-etc
+            defaultMode: 0444
+        - name: maas-bin
+          configMap:
+            name: maas-bin
+            defaultMode: 0555
+  volumeClaimTemplates:
+    - metadata:
+        name: syslog-archive
+        annotations:
+          {{ .Values.storage.syslog.pvc.class_path }}: {{ .Values.storage.syslog.pvc.class_name }}
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.storage.syslog.pvc.size }}
+...
+{{- end }}

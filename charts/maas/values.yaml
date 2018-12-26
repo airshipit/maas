@@ -20,6 +20,7 @@
 dependencies:
   static:
     maas_ingress: {}
+    maas_syslog: {}
     rack_controller:
       services:
         - service: maas_region
@@ -76,7 +77,9 @@ dependencies:
 
 manifests:
   region_statefulset: true
-  rack_deployment: true
+  rack_statefulset: true
+  syslog_statefulset: true
+  syslog_service: true
   test_maas_api: true
   secret_ssh_key: false
   ingress_region: true
@@ -96,6 +99,7 @@ images:
     ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.20.0
     ingress_vip: docker.io/busybox:latest
     error_pages: gcr.io/google_containers/defaultbackend:1.0
+    maas_syslog: quay.io/airshipit/maas-region-controller:latest
   pull_policy: IfNotPresent
   local_registry:
     # TODO(portdirect): this chart does not yet support local image cacheing
@@ -120,6 +124,9 @@ labels:
   ingress:
     node_selector_key: ucp-control-plane
     node_selector_value: enabled
+  syslog:
+    node_selector_key: ucp-control-plane
+    node_selector_value: enabled
 
 network:
   maas_ingress:
@@ -141,6 +148,11 @@ network:
       enabled: false
 
 storage:
+  syslog:
+    pvc:
+      class_path: volume.beta.kubernetes.io/storage-class
+      class_name: general
+      size: 1Gi
   rackd:
     pvc:
       class_path: volume.beta.kubernetes.io/storage-class
@@ -164,6 +176,14 @@ conf:
     bootaction_url: null
   cache:
     enabled: false
+  syslog:
+    logpath: /var/log/maas
+    logfile: nodeboot.log
+    logrotate:
+      # How many rotated logs to keep
+      rotate: '30'
+      # Size threshold when a log should rotate
+      size: '100M'
   maas:
     override:
     append:
@@ -254,7 +274,16 @@ pod:
       maas-rack: localhost/docker-default
     maas-region:
       maas-region: localhost/docker-default
+    maas-syslog:
+      syslog: localhost/docker-default
   security_context:
+    maas-syslog:
+      pod:
+        runAsUser: 99
+      container:
+        syslog:
+          runAsUser: 99
+          readOnlyRootFilesystem: true
     ingress_errors:
       pod:
         runAsUser: 99
@@ -282,9 +311,13 @@ pod:
     maas_ingress:
       init_container: []
       maas_region:
+    maas_syslog:
+      init_container: []
+      syslog: []
   replicas:
     rack: 2
     region: 2
+    syslog: 1
   resources:
     enabled: false
     test:
@@ -302,6 +335,13 @@ pod:
         memory: "128Mi"
         cpu: "500m"
     maas_region:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+      requests:
+        memory: "128Mi"
+        cpu: "500m"
+    maas_syslog:
       limits:
         memory: "128Mi"
         cpu: "500m"
@@ -389,6 +429,16 @@ endpoints:
         podport: 10254
       status:
         podport: 18080
+  maas_syslog:
+    hosts:
+      default: maas-syslog
+    host_fqdn_override:
+      default: null
+    port:
+      syslog:
+        public: 514
+        podport: 514
+
   maas_db:
     auth:
       admin:
@@ -432,6 +482,9 @@ endpoints:
         # comment them out and let the default rule
         # podport: 8000
         # public: 8000
+      region_syslog:
+        default: 514
+        podport: 514
     host_fqdn_override:
       default: null
   physicalprovisioner:

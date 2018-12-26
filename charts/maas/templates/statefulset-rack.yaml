@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */}}
 
-{{- if .Values.manifests.rack_deployment }}
+{{- if .Values.manifests.rack_statefulset }}
 {{- $envAll := . }}
 {{- $serviceAccountName := "maas-rack" }}
 {{- $mounts_maas_rack := .Values.pod.mounts.maas_rack }}
@@ -23,13 +23,18 @@ limitations under the License.
 
 {{ tuple $envAll "rack_controller" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: maas-rack
   annotations:
     {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
+  labels:
+{{ tuple $envAll "maas" "rack" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
 spec:
+  selector:
+    matchLabels:
+{{ tuple $envAll "maas" "rack" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 6 }}
   serviceName: maas-rack
   replicas: {{ .Values.pod.replicas.rack }}
   podManagementPolicy: 'Parallel'
@@ -90,7 +95,7 @@ spec:
                 - 'SYS_TIME'
           readinessProbe:
             initialDelaySeconds: 60
-            periodSeconds: 300
+            periodSeconds: 60
             timeoutSeconds: 60
             exec:
               command:

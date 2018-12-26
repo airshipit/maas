@@ -46,3 +46,9 @@ data:
 {{- end }}
   sleep-inittab: |
     ::sysinit:/tmp/maas-vip-configure.sh sleep
+  rsyslog.conf: |
+{{ tuple "etc/_rsyslog.conf.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  logrotate.conf: |
+{{ tuple "etc/_logrotate.conf.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  logrotate.cron: |
+{{ tuple "etc/_logrotate.cron.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
