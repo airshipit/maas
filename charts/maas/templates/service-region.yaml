@@ -34,6 +34,9 @@ spec:
       {{ if .Values.network.region_proxy.node_port.enabled }}
       nodePort:  {{ tuple "maas_region" "nodeport" "region_proxy" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
       {{ end }}
+    - name: region-dns
+      port: 53
+      targetPort: 53
   selector:
 {{ tuple $envAll "maas" "region" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
   {{ if or .Values.network.region_proxy.node_port.enabled .Values.network.region_api.node_port.enabled }}

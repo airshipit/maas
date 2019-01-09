@@ -32,7 +32,8 @@ function start () {
       --ingress-class=maas-ingress \
       --default-backend-service=${POD_NAMESPACE}/${ERROR_PAGE_SERVICE} \
       --configmap=${POD_NAMESPACE}/maas-ingress-config \
-      --tcp-services-configmap=${POD_NAMESPACE}/maas-ingress-services-tcp
+      --tcp-services-configmap=${POD_NAMESPACE}/maas-ingress-services-tcp \
+      --udp-services-configmap=${POD_NAMESPACE}/maas-ingress-services-udp
 }
 
 function stop () {
