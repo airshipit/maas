@@ -69,12 +69,17 @@ COPY 2.3_bios_grub_preseed.patch /tmp/2.3_bios_grub_preseed.patch
 COPY 2.3_maas_enlist.patch /tmp/2.3_maas_enlist.patch
 # sh8121att: patch so that interfaces with MAC 00:00:00:00:00:00 omit the MAC address
 COPY 2.3_mac_address.patch /tmp/2.3_mac_address.patch
+# sh8121att: allow all requests via the proxy to allow it to work
+# behind ingress
+COPY 2.3_proxy_acl.patch /tmp/2.3_proxy_acl.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.3_route.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/2.3_kernel_package.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch partition.py < /tmp/2.3_bios_grub_partition.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_storage.py < /tmp/2.3_bios_grub_preseed.patch
 RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets && patch maas_enlist.sh < /tmp/2.3_maas_enlist.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch ipaddr.py < /tmp/2.3_mac_address.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch ipaddr.py < /tmp/2.3_mac_address.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patch maas-proxy.conf.template < /tmp/2.3_proxy_acl.patch
 
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
 RUN mkdir -p /etc/systemd/system/basic.target.wants ;\
