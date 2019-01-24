@@ -19,7 +19,8 @@ RUN apt-get -qq update && \
     software-properties-common \
     libvirt-bin \
     systemd \
-    patch
+    patch \
+    jq
 # Don't start any optional services except for the few we need.
 
 RUN find /etc/systemd/system \

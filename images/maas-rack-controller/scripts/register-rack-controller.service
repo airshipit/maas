@@ -5,7 +5,7 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-PassEnvironment=MAAS_ENDPOINT MAAS_REGION_SECRET
+PassEnvironment=MAAS_ENDPOINT MAAS_REGION_SECRET MAAS_API_KEY HOST_MOUNT_PATH
 ExecStart=/usr/local/bin/register-rack-controller.sh
 
 [Install]
