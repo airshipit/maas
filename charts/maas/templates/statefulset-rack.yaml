@@ -76,6 +76,15 @@ spec:
             - /tmp/start.sh
           securityContext:
             privileged: true
+          readinessProbe:
+            initialDelaySeconds: 60
+            periodSeconds: 300
+            timeoutSeconds: 60
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - journalctl -u register-rack-controller -n 5 | grep -q 'Successfully registered with MaaS Region Controller'
           volumeMounts:
             - mountPath: /sys/fs/cgroup
               name: host-sys-fs-cgroup
