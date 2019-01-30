@@ -17,7 +17,7 @@ detach_rack_controller() {
   do
     vid=$(echo "$net" | jq -r .vid)
     fid=$(echo "$net" | jq -r .fabric_id)
-    maas local vlan update "$fid" "$vid" primary_rack='' secondary_rack=''
+    maas local vlan update "$fid" "$vid" primary_rack='' secondary_rack='' dhcp_on=false
   done
 }
 
