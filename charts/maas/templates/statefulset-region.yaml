@@ -65,7 +65,14 @@ spec:
             tcpSocket:
               port: {{ tuple "maas_region" "podport" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
           securityContext:
-            privileged: true
+            capabilities:
+              add:
+                - 'SYS_ADMIN'
+                - 'NET_ADMIN'
+                - 'SYS_PTRACE'
+                - 'SYS_TIME'
+                - 'SYS_RESOURCE'
+                - 'DAC_READ_SEARCH'
           command:
             - /tmp/start.sh
           volumeMounts:

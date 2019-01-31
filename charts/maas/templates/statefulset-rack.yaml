@@ -75,7 +75,14 @@ spec:
           command:
             - /tmp/start.sh
           securityContext:
-            privileged: true
+            capabilities:
+              add:
+                - 'DAC_READ_SEARCH'
+                - 'NET_ADMIN'
+                - 'SYS_ADMIN'
+                - 'SYS_PTRACE'
+                - 'SYS_RESOURCE'
+                - 'SYS_TIME'
           readinessProbe:
             initialDelaySeconds: 60
             periodSeconds: 300
