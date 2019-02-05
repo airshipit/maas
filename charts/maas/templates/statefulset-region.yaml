@@ -36,6 +36,8 @@ spec:
       labels:
 {{ tuple $envAll "maas" "region" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        configmap-bin-hash: {{ tuple "configmap-bin.yaml" . | include "helm-toolkit.utils.hash" }}
+        configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}
 {{ dict "envAll" $envAll "podName" "maas-region" "containerNames" (list "maas-region") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
     spec:
       serviceAccountName: {{ $serviceAccountName }}

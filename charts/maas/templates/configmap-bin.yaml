@@ -22,7 +22,7 @@ metadata:
   name: maas-bin
 data:
   db-init.sh: |+
-{{ tuple "bin/_db-init.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+{{-  include "helm-toolkit.scripts.pg_db_init" . | indent 4 }}
   db-sync.sh: |+
 {{ tuple "bin/_db-sync.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   bootstrap-admin-user.sh: |

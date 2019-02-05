@@ -43,7 +43,7 @@ spec:
           imagePullPolicy: {{ .Values.images.pull_policy | quote }}
 {{ tuple $envAll "db_init" | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           env:
-            - name: ROOT_DB_USER
+            - name: DB_ADMIN_USER
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.secrets.maas_db.admin }}
@@ -73,6 +73,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.secrets.maas_db.user }}
                   key: DATABASE_NAME
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.maas_db.user }}
+                  key: DATABASE_PORT
           command:
             - /tmp/db-init.sh
           volumeMounts:
