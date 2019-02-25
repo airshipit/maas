@@ -35,6 +35,7 @@ spec:
       labels:
 {{ tuple $envAll "maas" "ingress-errors" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
+{{ dict "envAll" $envAll "application" "ingress_errors" | include "helm-toolkit.snippets.kubernetes_pod_security_context" | indent 6 }}
       serviceAccountName: {{ $serviceAccountName }}
       nodeSelector:
         {{ .Values.labels.rack.node_selector_key }}: {{ .Values.labels.rack.node_selector_value }}
@@ -44,6 +45,7 @@ spec:
           image: {{ .Values.images.tags.error_pages }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
 {{ tuple $envAll $envAll.Values.pod.resources.maas_ingress_errors | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+{{ dict "envAll" $envAll "application" "ingress_errors" "container" "maas_ingress_errors" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           command:
             - /tmp/maas-ingress-errors.sh
             - start
