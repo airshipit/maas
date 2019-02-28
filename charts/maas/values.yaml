@@ -154,6 +154,7 @@ conf:
     override:
     append:
     http_boot: true
+    ingress_disable_gui: false
     ntp:
       # These options allow you to mock out the ntpd binary within the container
       # by overwriting it with a script that simply sleeps - this is useful in
