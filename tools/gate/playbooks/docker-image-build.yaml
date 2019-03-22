@@ -32,7 +32,7 @@
       environment:
         BRANCH: "{{ zuul.branch }}"
         CHANGE: "{{ zuul.change }}"
-        COMMIT: "{{ zuul.newrev }}"
+        COMMIT: "{{ zuul.newrev | default('') }}"
         PATCHSET: "{{ zuul.patchset }}"
       register: image_tags
 
@@ -116,7 +116,7 @@
               DOCKER_REGISTRY: "quay.io"
               IMAGE_PREFIX: "airshipit"
               IMAGE_TAG: "{{ item }}"
-              COMMIT: "{{ zuul.newrev }}"
+              COMMIT: "{{ zuul.newrev | default('') }}"
               PUSH_IMAGE: "true"
           with_items: "{{ image_tags.stdout_lines }}"
 
