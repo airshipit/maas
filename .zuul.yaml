@@ -14,12 +14,13 @@
     check:
       jobs:
         - airship-maas-lint-ws
-        - airship-maas-lint-chart
+        - airship-maas-chart-build-gate
+        - airship-maas-chart-build-latest-htk
         - airship-maas-docker-build-gate
     gate:
       jobs:
         - airship-maas-lint-ws
-        - airship-maas-lint-chart
+        - airship-maas-chart-build-gate
         - airship-maas-docker-build-gate
     post:
       jobs:
@@ -40,14 +41,21 @@
     nodeset: airship-maas-single-node
 
 - job:
-    name: airship-maas-lint-chart
-    files:
-      - ^charts/.*$
-    description: |
-      Lints Helm charts for validity
+    name: airship-maas-chart-build-gate
+    description: Build charts using pinned Helm toolkit.
     run: tools/gate/playbooks/helm-linter.yaml
     timeout: 600
     nodeset: airship-maas-single-node
+
+- job:
+    name: airship-maas-chart-build-latest-htk
+    description: Build charts using latest Helm toolkit.
+    voting: false
+    run: tools/gate/playbooks/helm-linter.yaml
+    timeout: 600
+    nodeset: airship-maas-single-node
+    vars:
+      HTK_COMMIT: master
 
 - job:
     name: airship-maas-docker-build-gate
