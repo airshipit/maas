@@ -29,11 +29,26 @@ spec:
         paths:
 {{- if .Values.conf.maas.ingress_disable_gui }}
           - path: /MAAS/api
-{{- else }}
-          - path: /
-{{- end }}
             backend:
               serviceName: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
               servicePort: region-api
+          - path: /MAAS/images-stream
+            backend:
+              serviceName: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+              servicePort: region-api
+          - path: /MAAS/metadata
+            backend:
+              serviceName: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+              servicePort: region-api
+          - path: /MAAS/rpc
+            backend:
+              serviceName: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+              servicePort: region-api
+{{- else }}
+          - path: /
+            backend:
+              serviceName: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+              servicePort: region-api
+{{- end }}
 ...
 {{ end }}
