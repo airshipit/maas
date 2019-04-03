@@ -30,10 +30,10 @@
     - name: Determine tags
       shell: echo '{{ tags | to_json }}' | python {{ zuul.project.src_dir }}/tools/image_tags.py
       environment:
-        BRANCH: "{{ zuul.branch }}"
-        CHANGE: "{{ zuul.change }}"
+        BRANCH: "{{ zuul.branch | default('') }}"
+        CHANGE: "{{ zuul.change | default('') }}"
         COMMIT: "{{ zuul.newrev | default('') }}"
-        PATCHSET: "{{ zuul.patchset }}"
+        PATCHSET: "{{ zuul.patchset | default('') }}"
       register: image_tags
 
     - name: Debug computed tags
