@@ -102,6 +102,8 @@ function check_for_rack_sync {
         if [[ $synced_ctlr == "true" && ! -z ${selected_imgs} ]]
         then
           sync_list=$(echo -e "${sync_list}\n${rack_id}" | sort | uniq)
+        else
+          maas ${ADMIN_USERNAME} rack-controller import-boot-images ${rack_id}
         fi
         if [[ $(echo -e "${rack_list}" | sort | uniq | grep -v '^$' ) == $(echo -e "${sync_list}" | sort | uniq | grep -v '^$') ]]
         then
