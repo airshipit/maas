@@ -1,4 +1,9 @@
-{{- $drydock_url := tuple "physicalprovisioner" "public" "api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" -}}
+
+{{- $drydock_url := tuple "physicalprovisioner" "public" "api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" }}
+{{- if not (empty .Values.conf.drydock.bootaction_url) }}
+{{- $drydock_url = .Values.conf.drydock.bootaction_url }}
+{{- end }}
+
 #cloud-config
 debconf_selections:
  maas: |
