@@ -24,6 +24,8 @@ dependencies:
       services:
         - service: maas_region
           endpoint: internal
+        - service: maas_ingress
+          endpoint: monitor
       jobs:
         - maas-export-api-key
     region_controller:
@@ -32,6 +34,8 @@ dependencies:
       services:
         - service: maas_db
           endpoint: internal
+        - service: maas_ingress
+          endpoint: monitor
     db_init:
       services:
         - service: maas_db
@@ -47,18 +51,28 @@ dependencies:
           endpoint: internal
         - service: maas_db
           endpoint: internal
+        - service: maas_ingress
+          endpoint: monitor
     import_resources:
+      jobs:
+        - maas-bootstrap-admin-user
       services:
         - service: maas_region
           endpoint: internal
         - service: maas_db
           endpoint: internal
+        - service: maas_ingress
+          endpoint: monitor
     export_api_key:
+      jobs:
+        - maas-bootstrap-admin-user
       services:
         - service: maas_region
           endpoint: internal
         - service: maas_db
           endpoint: internal
+        - service: maas_ingress
+          endpoint: monitor
 
 manifests:
   region_statefulset: true
@@ -358,6 +372,7 @@ endpoints:
     hosts:
       default: maas-ingress
       error_pages: maas-ingress-error
+      monitor: maas-ingress-monitor
     host_fqdn_override:
       default: null
     port:
