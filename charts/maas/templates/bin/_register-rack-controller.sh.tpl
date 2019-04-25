@@ -2,17 +2,6 @@
 
 set -x
 
-login_maas() {
-  echo "Logging in to MAAS region."
-  maas login local "$MAAS_ENDPOINT" "$MAAS_API_KEY"
-
-  if [[ $? -ne 0 ]];
-  then
-    echo "Could not login to MAAS API."
-    exit $?
-  fi
-}
-
 unregister_maas_rack() {
   # In oder to avoid the issue with race condition in maas,
   # do not de-register the dead maas-controller from mass-region
@@ -39,6 +28,5 @@ register_maas_rack() {
   done;
 }
 
-login_maas
 unregister_maas_rack
 register_maas_rack
