@@ -196,11 +196,10 @@ spec:
           image: {{ .Values.images.tags.ingress_vip }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
 {{ tuple $envAll $envAll.Values.pod.resources.maas_ingress_vip | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
-          securityContext:
+{{ dict "envAll" $envAll "application" "ingress" "container" "maas_ingress_vip" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
             capabilities:
               add:
                 - 'NET_ADMIN'
-            runAsUser: 0
           command:
             - /bin/init
           env:
@@ -224,11 +223,10 @@ spec:
           image: {{ .Values.images.tags.ingress }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
 {{ tuple $envAll $envAll.Values.pod.resources.maas_ingress | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
-          securityContext:
+{{ dict "envAll" $envAll "application" "ingress" "container" "maas_ingress" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
             capabilities:
               add:
                 - 'NET_BIND_SERVICE'
-            runAsUser: 0
           command:
             - /tmp/maas-ingress.sh
             - start

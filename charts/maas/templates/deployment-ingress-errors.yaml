@@ -45,21 +45,7 @@ spec:
           image: {{ .Values.images.tags.error_pages }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
 {{ tuple $envAll $envAll.Values.pod.resources.maas_ingress_errors | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
-{{ dict "envAll" $envAll "application" "ingress_errors" "container" "maas_ingress_errors" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
-          command:
-            - /tmp/maas-ingress-errors.sh
-            - start
-          env:
-            - name: BIND_PORT
-              value: {{ tuple "maas_ingress" "podport" "error_pages" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
-          volumeMounts:
-            - mountPath: /tmp/maas-ingress-errors.sh
-              name: maas-bin
-              subPath: maas-ingress-errors
-              readOnly: true
-      volumes:
-        - name: maas-bin
-          configMap:
-            name: maas-bin
-            defaultMode: 0555
+          args:
+            - "-port"
+            - {{ tuple "maas_ingress" "podport" "error_pages" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
 {{- end }}

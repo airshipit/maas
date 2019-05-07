@@ -98,7 +98,7 @@ images:
     dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
     ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.20.0
     ingress_vip: docker.io/busybox:latest
-    error_pages: gcr.io/google_containers/defaultbackend:1.0
+    error_pages: gcr.io/google_containers/ingress-gce-404-server-with-metrics-amd64:v1.6.0
     maas_syslog: quay.io/airshipit/maas-region-controller:latest
   pull_policy: IfNotPresent
   local_registry:
@@ -284,12 +284,17 @@ pod:
         syslog:
           runAsUser: 99
           readOnlyRootFilesystem: true
+    ingress:
+      container:
+        maas_ingress:
+          runAsUser: 33
+        maas_ingress_vip:
+          runAsUser: 33
     ingress_errors:
       pod:
-        runAsUser: 99
+        runAsUser: 65534
       container:
         maas_ingress_errors:
-          runAsUser: 0
           readOnlyRootFilesystem: true
   affinity:
     anti:
