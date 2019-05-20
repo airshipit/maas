@@ -240,6 +240,14 @@ pod:
       maas-rack: localhost/docker-default
     maas-region:
       maas-region: localhost/docker-default
+  security_context:
+    ingress_errors:
+      pod:
+        runAsUser: 99
+      container:
+        maas_ingress_errors:
+          runAsUser: 0
+          readOnlyRootFilesystem: true
   affinity:
     anti:
       type:
