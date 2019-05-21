@@ -36,6 +36,21 @@ then
   chmod 600 ~maas/.ssh/*
 fi
 
-chsh -s /bin/bash maas
-
+set +e
+sh_set=false
+for (( c=0; c<=10; c++ )); do
+  if chsh -s /bin/bash maas; then
+    sh_set=true
+    break
+  elif usermod -s /bin/bash maas; then
+    sh_set=true
+    break
+  else
+    sleep 2
+  fi
+done
+if [[ $sh_set = false ]]; then
+  exit 1
+fi
+set -e
 exec /sbin/init --log-target=console 3>&1
