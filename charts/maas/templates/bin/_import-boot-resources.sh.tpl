@@ -89,33 +89,6 @@ function check_then_set {
   fi
 }
 
-function check_for_rack_sync {
-  sync_list=""
-
-  while [[ ${JOB_TIMEOUT} -gt 0 ]]
-  do
-      rack_list=$(maas ${ADMIN_USERNAME} rack-controllers read | tail -n +1 | jq -r '.[] | .system_id')
-      for rack_id in ${rack_list}
-      do
-        selected_imgs=$(maas ${ADMIN_USERNAME} rack-controller list-boot-images ${rack_id} | tail -n +1 | jq ".images[] | select( .name | contains(\"${MAAS_DEFAULT_DISTRO}\")) | .name")
-        synced_ctlr=$(maas ${ADMIN_USERNAME} rack-controller list-boot-images ${rack_id} | tail -n +1 | jq '.status == "synced"')
-        if [[ $synced_ctlr == "true" && ! -z ${selected_imgs} ]]
-        then
-          sync_list=$(echo -e "${sync_list}\n${rack_id}" | sort | uniq)
-        else
-          maas ${ADMIN_USERNAME} rack-controller import-boot-images ${rack_id}
-        fi
-        if [[ $(echo -e "${rack_list}" | sort | uniq | grep -v '^$' ) == $(echo -e "${sync_list}" | sort | uniq | grep -v '^$') ]]
-        then
-          return 0
-        fi
-      done
-      let JOB_TIMEOUT-=${RETRY_TIMER}
-      sleep ${RETRY_TIMER}
-  done
-  return 1
-}
-
 function configure_proxy {
   check_then_set enable_http_proxy ${MAAS_PROXY_ENABLED}
   check_then_set use_peer_proxy ${MAAS_PEER_PROXY_ENABLED}
@@ -134,7 +107,6 @@ function configure_dns {
 }
 
 function configure_images {
-  check_for_rack_sync
 
   if [[ $? -eq 1 ]]
   then
