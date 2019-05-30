@@ -75,18 +75,28 @@ function check_then_set {
   option=$1
   value=$2
 
-  cur_val=$(maas ${ADMIN_USERNAME} maas get-config name=${option} | tail -1 | tr -d '"')
-  desired_val=$(echo ${value} | tr -d '"')
+  while [[ ${JOB_TIMEOUT} -gt 0 ]]
+  do
+      cur_val=$(maas ${ADMIN_USERNAME} maas get-config name=${option} | tail -1 | tr -d '"')
+      desired_val=$(echo ${value} | tr -d '"')
 
-  if [[ $cur_val != $desired_val ]]
-  then
-    echo "Setting MAAS option ${option} to ${desired_val}"
-    maas ${ADMIN_USERNAME} maas set-config name=${option} value=${desired_val}
-    return $?
-  else
-    echo "MAAS option ${option} already set to ${cur_val}"
-    return 0
-  fi
+      if [[ $cur_val != $desired_val ]]
+      then
+        echo "Setting MAAS option ${option} to ${desired_val}"
+        maas ${ADMIN_USERNAME} maas set-config name=${option} value=${desired_val}
+        if [[ $? -gt 0 ]]
+        then
+          let JOB_TIMEOUT-=${RETRY_TIMER}
+          sleep ${RETRY_TIMER}
+        else
+          return $?
+        fi
+      else
+        echo "MAAS option ${option} already set to ${cur_val}"
+        return 0
+      fi
+  done
+  return 1
 }
 
 function configure_proxy {
