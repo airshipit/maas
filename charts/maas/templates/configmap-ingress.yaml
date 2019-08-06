@@ -22,7 +22,9 @@ kind: ConfigMap
 metadata:
   name: maas-ingress-services-tcp
 data:
+{{- if .Values.conf.maas.proxy.proxy_enabled }}
   {{ tuple "maas_region" "public" "region_proxy" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}: "{{- .Release.Namespace -}}/{{- tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" -}}:region-proxy"
+{{- end }}
 ...
 ---
 apiVersion: v1
