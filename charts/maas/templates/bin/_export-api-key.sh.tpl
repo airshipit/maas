@@ -23,7 +23,7 @@ function clear_secret {
         --header='Content-Type: application/json' \
         --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
         --method=DELETE \
-        https://kubernetes.default.svc.cluster.local/api/v1/namespaces/${SECRET_NAMESPACE}/secrets/${SECRET_NAME}
+        https://kubernetes/api/v1/namespaces/${SECRET_NAMESPACE}/secrets/${SECRET_NAME}
 }
 
 function post_secret {
@@ -34,7 +34,7 @@ function post_secret {
         --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
         --method=POST \
         --body-file=/tmp/secret.json \
-        https://kubernetes.default.svc.cluster.local/api/v1/namespaces/${SECRET_NAMESPACE}/secrets \
+        https://kubernetes/api/v1/namespaces/${SECRET_NAMESPACE}/secrets \
         2>&1
 }
 
