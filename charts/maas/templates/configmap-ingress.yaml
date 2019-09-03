@@ -33,6 +33,7 @@ metadata:
   name: maas-ingress-services-udp
 data:
   '53': "{{- .Release.Namespace -}}/{{- tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" -}}:region-dns"
+  "514": "{{- .Release.Namespace -}}/{{- tuple "maas_syslog" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" -}}:syslog"
 ...
 ---
 apiVersion: v1

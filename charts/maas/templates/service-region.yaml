@@ -38,6 +38,9 @@ spec:
       port: 53
       targetPort: 53
       protocol: "UDP"
+    - name: region-syslog
+      port: 514
+      targetPort: {{ tuple "maas_region" "podport" "region_syslog" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
   selector:
 {{ tuple $envAll "maas" "region" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
   {{ if or .Values.network.region_proxy.node_port.enabled .Values.network.region_api.node_port.enabled }}
