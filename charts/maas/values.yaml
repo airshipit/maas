@@ -75,6 +75,13 @@ dependencies:
         - service: maas_ingress
           endpoint: monitor
 
+network_policy:
+  maas:
+    ingress:
+      - {}
+    egress:
+      - {}
+
 manifests:
   region_statefulset: true
   rack_statefulset: true
@@ -85,6 +92,7 @@ manifests:
   ingress_region: true
   configmap_ingress: true
   maas_ingress: true
+  network_policy: false
 
 images:
   tags:
