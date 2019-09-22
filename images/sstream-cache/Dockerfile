@@ -9,7 +9,7 @@ LABEL org.opencontainers.image.vendor='The Airship Authors'
 LABEL org.opencontainers.image.licenses='Apache-2.0'
 
 ARG SSTREAM_IMAGE=https://images.maas.io/ephemeral-v3/daily/
-ENV IMAGE_SRC ${SSTREAM_IMAGE}
+ARG SSTREAM_RELEASE=xenial
 
 RUN apt-get -qq update && \
     apt install -y simplestreams \
@@ -19,10 +19,10 @@ RUN apt-get -qq update && \
                    python-certifi --no-install-recommends \
                    file
 
-RUN sstream-mirror --keyring=/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg $IMAGE_SRC \
-    /var/www/html/maas/images/ephemeral-v3/daily 'arch=amd64' 'release~xenial' --max=1 --progress
+RUN sstream-mirror --keyring=/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg ${SSTREAM_IMAGE} \
+    /var/www/html/maas/images/ephemeral-v3/daily 'arch=amd64' "release~${SSTREAM_RELEASE}" --max=1 --progress
 
-RUN sstream-mirror --keyring=/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg $IMAGE_SRC \
+RUN sstream-mirror --keyring=/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg ${SSTREAM_IMAGE} \
    /var/www/html/maas/images/ephemeral-v3/daily 'os~(grub*|pxelinux)' --max=1 --progress
 
 RUN sh -c 'echo "" > /etc/apache2/ports.conf'

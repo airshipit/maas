@@ -33,6 +33,7 @@ IMAGE_NAME        := maas-rack-controller maas-region-controller sstream-cache
 BUILD_DIR         := $(shell mktemp -d)
 HELM              := $(BUILD_DIR)/helm
 SSTREAM_IMAGE     := "https://images.maas.io/ephemeral-v3/daily/"
+SSTREAM_RELEASE   := "xenial"
 UBUNTU_BASE_IMAGE ?= ubuntu:16.04
 
 .PHONY: images
@@ -82,6 +83,7 @@ ifeq ($(USE_PROXY), true)
 		--build-arg no_proxy=$(NO_PROXY) \
 		--build-arg NO_PROXY=$(NO_PROXY) \
 		--build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) \
+		--build-arg SSTREAM_RELEASE=$(SSTREAM_RELEASE) \
 		$(IMAGE_DIR)
 else
 	docker build -t $(IMAGE) --label $(LABEL) --network=host \
@@ -91,6 +93,7 @@ else
 		-f $(IMAGE_DIR)/Dockerfile \
 		--build-arg FROM=$(UBUNTU_BASE_IMAGE) \
 		--build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) \
+		--build-arg SSTREAM_RELEASE=$(SSTREAM_RELEASE) \
 		$(IMAGE_DIR)
 endif
 ifeq ($(PUSH_IMAGE), true)
