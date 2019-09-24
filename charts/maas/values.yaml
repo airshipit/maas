@@ -127,6 +127,9 @@ labels:
   syslog:
     node_selector_key: ucp-control-plane
     node_selector_value: enabled
+  test:
+    node_selector_key: ucp-control-plane
+    node_selector_value: enabled
 
 network:
   maas_ingress:
