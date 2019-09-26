@@ -290,9 +290,9 @@ pod:
     ingress:
       container:
         maas_ingress:
-          runAsUser: 33
+          runAsUser: 0
         maas_ingress_vip:
-          runAsUser: 33
+          runAsUser: 0
     ingress_errors:
       pod:
         runAsUser: 65534
