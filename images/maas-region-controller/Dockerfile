@@ -78,7 +78,6 @@ RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch partition.py < 
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_storage.py < /tmp/2.3_bios_grub_preseed.patch
 RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets && patch maas_enlist.sh < /tmp/2.3_maas_enlist.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch ipaddr.py < /tmp/2.3_mac_address.patch
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch ipaddr.py < /tmp/2.3_mac_address.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patch maas-proxy.conf.template < /tmp/2.3_proxy_acl.patch
 
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
