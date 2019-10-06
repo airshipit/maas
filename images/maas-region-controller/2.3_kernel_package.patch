@@ -19,7 +19,7 @@
 +        # parse the string and find our package param value
 +        # e.g. kernel_package=linux-image-4.15.0-34-generic
 +        kparams = kernel_opts.split()
-+        kdict = dict(kparam.split('=') for kparam in kparams)
++        kdict = dict(kparam.split('=',1) for kparam in kparams if '=' in kparam)
 +        if 'kernel_package' in kdict:
 +            kpackage = kdict['kernel_package']
 +
