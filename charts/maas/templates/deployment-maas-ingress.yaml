@@ -17,6 +17,7 @@ limitations under the License.
 
 {{- if .Values.manifests.maas_ingress }}
 {{- $envAll := . }}
+{{- $labels := tuple $envAll "maas" "ingress" | include "helm-toolkit.snippets.kubernetes_metadata_labels" -}}
 {{- $serviceAccountName := "maas-ingress" }}
 {{- $mounts_maas_ingress := .Values.pod.mounts.maas_ingress }}
 {{- $mounts_maas_ingress_init := .Values.pod.mounts.maas_ingress.init_container }}
@@ -142,7 +143,7 @@ subjects:
     namespace: {{ $envAll.Release.Namespace }}
 ---
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: maas-ingress
@@ -150,10 +151,13 @@ metadata:
     {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
 spec:
   replicas: {{ .Values.pod.replicas.ingress }}
+  selector:
+    matchLabels:
+{{ $labels | indent 6 }}
   template:
     metadata:
       labels:
-{{ tuple $envAll "maas" "ingress" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+{{ $labels | indent 8 }}
       annotations:
 {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" | indent 8 }}
         configmap-bin-hash: {{ tuple "configmap-bin.yaml" . | include "helm-toolkit.utils.hash" }}

@@ -17,23 +17,27 @@ limitations under the License.
 
 {{- if .Values.manifests.rack_statefulset }}
 {{- $envAll := . }}
+{{- $labels := tuple $envAll "maas" "ingress-errors" | include "helm-toolkit.snippets.kubernetes_metadata_labels" -}}
 {{- $serviceAccountName := "maas-ingress-errors" }}
 {{- $mounts_maas_rack := .Values.pod.mounts.maas_rack }}
 {{- $mounts_maas_rack_init := .Values.pod.mounts.maas_rack.init_container }}
 
 {{ tuple $envAll "rack_controller" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: maas-ingress-errors
 spec:
   serviceName: maas-rack
   replicas: {{ .Values.pod.replicas.ingress_errors }}
+  selector:
+    matchLabels:
+{{ $labels | indent 6 }}
   template:
     metadata:
       labels:
-{{ tuple $envAll "maas" "ingress-errors" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+{{ $labels | indent 8 }}
     spec:
 {{ dict "envAll" $envAll "application" "ingress_errors" | include "helm-toolkit.snippets.kubernetes_pod_security_context" | indent 6 }}
       serviceAccountName: {{ $serviceAccountName }}

@@ -16,7 +16,7 @@
 
 {{- if and .Values.manifests.ingress_region .Values.network.region_api.ingress.public }}
 ---
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: maas-region-api
