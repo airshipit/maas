@@ -177,12 +177,16 @@ function configure_boot_sources {
 
   check_then_set http_boot ${MAAS_HTTP_BOOT}
 
-  selected_releases=$(maas ${ADMIN_USERNAME} boot-source-selections read 1 | tail -n +1 | jq -r '.[] | .release')
+  selected_releases="$(maas ${ADMIN_USERNAME} boot-source-selections read 1 | jq -r '.[] | .release')"
 
-  if [[ -z $(echo "${selected_releases}" | grep "${MAAS_DEFAULT_DISTRO}") ]]
+  if ! echo "${selected_releases}" | grep -q "${MAAS_DEFAULT_DISTRO}"
   then
-    maas ${ADMIN_USERNAME} boot-source-selections create 1 os="${MAAS_DEFAULT_OS}" \
-      release="${MAAS_DEFAULT_DISTRO}" arches="amd64" subarches='*' labels='*'
+    # Need to start an import to get the availability data
+    maas "$ADMIN_USERNAME" boot-resources import
+    if ! maas ${ADMIN_USERNAME} boot-source-selections create 1 os="${MAAS_DEFAULT_OS}" \
+      release="${MAAS_DEFAULT_DISTRO}" arches="amd64" subarches='*' labels='*' | grep -q 'Success'; then
+      return 1
+    fi
   fi
 }
 
@@ -203,7 +207,7 @@ configure_ntp
 configure_dns
 
 # make call to import images
-configure_boot_sources
+timer "$RETRY_TIMER" configure_boot_sources
 start_import
 
 if [[ $? -eq 0 ]]
