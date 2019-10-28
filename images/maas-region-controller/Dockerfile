@@ -75,16 +75,19 @@ COPY 2.3_proxy_acl.patch /tmp/2.3_proxy_acl.patch
 # Patch to add retrying to MaaS BMC user setup, and improve exception handling
 copy 2.3_configure_ipmi_user.patch /tmp/2.3_configure_ipmi_user.patch
 COPY 2.3_secure_headers.patch /tmp/2.3_secure_headers.patch
+COPY 2.3_region_secret_rotate.patch /tmp/2.3_region_secret_rotate.patch
 
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.3_route.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/2.3_kernel_package.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch partition.py < /tmp/2.3_bios_grub_partition.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_storage.py < /tmp/2.3_bios_grub_preseed.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver && patch security.py < /tmp/2.3_region_secret_rotate.patch
 RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets && patch maas_enlist.sh < /tmp/2.3_maas_enlist.patch
 RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets && patch maas_ipmi_autodetect.py < /tmp/2.3_configure_ipmi_user.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch ipaddr.py < /tmp/2.3_mac_address.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patch maas-proxy.conf.template < /tmp/2.3_proxy_acl.patch
 RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/2.3_secure_headers.patch
+
 
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
 RUN mkdir -p /etc/systemd/system/basic.target.wants ;\
