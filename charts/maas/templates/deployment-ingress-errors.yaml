@@ -29,7 +29,6 @@ kind: Deployment
 metadata:
   name: maas-ingress-errors
 spec:
-  serviceName: maas-rack
   replicas: {{ .Values.pod.replicas.ingress_errors }}
   selector:
     matchLabels:
