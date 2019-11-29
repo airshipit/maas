@@ -1,0 +1,26 @@
+diff --git a/src/provisioningserver/drivers/power/ipmi.py b/src/provisioningserver/drivers/power/ipmi.py
+index 219ee268b..acdf2065d 100644
+--- a/src/provisioningserver/drivers/power/ipmi.py
++++ b/src/provisioningserver/drivers/power/ipmi.py
+@@ -143,6 +143,12 @@ IPMI_ERRORS = {
+             "  MAAS performed several retries.  Please wait and try again."),
+         'exception': PowerConnError
+     },
++    'BMC error': {
++        'message': (
++            "Device not responding correctly while performing power action."
++            "  MAAS performed several retries.  Please wait and try again."),
++        'exception': PowerConnError
++    },
+     'could not find inband device': {
+         'message': (
+             "An inband device could not be found."
+@@ -209,7 +215,7 @@ class IPMIPowerDriver(PowerDriver):
+             'mac_address', "Power MAC", scope=SETTING_SCOPE.NODE)
+     ]
+     ip_extractor = make_ip_extractor('power_address')
+-    wait_time = (4, 8, 16, 32)
++    wait_time = (4, 4, 8, 8, 16, 16, 32, 32)
+ 
+     def detect_missing_packages(self):
+         if not shell.has_command_available('ipmipower'):
