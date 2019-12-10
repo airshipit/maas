@@ -10,13 +10,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- hosts: primary
-  tasks:
-    - name: Execute the make target to package Helm charts.
-      make:
-        chdir: "{{ zuul.project.src_dir }}"
-        target: charts
-        params:
-          HTK_COMMIT: "{{ HTK_COMMIT | default('') }}"
-      register: result
-      failed_when: result.failed
+yamllint -c ./tools/gate/playbooks/yamllint-config.yaml .

@@ -17,11 +17,13 @@
         - airship-maas-chart-build-gate
         - airship-maas-chart-build-latest-htk
         - airship-maas-docker-build-gate
+        - airship-maas-lint-yaml
     gate:
       jobs:
         - airship-maas-lint-ws
         - airship-maas-chart-build-gate
         - airship-maas-docker-build-gate
+        - airship-maas-lint-yaml
     post:
       jobs:
         - airship-maas-docker-publish
@@ -70,6 +72,15 @@
       tags:
         dynamic:
           patch_set: true
+
+- job:
+    name: airship-maas-lint-yaml
+    voting: true
+    timeout: 900
+    run: tools/gate/playbooks/lint-yaml.yaml
+    nodeset: ubuntu-bionic
+    irrelevant-files:
+      - '^charts/maas/templates/.*'
 
 - job:
     name: airship-maas-docker-publish
