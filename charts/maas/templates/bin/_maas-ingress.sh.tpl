@@ -26,6 +26,8 @@ function start () {
       --watch-namespace="${POD_NAMESPACE}" \
       --https-port="${HTTPS_PORT}" \
       --status-port="${STATUS_PORT}" \
+      --stream-port="${STREAM_PORT}" \
+      --profiler-port="${PROFILER_PORT}" \
       --healthz-port="${HEALTHZ_PORT}" \
       --election-id=${RELEASE_NAME} \
       --default-server-port=${DEFAULT_ERROR_PORT} \

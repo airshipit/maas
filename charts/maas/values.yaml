@@ -104,7 +104,7 @@ images:
     export_api_key: quay.io/airshipit/maas-region-controller:latest
     maas_cache: quay.io/airshipit/sstream-cache:latest
     dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
-    ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.20.0
+    ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.26.1
     ingress_vip: docker.io/busybox:latest
     error_pages: gcr.io/google_containers/ingress-gce-404-server-with-metrics-amd64:v1.6.0
     maas_syslog: quay.io/airshipit/maas-region-controller:latest
@@ -444,7 +444,11 @@ endpoints:
       healthz:
         podport: 10254
       status:
-        podport: 18080
+        podport: 10246
+      stream:
+        podport: 10247
+      profiler:
+        podport: 10245
   maas_syslog:
     hosts:
       default: maas-syslog

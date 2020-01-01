@@ -55,7 +55,15 @@ rules:
       - list
       - watch
   - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
       - "extensions"
+      - "networking.k8s.io"
     resources:
       - ingresses
     verbs:
@@ -63,14 +71,8 @@ rules:
       - list
       - watch
   - apiGroups:
-      - ""
-    resources:
-        - events
-    verbs:
-        - create
-        - patch
-  - apiGroups:
       - "extensions"
+      - "networking.k8s.io"
     resources:
       - ingresses/status
     verbs:
@@ -253,6 +255,10 @@ spec:
               value: {{ tuple "maas_ingress" "podport" "healthz" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
             - name: STATUS_PORT
               value: {{ tuple "maas_ingress" "podport" "status" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
+            - name: STREAM_PORT
+              value: {{ tuple "maas_ingress" "podport" "stream" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
+            - name: PROFILER_PORT
+              value: {{ tuple "maas_ingress" "podport" "profiler" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
             - name: ERROR_PAGE_SERVICE
               value: {{ tuple "maas_ingress" "error_pages" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" | quote }}
             - name: DEFAULT_ERROR_PORT
