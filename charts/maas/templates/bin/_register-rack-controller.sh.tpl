@@ -20,6 +20,7 @@ register_maas_rack() {
     if maas-rack register --url="${MAAS_ENDPOINT}" --secret="${MAAS_REGION_SECRET}";
     then
         echo "Successfully registered with MaaS Region Controller"
+        touch '/tmp/maas-rack.done'
         break
     else
         echo "Unable to register with ${MAAS_ENDPOINT}... will try again"

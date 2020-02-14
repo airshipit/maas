@@ -99,9 +99,8 @@ spec:
             timeoutSeconds: 60
             exec:
               command:
-                - /bin/bash
-                - -c
-                - journalctl -u register-rack-controller -n 5 | grep -q 'Successfully registered with MaaS Region Controller'
+                - ls
+                - /tmp/maas-rack.done
           volumeMounts:
             - mountPath: /sys/fs/cgroup
               name: host-sys-fs-cgroup
