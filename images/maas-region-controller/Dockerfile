@@ -60,6 +60,9 @@ RUN apt-get download maas-region-controller=$MAAS_VERSION && \
     dpkg -i maas-region-controller.deb && \
     pg_dropcluster --stop 9.5 main
 
+# we don't want/need avahi-daemon running in the container
+RUN rm -f /etc/init.d/avahi-daemon
+
 # 2.3 workarounds
 COPY 2.3_route.patch /tmp/2.3_route.patch
 COPY 2.3_kernel_package.patch /tmp/2.3_kernel_package.patch
