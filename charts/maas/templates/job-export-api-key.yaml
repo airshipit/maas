@@ -74,6 +74,8 @@ spec:
     metadata:
       labels:
 {{ tuple $envAll "maas" "export-api-key" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+{{ dict "envAll" $envAll "podName" "maas-export-api-key" "containerNames" (list "init" "exporter") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
     spec:
       serviceAccountName: {{ $serviceAccountName }}
       restartPolicy: OnFailure

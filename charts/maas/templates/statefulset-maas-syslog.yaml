@@ -42,7 +42,7 @@ spec:
       annotations:
         configmap-bin-hash: {{ tuple "configmap-bin.yaml" . | include "helm-toolkit.utils.hash" }}
         configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}
-{{ dict "envAll" $envAll "podName" "maas-syslog" "containerNames" (list "syslog") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
+{{ dict "envAll" $envAll "podName" "maas-syslog" "containerNames" (list "init" "logrotate" "syslog") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
     spec:
       serviceAccountName: {{ $serviceAccountName }}
       shareProcessNamespace: true

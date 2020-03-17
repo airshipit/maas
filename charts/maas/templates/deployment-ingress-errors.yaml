@@ -37,6 +37,8 @@ spec:
     metadata:
       labels:
 {{ $labels | indent 8 }}
+      annotations:
+{{ dict "envAll" $envAll "podName" "maas-ingress-errors" "containerNames" (list "maas-ingress-errors") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
     spec:
 {{ dict "envAll" $envAll "application" "ingress_errors" | include "helm-toolkit.snippets.kubernetes_pod_security_context" | indent 6 }}
       serviceAccountName: {{ $serviceAccountName }}

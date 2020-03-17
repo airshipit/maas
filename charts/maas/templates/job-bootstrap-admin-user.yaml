@@ -30,6 +30,8 @@ spec:
     metadata:
       labels:
 {{ tuple $envAll "maas" "bootstrap-admin-user" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+{{ dict "envAll" $envAll "podName" "maas-bootstrap-admin-user" "containerNames" (list "init" "maas-bootstrap-admin-user") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
     spec:
       serviceAccountName: {{ $serviceAccountName }}
       restartPolicy: OnFailure
