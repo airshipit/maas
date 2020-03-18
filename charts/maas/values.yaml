@@ -235,6 +235,9 @@ conf:
       secret:
         namespace: maas
         name: maas-api-key
+    # system user for console login/recovery in early phases of deployment
+    system_user: 'root'
+    system_passwd: 'password'
   drivers: null
   #### If you populates drivers, it will replace the 3rd party driver
   #### info that comes with MaaS. see structure below if it is needed

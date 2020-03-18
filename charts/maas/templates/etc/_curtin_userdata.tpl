@@ -73,3 +73,21 @@ def find_ba_key(n):
 {{ "{{" }}endif{{ "}}" }}
 showtrace: true
 verbosity: 2
+{{- if not (empty .Values.conf.maas.system_user) }}
+{{- if not (empty .Values.conf.maas.system_passwd) }}
+write_files:
+  # Create cloud-init config that configures the 'root' user as the
+  # default user instead of 'centos'.
+  # Additionally, enables password authentication for this user.
+  userconfig:
+    path: /etc/cloud/cloud.cfg.d/00-user.cfg
+    content: |
+      ssh_pwauth: yes
+      disable_root: false
+      system_info:
+        default_user:
+          name: {{ .Values.conf.maas.system_user | squote }}
+          lock_passwd: false
+          plain_text_passwd: {{ .Values.conf.maas.system_passwd | squote }}
+{{- end }}
+{{- end }}
