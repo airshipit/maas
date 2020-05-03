@@ -235,6 +235,16 @@ conf:
       secret:
         namespace: maas
         name: maas-api-key
+    extra_settings:
+      # Additional settings available via maas $PROFILE maas set-config
+      # Marks if the initial intro has been completed: true or false
+      completed_intro: true
+      # Enable Google Analytics: true or false
+      enable_analytics: false
+      # network_discovery: 'enabled' or 'disabled'
+      network_discovery: disabled
+      # active_discovery_interval (seconds): one of '0', '604800', '86400', '43200', '21600', '10800', '3600', '1800', '600'
+      active_discovery_interval: 0
     # system user for console login/recovery in early phases of deployment
     system_user: 'root'
     system_passwd: 'password'
