@@ -190,6 +190,14 @@ function configure_boot_sources {
   fi
 }
 
+function configure_extra_settings {
+{{- range $k, $v := .Values.conf.maas.extra_settings }}
+  check_then_set {{$k}} {{$v}}
+{{- else }}
+  : No additional MAAS config
+{{- end }}
+}
+
 function maas_login {
   KEY=$(maas-region apikey --username=${ADMIN_USERNAME})
   if [ -z "$KEY" ]
@@ -205,6 +213,7 @@ timer "$RETRY_TIMER" maas_login
 configure_proxy
 configure_ntp
 configure_dns
+configure_extra_settings
 
 # make call to import images
 timer "$RETRY_TIMER" configure_boot_sources
