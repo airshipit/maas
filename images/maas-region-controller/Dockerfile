@@ -79,6 +79,7 @@ COPY 2.3_proxy_acl.patch /tmp/2.3_proxy_acl.patch
 copy 2.3_configure_ipmi_user.patch /tmp/2.3_configure_ipmi_user.patch
 COPY 2.3_secure_headers.patch /tmp/2.3_secure_headers.patch
 COPY 2.3_region_secret_rotate.patch /tmp/2.3_region_secret_rotate.patch
+COPY 2.3_partitiontable_does_not_exist.patch /tmp/2.3_partitiontable_does_not_exist.patch
 
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.3_route.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/2.3_kernel_package.patch
@@ -90,6 +91,7 @@ RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippet
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch ipaddr.py < /tmp/2.3_mac_address.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patch maas-proxy.conf.template < /tmp/2.3_proxy_acl.patch
 RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/2.3_secure_headers.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver/api && patch partitions.py < /tmp/2.3_partitiontable_does_not_exist.patch
 
 
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
