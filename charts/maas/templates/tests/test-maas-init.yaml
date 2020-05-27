@@ -26,6 +26,7 @@ metadata:
   annotations:
     "helm.sh/hook": "test-success"
     {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
+{{ dict "envAll" $envAll "podName" "maas-api-test" "containerNames" (list "maas-api-test") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 4 }}
   labels:
 {{ tuple $envAll "maas" "init-test" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
 spec:
@@ -33,7 +34,7 @@ spec:
   nodeSelector:
     {{ .Values.labels.test.node_selector_key }}: {{ .Values.labels.test.node_selector_value }}
   containers:
-    - name: "{{ .Release.Name }}-api-test"
+    - name: maas-api-test
       env:
         - name: 'MAAS_URL'
           value: {{ tuple "maas_region" "internal" "region_api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | quote }}

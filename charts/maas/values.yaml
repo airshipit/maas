@@ -329,6 +329,8 @@ pod:
     maas-import-resources:
       region-import-resources: runtime/default
       init: runtime/default
+    maas-api-test:
+      maas-api-test: runtime/default
   security_context:
     maas-syslog:
       pod:
