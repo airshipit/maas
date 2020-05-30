@@ -3,15 +3,9 @@ $ModLoad imudp
 $UDPServerRun {{ tuple "maas_region" "podport" "region_syslog" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
 #$ModLoad imtcp # load TCP listener
 
-# Reduce message repetition
-$RepeatedMsgReduction on
+# Discard messages from localhost
+:fromhost-ip, isequal, "127.0.0.1" ~
 
-# Overwrite default when log_level is set
-{{- if .Values.conf.syslog.log_level }}
-*.{{ .Values.conf.syslog.log_level }} {{ .Values.conf.syslog.logpath }}/{{ .Values.conf.syslog.logfile }}
-{{- end }}
-
-##$RepeatedMsgContainsOriginalMsg on
-
-:fromhost-ip, !isequal, "127.0.0.1" {{ .Values.conf.syslog.logpath }}/{{ .Values.conf.syslog.logfile }}
+# Log remote messages, based on the configured log level
+*.{{ .Values.conf.syslog.log_level | default "*" }} {{ .Values.conf.syslog.logpath }}/{{ .Values.conf.syslog.logfile }}
 & ~
