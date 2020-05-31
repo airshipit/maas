@@ -72,6 +72,8 @@ def find_ba_key(n):
   driver_07_update_initramfs: ["curtin", "in-target", "--", "update-initramfs", "-u"]
 {{ "{{" }}endif{{ "}}" }}
 showtrace: true
+swap:
+  size: 0
 verbosity: 2
 {{- if not (empty .Values.conf.maas.system_user) }}
 {{- if not (empty .Values.conf.maas.system_passwd) }}
