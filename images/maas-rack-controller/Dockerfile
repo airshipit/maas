@@ -70,5 +70,8 @@ COPY scripts/journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.ser
 RUN mkdir -p /etc/systemd/system/basic.target.wants ;\
     ln -s /etc/systemd/system/journalctl-to-tty.service /etc/systemd/system/basic.target.wants/journalctl-to-tty.service
 
+# quiet sudo for the maas user
+RUN umask 0337; echo 'Defaults:maas !pam_session, !syslog' > /etc/sudoers.d/99-maas-no-log
+
 # initalize systemd
 CMD ["/bin/bash", "-c", "exec /sbin/init --log-target=console 3>&1"]
