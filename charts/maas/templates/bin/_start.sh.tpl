@@ -52,5 +52,10 @@ done
 if [[ $sh_set = false ]]; then
   exit 1
 fi
+{{- if .Values.conf.maas.force_gpt }}
+# Forcing the use of GPT irrespective of boot disk size
+# https://github.com/maas/maas/blob/2.3/src/maasserver/models/partitiontable.py#L51-L53
+sed -i '/^GPT_REQUIRED_SIZE =/c\GPT_REQUIRED_SIZE = 0' /usr/lib/python3/dist-packages/maasserver/models/partitiontable.py
+{{- end }}
 set -e
 exec /sbin/init --log-target=console 3>&1

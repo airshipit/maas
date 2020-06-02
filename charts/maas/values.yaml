@@ -235,6 +235,12 @@ conf:
       secret:
         namespace: maas
         name: maas-api-key
+    # By default, MAAS will use MBR for boot disks smaller than 2 TiB.
+    # Set force_gpt: true to always use GPT.
+    # NOTE: This is not a standard MAAS setting, and enabling it will cause
+    # modification of a file during maas-region pod startup:
+    # /usr/lib/python3/dist-packages/maasserver/models/partitiontable.py
+    force_gpt: false
     extra_settings:
       # Additional settings available via maas $PROFILE maas set-config
       # Marks if the initial intro has been completed: true or false
