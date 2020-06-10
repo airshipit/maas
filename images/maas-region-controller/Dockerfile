@@ -8,6 +8,13 @@ LABEL org.opencontainers.image.source='https://git.openstack.org/openstack/airsh
 LABEL org.opencontainers.image.vendor='The Airship Authors'
 LABEL org.opencontainers.image.licenses='Apache-2.0'
 
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+ARG http_proxy
+ARG https_proxy
+ARG no_proxy
+
 ENV DEBIAN_FRONTEND noninteractive
 ENV container docker
 
