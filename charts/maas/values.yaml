@@ -257,6 +257,8 @@ conf:
   drivers: null
   #### If you populates drivers, it will replace the 3rd party driver
   #### info that comes with MaaS. see structure below if it is needed
+  #### Additional context about the use of this file can be found here:
+  #### https://github.com/maas/maas/blob/2.3.5/src/maasserver/third_party_drivers.py
   # - blacklist: string    # a kernel module to blacklist from loading if needed
   #   comment: string       # free form comment
   #   key_binary: |    # The GPG key for the repo holding the package, base64 encoded, non-ascii armored
