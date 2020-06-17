@@ -71,10 +71,12 @@
             allow_unauthenticated: True
           with_items:
             - docker-ce
-            - python-pip
+            - python3-pip
+            - python3-setuptools
         - pip:
             name: docker
             version: 2.7.0
+            executable: pip3
         # NOTE(SamYaple): Allow all connections from containers to host so the
         # containers can access the http server for git and wheels
         - iptables:
