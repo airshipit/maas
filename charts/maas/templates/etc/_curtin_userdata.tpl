@@ -71,6 +71,9 @@ def find_ba_key(n):
   driver_06_depmod: ["curtin", "in-target", "--", "depmod"]
   driver_07_update_initramfs: ["curtin", "in-target", "--", "update-initramfs", "-u"]
 {{ "{{" }}endif{{ "}}" }}
+{{- range $k, $v := .Values.conf.curtin.late_commands }}
+{{ dict $k $v | toYaml | trim | indent 2 }}
+{{- end }}
 showtrace: true
 swap:
   size: 0

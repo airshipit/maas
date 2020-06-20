@@ -183,6 +183,15 @@ conf:
     append:
   curtin:
     override: true
+    late_commands: {}
+    # Additional commands to be run during the "late" curtin stage
+    #   https://curtin.readthedocs.io/en/latest/topics/config.html#stages
+    # When naming the keys, consider that the commands are executed in
+    # lexicographic order. The existing late_commands are named:
+    #   driver_NN_*, drydock_NN, and maas
+    # Example:
+    # late_commands:
+    #   install_modules_extra: ["curtin", "in-target", "--", "apt-get", "-y", "install", "linux-modules-extra-4.15.0-88-generic"]
   drydock:
     bootaction_url: null
   cache:
