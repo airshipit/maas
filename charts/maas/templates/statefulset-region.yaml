@@ -44,7 +44,12 @@ spec:
 {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" | indent 8 }}
         configmap-bin-hash: {{ tuple "configmap-bin.yaml" . | include "helm-toolkit.utils.hash" }}
         configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}
-{{ dict "envAll" $envAll "podName" "maas-region" "containerNames" (list "init" "maas-region") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
+{{- $containers := "init maas-region" }}
+{{- if .Values.conf.cache.enabled }}
+{{- $containers = printf "%s maas-cache" $containers }}
+{{- end }}
+{{- $containers = splitList " " $containers }}
+{{ dict "envAll" $envAll "podName" "maas-region" "containerNames" $containers | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
     spec:
       serviceAccountName: {{ $serviceAccountName }}
       affinity:

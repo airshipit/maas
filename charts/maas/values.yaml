@@ -319,6 +319,7 @@ pod:
       init: runtime/default
     maas-region:
       maas-region: runtime/default
+      maas-cache: runtime/default
       init: runtime/default
     maas-syslog:
       syslog: runtime/default
