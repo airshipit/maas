@@ -51,6 +51,7 @@ spec:
 {{- $containers = splitList " " $containers }}
 {{ dict "envAll" $envAll "podName" "maas-region" "containerNames" $containers | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
     spec:
+{{ dict "envAll" $envAll "application" "region" | include "helm-toolkit.snippets.kubernetes_pod_security_context" | indent 6 }}
       serviceAccountName: {{ $serviceAccountName }}
       affinity:
 {{ tuple $envAll "maas" "region" | include "helm-toolkit.snippets.kubernetes_pod_anti_affinity" | indent 8 }}
@@ -61,6 +62,7 @@ spec:
       containers:
 {{- if .Values.conf.cache.enabled }}
         - name: maas-cache
+{{ dict "envAll" $envAll "application" "region" "container" "maas_cache" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           image: {{ .Values.images.tags.maas_cache }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
 {{- end }}
@@ -94,6 +96,7 @@ spec:
           tty: true
 
 {{ tuple $envAll $envAll.Values.pod.resources.maas_region | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+{{ dict "envAll" $envAll "application" "region" "container" "maas_region" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           ports:
             - name: region-api
               containerPort: {{ tuple "maas_region" "podport" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}

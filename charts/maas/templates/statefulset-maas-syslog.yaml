@@ -44,6 +44,7 @@ spec:
         configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}
 {{ dict "envAll" $envAll "podName" "maas-syslog" "containerNames" (list "init" "logrotate" "syslog") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
     spec:
+{{ dict "envAll" $envAll "application" "syslog" | include "helm-toolkit.snippets.kubernetes_pod_security_context" | indent 6 }}
       serviceAccountName: {{ $serviceAccountName }}
       shareProcessNamespace: true
       affinity:
@@ -56,6 +57,7 @@ spec:
         - name: syslog
           image: {{ .Values.images.tags.maas_syslog }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
+{{ dict "envAll" $envAll "application" "syslog" "container" "syslog" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           command:
             - /tmp/start-syslog.sh
           env:
@@ -81,6 +83,7 @@ spec:
           image: {{ .Values.images.tags.maas_syslog }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
           # Run cron in the foreground and only log failed cronjobs (when logrotate fails)
+{{ dict "envAll" $envAll "application" "syslog" "container" "logrotate" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           command:
             - "cron"
             - "-f"

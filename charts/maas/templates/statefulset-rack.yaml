@@ -50,6 +50,7 @@ spec:
         configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}
 {{ dict "envAll" $envAll "podName" "maas-rack" "containerNames" (list "init" "maas-rack") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
     spec:
+{{ dict "envAll" $envAll "application" "rack" | include "helm-toolkit.snippets.kubernetes_pod_security_context" | indent 6 }}
       serviceAccountName: {{ $serviceAccountName }}
       affinity:
 {{- tuple $envAll "maas" "rack" | include "helm-toolkit.snippets.kubernetes_pod_anti_affinity" | indent 8 }}
@@ -82,6 +83,7 @@ spec:
                   name: {{ .Values.conf.maas.credentials.secret.name }}
                   key: 'token'
 {{ tuple $envAll $envAll.Values.pod.resources.maas_rack | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+{{ dict "envAll" $envAll "application" "rack" "container" "maas_rack" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           command:
             - /tmp/start.sh
           securityContext:

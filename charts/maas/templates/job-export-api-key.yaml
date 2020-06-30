@@ -77,6 +77,7 @@ spec:
       annotations:
 {{ dict "envAll" $envAll "podName" "maas-export-api-key" "containerNames" (list "init" "exporter") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
     spec:
+{{ dict "envAll" $envAll "application" "export_api_key" | include "helm-toolkit.snippets.kubernetes_pod_security_context" | indent 6 }}
       serviceAccountName: {{ $serviceAccountName }}
       restartPolicy: OnFailure
       nodeSelector:
@@ -87,6 +88,7 @@ spec:
         - name: exporter
           image: {{ .Values.images.tags.export_api_key }}
 {{ tuple $envAll $envAll.Values.pod.resources.jobs.export_api_key | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+{{ dict "envAll" $envAll "application" "export_api_key" "container" "exporter" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
           env:
             - name: SECRET_NAMESPACE

@@ -33,6 +33,7 @@ spec:
       annotations:
 {{ dict "envAll" $envAll "podName" "maas-db-init" "containerNames" (list "init" "maas-db-init") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
     spec:
+{{ dict "envAll" $envAll "application" "db_init" | include "helm-toolkit.snippets.kubernetes_pod_security_context" | indent 6 }}
       serviceAccountName: {{ $serviceAccountName }}
       restartPolicy: OnFailure
       nodeSelector:
@@ -44,6 +45,7 @@ spec:
           image: {{ .Values.images.tags.db_init | quote }}
           imagePullPolicy: {{ .Values.images.pull_policy | quote }}
 {{ tuple $envAll "db_init" | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+{{ dict "envAll" $envAll "application" "db_init" "container" "maas_db_init" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           env:
             - name: DB_ADMIN_USER
               valueFrom:

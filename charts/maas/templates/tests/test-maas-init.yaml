@@ -30,6 +30,7 @@ metadata:
   labels:
 {{ tuple $envAll "maas" "init-test" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
 spec:
+{{ dict "envAll" $envAll "application" "api_test" | include "helm-toolkit.snippets.kubernetes_pod_security_context" | indent 2 }}
   restartPolicy: Never
   nodeSelector:
     {{ .Values.labels.test.node_selector_key }}: {{ .Values.labels.test.node_selector_value }}
@@ -46,6 +47,7 @@ spec:
       image: {{ .Values.images.tags.maas_region }}
       imagePullPolicy: {{ .Values.images.pull_policy }}
 {{ tuple . .Values.pod.resources.test | include "helm-toolkit.snippets.kubernetes_resources" | indent 6 }}
+{{ dict "envAll" $envAll "application" "api_test" "container" "maas_api_test" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 6 }}
       command: ["/tmp/maas-test.sh"]
       volumeMounts:
         - name: maas-bin

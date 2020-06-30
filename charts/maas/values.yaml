@@ -350,25 +350,81 @@ pod:
     maas-api-test:
       maas-api-test: runtime/default
   security_context:
-    maas-syslog:
-      pod:
-        runAsUser: 99
-      container:
-        syslog:
-          runAsUser: 99
-          readOnlyRootFilesystem: true
     ingress:
+      pod:
+        runAsUser: 0
       container:
-        maas_ingress:
-          runAsUser: 0
+        maas_ingress_vip_init:
+          readOnlyRootFilesystem: false
         maas_ingress_vip:
-          runAsUser: 0
+          readOnlyRootFilesystem: false
+        maas_ingress:
+          readOnlyRootFilesystem: false
     ingress_errors:
       pod:
         runAsUser: 65534
       container:
         maas_ingress_errors:
           readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+    bootstrap_admin_user:
+      pod:
+        runAsUser: 0
+      container:
+        maas_bootstrap_admin_user:
+          readOnlyRootFilesystem: false
+    db_init:
+      pod:
+        runAsUser: 0
+      container:
+        maas_db_init:
+          readOnlyRootFilesystem: true
+    db_sync:
+      pod:
+        runAsUser: 0
+      container:
+        maas_db_sync:
+          readOnlyRootFilesystem: false
+    export_api_key:
+      pod:
+        runAsUser: 0
+      container:
+        exporter:
+          readOnlyRootFilesystem: false
+    import_resources:
+      pod:
+        runAsUser: 0
+      container:
+        region_import_resources:
+          readOnlyRootFilesystem: false
+    syslog:
+      pod:
+        runAsUser: 0
+      container:
+        syslog:
+          readOnlyRootFilesystem: true
+        logrotate:
+          readOnlyRootFilesystem: false
+    rack:
+      pod:
+        runAsUser: 0
+      container:
+        maas_rack:
+          readOnlyRootFilesystem: false
+    region:
+      pod:
+        runAsUser: 0
+      container:
+        maas_cache:
+          readOnlyRootFilesystem: false
+        maas_region:
+          readOnlyRootFilesystem: false
+    api_test:
+      pod:
+        runAsUser: 0
+      container:
+        maas_api_test:
+          readOnlyRootFilesystem: false
   affinity:
     anti:
       type:
