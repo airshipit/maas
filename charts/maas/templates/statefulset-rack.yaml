@@ -65,6 +65,7 @@ spec:
           image: {{ .Values.images.tags.maas_rack }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
           tty: true
+{{ dict "envAll" $envAll "application" "rack" "container" "maas_rack" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           env:
             - name: MAAS_ENDPOINT
 {{- if empty .Values.conf.maas.url.maas_url }}
@@ -83,18 +84,8 @@ spec:
                   name: {{ .Values.conf.maas.credentials.secret.name }}
                   key: 'token'
 {{ tuple $envAll $envAll.Values.pod.resources.maas_rack | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
-{{ dict "envAll" $envAll "application" "rack" "container" "maas_rack" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           command:
             - /tmp/start.sh
-          securityContext:
-            capabilities:
-              add:
-                - 'DAC_READ_SEARCH'
-                - 'NET_ADMIN'
-                - 'SYS_ADMIN'
-                - 'SYS_PTRACE'
-                - 'SYS_RESOURCE'
-                - 'SYS_TIME'
           readinessProbe:
             initialDelaySeconds: 60
             periodSeconds: 60

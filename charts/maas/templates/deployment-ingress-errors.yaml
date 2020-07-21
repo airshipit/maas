@@ -50,6 +50,7 @@ spec:
           image: {{ .Values.images.tags.error_pages }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
 {{ tuple $envAll $envAll.Values.pod.resources.maas_ingress_errors | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+{{ dict "envAll" $envAll "application" "ingress_errors" "container" "maas_ingress_errors" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           args:
             - "-port"
             - {{ tuple "maas_ingress" "podport" "error_pages" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}

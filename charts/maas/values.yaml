@@ -411,6 +411,14 @@ pod:
       container:
         maas_rack:
           readOnlyRootFilesystem: false
+          capabilities:
+            add:
+              - 'DAC_READ_SEARCH'
+              - 'NET_ADMIN'
+              - 'SYS_ADMIN'
+              - 'SYS_PTRACE'
+              - 'SYS_RESOURCE'
+              - 'SYS_TIME'
     region:
       pod:
         runAsUser: 0
@@ -419,6 +427,14 @@ pod:
           readOnlyRootFilesystem: false
         maas_region:
           readOnlyRootFilesystem: false
+          capabilities:
+            add:
+              - 'SYS_ADMIN'
+              - 'NET_ADMIN'
+              - 'SYS_PTRACE'
+              - 'SYS_TIME'
+              - 'SYS_RESOURCE'
+              - 'DAC_READ_SEARCH'
     api_test:
       pod:
         runAsUser: 0
