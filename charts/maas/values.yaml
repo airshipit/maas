@@ -402,7 +402,7 @@ pod:
         runAsUser: 0
       container:
         syslog:
-          readOnlyRootFilesystem: true
+          readOnlyRootFilesystem: false
         logrotate:
           readOnlyRootFilesystem: false
     rack:
