@@ -356,10 +356,21 @@ pod:
       container:
         maas_ingress_vip_init:
           readOnlyRootFilesystem: false
+          capabilities:
+            add:
+              - 'NET_ADMIN'
+              - 'SYS_MODULE'
+          runAsUser: 0
         maas_ingress_vip:
           readOnlyRootFilesystem: false
+          capabilities:
+            add:
+              - 'NET_ADMIN'
         maas_ingress:
           readOnlyRootFilesystem: false
+          capabilities:
+            add:
+              - 'NET_BIND_SERVICE'
     ingress_errors:
       pod:
         runAsUser: 65534
