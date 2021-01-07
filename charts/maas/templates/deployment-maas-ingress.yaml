@@ -192,6 +192,7 @@ spec:
               subPath: maas-vip-configure
               readOnly: true
             - mountPath: /mnt/host-rootfs
+              mountPropagation: HostToContainer
               name: host-rootfs
               readOnly: true
       containers:
