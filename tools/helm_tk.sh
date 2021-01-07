@@ -32,7 +32,7 @@ function helm_serve {
   if [[ -d "$HOME/.helm" ]]; then
      echo ".helm directory found"
   else
-     ${HELM} init --client-only
+     ${HELM} init --client-only --skip-refresh
   fi
   if [[ -z $(curl -s 127.0.0.1:8879 | grep 'Helm Repository') ]]; then
      ${HELM} serve & > /dev/null
