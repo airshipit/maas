@@ -155,6 +155,20 @@ spec:
               subPath: ntpd.sh
               readOnly: true
 {{- end }}
+{{- if .Values.conf.cloudconfig.override }}
+            - name: maas-etc
+              mountPath: /etc/maas/preseeds/enlist
+              subPath: enlist
+              readOnly: true
+            - name: maas-etc
+              mountPath: /etc/maas/preseeds/commissioning
+              subPath: commissioning
+              readOnly: true
+            - name: maas-etc
+              mountPath: /etc/maas/preseeds/curtin
+              subPath: curtin
+              readOnly: true
+{{- end }}
 {{- if $mounts_maas_region.volumeMounts }}{{ toYaml $mounts_maas_region.volumeMounts | indent 12 }}{{ end }}
       volumes:
         - name: host-sys-fs-cgroup

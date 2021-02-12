@@ -192,6 +192,21 @@ conf:
     # Example:
     # late_commands:
     #   install_modules_extra: ["curtin", "in-target", "--", "apt-get", "-y", "install", "linux-modules-extra-4.15.0-88-generic"]
+  cloudconfig:
+    override: false
+    sections: {}
+    # Additional user-data sections to add to the default cloud-config.
+    # These apply to the ephemeral environment, used during enlistment,
+    # commissioning, and deployment (pre-curtin).
+    # In particular, bootcmd may be useful:
+    # https://cloudinit.readthedocs.io/en/latest/topics/modules.html#bootcmd
+    # Example:
+    # conf:
+    #   cloudconfig:
+    #     override: true
+    #     sections:
+    #       bootcmd:
+    #         - "rm -fr /var/lib/apt/lists"
   drydock:
     bootaction_url: null
   cache:

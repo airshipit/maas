@@ -52,3 +52,11 @@ data:
 {{ tuple "etc/_logrotate.conf.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   logrotate.cron: |
 {{ tuple "etc/_logrotate.cron.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+{{- if .Values.conf.cloudconfig.override }}
+  enlist: |+
+{{ tuple "etc/_enlist.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  commissioning: |+
+{{ tuple "etc/_commissioning.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  curtin: |+
+{{ tuple "etc/_curtin.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+{{- end }}
