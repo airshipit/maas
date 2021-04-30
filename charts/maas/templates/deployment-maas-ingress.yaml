@@ -149,6 +149,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: maas-ingress
+  labels:
+{{ $labels | indent 4 }}
   annotations:
     {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
 spec:
