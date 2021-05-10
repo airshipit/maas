@@ -65,7 +65,7 @@
         - apt_key:
             url: https://download.docker.com/linux/ubuntu/gpg
         - apt_repository:
-            repo: deb http://{{ zuul_site_mirror_fqdn }}/deb-docker xenial stable
+            repo: deb http://{{ zuul_site_mirror_fqdn }}/deb-docker/{{ ansible_distribution_release }} {{ ansible_distribution_release }} stable
         - apt:
             name: "{{ item }}"
             allow_unauthenticated: True
