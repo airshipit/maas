@@ -28,6 +28,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: maas-ingress-errors
+  labels:
+{{ $labels | indent 4 }}
 spec:
   replicas: {{ .Values.pod.replicas.ingress_errors }}
   selector:
