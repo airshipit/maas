@@ -72,8 +72,6 @@ spec:
               value: {{ .Values.conf.maas.proxy.proxy_server }}
             - name: MAAS_INTERNAL_PROXY_PORT
               value: {{ tuple "maas_region" "default" "region_proxy" . | include "helm-toolkit.endpoints.endpoint_port_lookup" | quote }}
-            - name: MAAS_HTTP_BOOT
-              value: {{ .Values.conf.maas.http_boot | quote }}
             - name: MAAS_NTP_SERVERS
               value: {{ .Values.conf.maas.ntp.ntp_servers | join "," | quote }}
             - name: MAAS_NTP_EXTERNAL_ONLY
@@ -88,6 +86,12 @@ spec:
               value: {{ .Values.conf.maas.images.default_image | quote }}
             - name: MAAS_DEFAULT_KERNEL
               value: {{ .Values.conf.maas.images.default_kernel | quote }}
+            - name: MAAS_REMOTE_SYSLOG
+{{- if empty .Values.conf.maas.syslog.remote_syslog }}
+              value: {{ tuple "maas_syslog" "public" "syslog" . | include "helm-toolkit.endpoints.host_and_port_endpoint_uri_lookup" | quote }}
+{{- else }}
+              value: {{ .Values.conf.maas.syslog.remote_syslog | quote }}
+{{- end }}
 {{ tuple $envAll $envAll.Values.pod.resources.jobs.import_resources | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
 {{ dict "envAll" $envAll "application" "import_resources" "container" "region_import_resources" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           command:

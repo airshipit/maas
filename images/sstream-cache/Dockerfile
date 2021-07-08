@@ -1,4 +1,4 @@
-ARG FROM=ubuntu:16.04
+ARG FROM=ubuntu:18.04
 FROM ${FROM}
 
 LABEL org.opencontainers.image.authors='airship-discuss@lists.airshipit.org, irc://#airshipit@freenode'
@@ -15,8 +15,8 @@ ARG http_proxy
 ARG https_proxy
 ARG no_proxy
 
-ARG SSTREAM_IMAGE=https://images.maas.io/ephemeral-v3/daily/
-ARG SSTREAM_RELEASE=xenial
+ARG SSTREAM_IMAGE=https://images.maas.io/ephemeral-v3/stable/
+ARG SSTREAM_RELEASE=bionic
 
 RUN apt-get -qq update && \
     apt install -y simplestreams \

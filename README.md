@@ -25,7 +25,7 @@ This image needs to be run in privileged host networking mode to function.
 The cache image [Dockerfile](images/sstream-cache/Dockerfile) simply provides a point-in-time
 mirror of the maas.io image repository so that if you are deploying MaaS somewhere
 without network connectivity, you have a local copy of Ubuntu. Currently this only
-mirrors Ubuntu 16.04 Xenial and does not update the mirror after image creation.
+mirrors Ubuntu 18.04 Bionic and does not update the mirror after image creation.
 
 ## Charts
 

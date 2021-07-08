@@ -154,6 +154,10 @@ function configure_dns {
   check_then_set upstream_dns ${MAAS_DNS_SERVERS}
 }
 
+function configure_syslog {
+  check_then_set remote_syslog ${MAAS_REMOTE_SYSLOG}
+}
+
 function configure_images {
   check_for_rack_sync
 
@@ -174,8 +178,6 @@ function configure_boot_sources {
   then
     maas ${ADMIN_USERNAME} boot-source update 1 url=http://localhost:8888/maas/images/ephemeral-v3/daily/
   fi
-
-  check_then_set http_boot ${MAAS_HTTP_BOOT}
 
   selected_releases="$(maas ${ADMIN_USERNAME} boot-source-selections read 1 | jq -r '.[] | .release')"
 
@@ -213,6 +215,7 @@ timer "$RETRY_TIMER" maas_login
 configure_proxy
 configure_ntp
 configure_dns
+configure_syslog
 configure_extra_settings
 
 # make call to import images

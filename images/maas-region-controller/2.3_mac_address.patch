@@ -1,6 +1,0 @@
-394a395,399
->     # Exclude interfaces that have duplicate MACs
->     # such as OVS gretap and erspan interfaces
->     ifaces = { k: v
->                for k, v in ifaces.items()
->                if v.get('mac', '') != '00:00:00:00:00:00'}

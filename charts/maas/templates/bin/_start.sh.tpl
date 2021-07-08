@@ -20,9 +20,13 @@ set -ex
 env > /tmp/env
 
 # Ensure PVC volumes have correct ownership
+# Also restore the subdirectory structure and any default files
+# (i.e. /var/lib/maas/http/nginx.conf)
 
 chown maas:maas ~maas/
 chown maas:maas /etc/maas
+[[ -r /opt/maas/var-lib-maas.tgz ]] && tar -C/ -xvzf /opt/maas/var-lib-maas.tgz
+[[ -d ~maas/boot-resources ]] && chown -R maas:maas ~maas/boot-resources
 
 # MAAS must be able to ssh to libvirt hypervisors
 # to control VMs
@@ -52,10 +56,5 @@ done
 if [[ $sh_set = false ]]; then
   exit 1
 fi
-{{- if .Values.conf.maas.force_gpt }}
-# Forcing the use of GPT irrespective of boot disk size
-# https://github.com/maas/maas/blob/2.3/src/maasserver/models/partitiontable.py#L51-L53
-sed -i '/^GPT_REQUIRED_SIZE =/c\GPT_REQUIRED_SIZE = 0' /usr/lib/python3/dist-packages/maasserver/models/partitiontable.py
-{{- end }}
 set -e
 exec /sbin/init --log-target=console 3>&1

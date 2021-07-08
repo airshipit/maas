@@ -1,4 +1,4 @@
-ARG FROM=ubuntu:16.04
+ARG FROM=ubuntu:18.04
 FROM ${FROM}
 
 LABEL org.opencontainers.image.authors='airship-discuss@lists.airshipit.org, irc://#airshipit@freenode'
@@ -18,92 +18,65 @@ ARG no_proxy
 ENV DEBIAN_FRONTEND noninteractive
 ENV container docker
 
+ENV MAAS_VERSION 2.8.6-8602-g.07cdffcaa-0ubuntu1~18.04.1
+
+RUN apt-get -qq update \
+ && apt-get install -y \
+        avahi-daemon \
+        jq \
+        patch \
+        software-properties-common \
+        sudo \
+        systemd \
 # Don't start any optional services except for the few we need.
-RUN find /etc/systemd/system \
+# (specifically, don't start avahi-daemon)
+ && find /etc/systemd/system \
          /lib/systemd/system \
          -path '*.wants/*' \
          -not -name '*journald*' \
          -not -name '*systemd-tmpfiles*' \
          -not -name '*systemd-user-sessions*' \
-         -exec rm \{} \;
-RUN systemctl set-default multi-user.target
+         -exec rm \{} \; \
+ && systemctl set-default multi-user.target \
+# Install maas from the ppa
+ && add-apt-repository -yu ppa:maas/2.8 \
+ && apt-get install -y \
+        maas-region-api=$MAAS_VERSION \
+        # tcpdump is required by /usr/lib/maas/beacon-monitor
+        tcpdump \
+ && rm -rf /var/lib/apt/lists/*
 
-# everything else below is to setup maas into the systemd initialized
-# container based on ubuntu 16.04
-RUN apt-get -qq update && \
-    apt-get -y install sudo \
-                       software-properties-common \
-                       jq
-
-# TODO(alanmeadows)
-# we need systemd 231 per https://github.com/systemd/systemd/commit/a1350640ba605cf5876b25abfee886488a33e50b
-#RUN add-apt-repository ppa:pitti/systemd -y && add-apt-repository ppa:maas/stable -y && apt-get update
-RUN apt-get install -y systemd
-
-# install syslog and enable it
-RUN apt-get install -y rsyslog
-RUN systemctl enable rsyslog.service
-
-ENV MAAS_VERSION 2.3.5-6511-gf466fdb-0ubuntu1
-
-# install maas
-RUN rsyslogd; apt-get install -y maas-cli=$MAAS_VERSION \
-    maas-dns=$MAAS_VERSION \
-    maas-region-api=$MAAS_VERSION \
-    avahi-utils \
-    dbconfig-pgsql=2.0.4ubuntu1 \
-    iputils-ping \
-    postgresql \
-    tcpdump \
-    python3-pip
-
-
-RUN apt-get download maas-region-controller=$MAAS_VERSION && \
-# remove postinstall script in order to avoid db_sync
-    dpkg-deb --extract maas-region-controller*.deb maas-region-controller && \
-    dpkg-deb --control maas-region-controller*.deb maas-region-controller/DEBIAN && \
-    rm maas-region-controller/DEBIAN/postinst && \
-    dpkg-deb --build maas-region-controller && \
-    dpkg -i maas-region-controller.deb && \
-    pg_dropcluster --stop 9.5 main
-
-# we don't want/need avahi-daemon running in the container
-RUN rm -f /etc/init.d/avahi-daemon
+# Preserve the directory structure, permissions, and contents of /var/lib/maas
+RUN mkdir -p /opt/maas/ && tar -cvzf /opt/maas/var-lib-maas.tgz /var/lib/maas
 
 # 2.3 workarounds
 COPY 2.3_route.patch /tmp/2.3_route.patch
 COPY 2.3_kernel_package.patch /tmp/2.3_kernel_package.patch
 COPY 2.3_bios_grub_partition.patch /tmp/2.3_bios_grub_partition.patch
-COPY 2.3_bios_grub_preseed.patch /tmp/2.3_bios_grub_preseed.patch
-# sh8121att: patch so that maas-enlist works with domains that contain '-'
-COPY 2.3_maas_enlist.patch /tmp/2.3_maas_enlist.patch
-# sh8121att: patch so that interfaces with MAC 00:00:00:00:00:00 omit the MAC address
-COPY 2.3_mac_address.patch /tmp/2.3_mac_address.patch
 # sh8121att: allow all requests via the proxy to allow it to work
 # behind ingress
 COPY 2.3_proxy_acl.patch /tmp/2.3_proxy_acl.patch
 # Patch to add retrying to MaaS BMC user setup, and improve exception handling
-copy 2.3_configure_ipmi_user.patch /tmp/2.3_configure_ipmi_user.patch
+COPY 2.3_configure_ipmi_user.patch /tmp/2.3_configure_ipmi_user.patch
 COPY 2.3_secure_headers.patch /tmp/2.3_secure_headers.patch
 COPY 2.3_region_secret_rotate.patch /tmp/2.3_region_secret_rotate.patch
 COPY 2.3_partitiontable_does_not_exist.patch /tmp/2.3_partitiontable_does_not_exist.patch
+# Avoid enlistment failures due to exceptions during moonshot detect attempts
+COPY 2.8_maas_ipmi_autodetect_tool.patch /tmp/2.8_maas_ipmi_autodetect_tool.patch
 
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.3_route.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/2.3_kernel_package.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch partition.py < /tmp/2.3_bios_grub_partition.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_storage.py < /tmp/2.3_bios_grub_preseed.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch security.py < /tmp/2.3_region_secret_rotate.patch
-RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets && patch maas_enlist.sh < /tmp/2.3_maas_enlist.patch
 RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets && patch maas_ipmi_autodetect.py < /tmp/2.3_configure_ipmi_user.patch
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch ipaddr.py < /tmp/2.3_mac_address.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patch maas-proxy.conf.template < /tmp/2.3_proxy_acl.patch
 RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/2.3_secure_headers.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver/api && patch partitions.py < /tmp/2.3_partitiontable_does_not_exist.patch
+RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets/ && patch maas_ipmi_autodetect_tool.py < /tmp/2.8_maas_ipmi_autodetect_tool.patch
 
-
+# echo journalctl logs to the container's stdout
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
-RUN mkdir -p /etc/systemd/system/basic.target.wants ;\
-    ln -s /etc/systemd/system/journalctl-to-tty.service /etc/systemd/system/basic.target.wants/journalctl-to-tty.service
+RUN systemctl enable journalctl-to-tty.service
 
 # quiet sudo for the maas user
 RUN umask 0337; echo 'Defaults:maas !pam_session, !syslog' > /etc/sudoers.d/99-maas-no-log

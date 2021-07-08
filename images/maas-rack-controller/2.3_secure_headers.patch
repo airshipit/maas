@@ -1,2 +1,12 @@
-170d169
-<         self.setHeader(b'server', version)
+diff --git a/src/twisted/web/server.py b/src/twisted/web/server.py
+index 3a3f9f89b..1eb273816 100644
+--- a/src/twisted/web/server.py
++++ b/src/twisted/web/server.py
+@@ -174,7 +174,6 @@ class Request(Copyable, http.Request, components.Componentized):
+         self.site = self.channel.site
+ 
+         # set various default headers
+-        self.setHeader(b'server', version)
+         self.setHeader(b'date', http.datetimeToString())
+ 
+         # Resource Identification

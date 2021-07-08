@@ -32,9 +32,9 @@ COMMIT            ?= $(shell git rev-parse HEAD)
 IMAGE_NAME        := maas-rack-controller maas-region-controller sstream-cache
 BUILD_DIR         := $(shell mktemp -d)
 HELM              := $(BUILD_DIR)/helm
-SSTREAM_IMAGE     := "https://images.maas.io/ephemeral-v3/daily/"
-SSTREAM_RELEASE   := "xenial"
-UBUNTU_BASE_IMAGE ?= ubuntu:16.04
+SSTREAM_IMAGE     := "https://images.maas.io/ephemeral-v3/stable/"
+SSTREAM_RELEASE   := "bionic"
+UBUNTU_BASE_IMAGE ?= ubuntu:18.04
 
 .PHONY: images
 #Build all images in the list

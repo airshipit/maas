@@ -33,7 +33,7 @@
     name: airship-maas-single-node
     nodes:
       - name: primary
-        label: ubuntu-xenial
+        label: ubuntu-bionic
 
 - job:
     name: airship-maas-lint-ws

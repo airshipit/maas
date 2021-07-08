@@ -225,7 +225,6 @@ conf:
   maas:
     override:
     append:
-    http_boot: true
     url:
       maas_url: null
     ingress_disable_gui: false
@@ -253,18 +252,22 @@ conf:
       proxy_server: null
     images:
       default_os: 'ubuntu'
-      default_image: 'xenial'
-      default_kernel: 'ga-16.04'
+      default_image: 'bionic'
+      default_kernel: 'ga-18.04'
     credentials:
       secret:
         namespace: maas
         name: maas-api-key
-    # By default, MAAS will use MBR for boot disks smaller than 2 TiB.
-    # Set force_gpt: true to always use GPT.
-    # NOTE: This is not a standard MAAS setting, and enabling it will cause
-    # modification of a file during maas-region pod startup:
-    # /usr/lib/python3/dist-packages/maasserver/models/partitiontable.py
-    force_gpt: false
+    syslog:
+      # Remote syslog destination for machine syslogs (during enlistment,
+      # commissioning, and deployment)
+      # Can be specified as 'ip', 'fqdn', 'ip:port', or 'fqdn:port', where
+      # ':port' defaults to ':514'
+      # If remote_syslog is null, the destination will be resolved via a
+      # host_and_port_endpoint_uri_lookup of the public maas_syslog endpoint
+      # (Note that this differs from the MAAS default, which is to send machine
+      # syslogs to MAAS on port 5247)
+      remote_syslog: null
     extra_settings:
       # Additional settings available via maas $PROFILE maas set-config
       # Marks if the initial intro has been completed: true or false
@@ -275,6 +278,8 @@ conf:
       network_discovery: disabled
       # active_discovery_interval (seconds): one of '0', '604800', '86400', '43200', '21600', '10800', '3600', '1800', '600'
       active_discovery_interval: 0
+      # enlist_commissioning: if true, directly go into commissioning during enlistment
+      enlist_commissioning: false
     # system user for console login/recovery in early phases of deployment
     system_user: 'root'
     system_passwd: 'password'
@@ -654,7 +659,7 @@ endpoints:
       region_api:
         default: 80
         nodeport: 31900
-        podport: 80
+        podport: 5240
         public: 80
       region_proxy:
         default: 8000

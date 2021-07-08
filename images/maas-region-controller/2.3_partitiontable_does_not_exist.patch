@@ -1,11 +1,11 @@
 diff --git a/src/maasserver/api/partitions.py b/src/maasserver/api/partitions.py
-index fb75600a8..f03fc5685 100644
+index 5a413fb3b..6a5ad8b47 100644
 --- a/src/maasserver/api/partitions.py
 +++ b/src/maasserver/api/partitions.py
-@@ -89,7 +89,7 @@ class PartitionsHandler(OperationsHandler):
-         """
+@@ -99,7 +99,7 @@ class PartitionsHandler(OperationsHandler):
          device = BlockDevice.objects.get_block_device_or_404(
-             system_id, device_id, request.user, NODE_PERMISSION.VIEW)
+             system_id, device_id, request.user, NodePermission.view
+         )
 -        partition_table = device.partitiontable_set.get()
 +        partition_table = device.get_partitiontable()
          if partition_table is None:

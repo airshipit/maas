@@ -9,6 +9,9 @@ unregister_maas_rack() {
   echo "Deregistering this pod's local state in /var/lib/maas directory."
   rm -f /var/lib/maas/secret
   rm -f /var/lib/maas/maas_id
+  echo "Removing local state in /etc/maas directory."
+  rm -f /etc/maas/rackd.conf
+  rm -rf /etc/maas/certificates
 }
 
 register_maas_rack() {
