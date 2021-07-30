@@ -58,10 +58,13 @@ COPY 2.8_nic_filter.patch /tmp/2.8_nic_filter.patch
 COPY 2.8_secure_headers.patch /tmp/2.8_secure_headers.patch
 # Patch so maas knows that "BMC error" is retriable
 COPY 2.8_ipmi_error.patch /tmp/2.8_ipmi_error.patch
+# Patch to space redfish request retries apart a bit, to avoid overwhelming the BMC
+COPY 2.8_redfish_retries.patch /tmp/2.8_redfish_retries.patch
 
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch network.py < /tmp/2.8_nic_filter.patch
 RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/2.8_secure_headers.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch ipmi.py < /tmp/2.8_ipmi_error.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch redfish.py < /tmp/2.8_redfish_retries.patch
 
 # echo journalctl logs to the container's stdout
 COPY scripts/journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
