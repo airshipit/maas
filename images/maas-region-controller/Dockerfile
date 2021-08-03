@@ -49,29 +49,29 @@ RUN apt-get -qq update \
 # Preserve the directory structure, permissions, and contents of /var/lib/maas
 RUN mkdir -p /opt/maas/ && tar -cvzf /opt/maas/var-lib-maas.tgz /var/lib/maas
 
-# 2.3 workarounds
-COPY 2.3_route.patch /tmp/2.3_route.patch
-COPY 2.3_kernel_package.patch /tmp/2.3_kernel_package.patch
-COPY 2.3_bios_grub_partition.patch /tmp/2.3_bios_grub_partition.patch
+# MAAS workarounds
+COPY 2.8_route.patch /tmp/2.8_route.patch
+COPY 2.8_kernel_package.patch /tmp/2.8_kernel_package.patch
+COPY 2.8_bios_grub_partition.patch /tmp/2.8_bios_grub_partition.patch
 # sh8121att: allow all requests via the proxy to allow it to work
 # behind ingress
-COPY 2.3_proxy_acl.patch /tmp/2.3_proxy_acl.patch
+COPY 2.8_proxy_acl.patch /tmp/2.8_proxy_acl.patch
 # Patch to add retrying to MaaS BMC user setup, and improve exception handling
-COPY 2.3_configure_ipmi_user.patch /tmp/2.3_configure_ipmi_user.patch
-COPY 2.3_secure_headers.patch /tmp/2.3_secure_headers.patch
-COPY 2.3_region_secret_rotate.patch /tmp/2.3_region_secret_rotate.patch
-COPY 2.3_partitiontable_does_not_exist.patch /tmp/2.3_partitiontable_does_not_exist.patch
+COPY 2.8_configure_ipmi_user.patch /tmp/2.8_configure_ipmi_user.patch
+COPY 2.8_secure_headers.patch /tmp/2.8_secure_headers.patch
+COPY 2.8_region_secret_rotate.patch /tmp/2.8_region_secret_rotate.patch
+COPY 2.8_partitiontable_does_not_exist.patch /tmp/2.8_partitiontable_does_not_exist.patch
 # Avoid enlistment failures due to exceptions during moonshot detect attempts
 COPY 2.8_maas_ipmi_autodetect_tool.patch /tmp/2.8_maas_ipmi_autodetect_tool.patch
 
-RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.3_route.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/2.3_kernel_package.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch partition.py < /tmp/2.3_bios_grub_partition.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver && patch security.py < /tmp/2.3_region_secret_rotate.patch
-RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets && patch maas_ipmi_autodetect.py < /tmp/2.3_configure_ipmi_user.patch
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patch maas-proxy.conf.template < /tmp/2.3_proxy_acl.patch
-RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/2.3_secure_headers.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver/api && patch partitions.py < /tmp/2.3_partitiontable_does_not_exist.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.8_route.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/2.8_kernel_package.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch partition.py < /tmp/2.8_bios_grub_partition.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver && patch security.py < /tmp/2.8_region_secret_rotate.patch
+RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets && patch maas_ipmi_autodetect.py < /tmp/2.8_configure_ipmi_user.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patch maas-proxy.conf.template < /tmp/2.8_proxy_acl.patch
+RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/2.8_secure_headers.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver/api && patch partitions.py < /tmp/2.8_partitiontable_does_not_exist.patch
 RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets/ && patch maas_ipmi_autodetect_tool.py < /tmp/2.8_maas_ipmi_autodetect_tool.patch
 
 # echo journalctl logs to the container's stdout

@@ -54,14 +54,14 @@ COPY scripts/register-rack-controller.service /lib/systemd/system/register-rack-
 RUN systemctl enable register-rack-controller.service
 
 # Patch so that Calico interfaces are ignored
-COPY 2.3_nic_filter.patch /tmp/2.3_nic_filter.patch
-COPY 2.3_secure_headers.patch /tmp/2.3_secure_headers.patch
+COPY 2.8_nic_filter.patch /tmp/2.8_nic_filter.patch
+COPY 2.8_secure_headers.patch /tmp/2.8_secure_headers.patch
 # Patch so maas knows that "BMC error" is retriable
-COPY 2.3_ipmi_error.patch /tmp/2.3_ipmi_error.patch
+COPY 2.8_ipmi_error.patch /tmp/2.8_ipmi_error.patch
 
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch network.py < /tmp/2.3_nic_filter.patch
-RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/2.3_secure_headers.patch
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch ipmi.py < /tmp/2.3_ipmi_error.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch network.py < /tmp/2.8_nic_filter.patch
+RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/2.8_secure_headers.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch ipmi.py < /tmp/2.8_ipmi_error.patch
 
 # echo journalctl logs to the container's stdout
 COPY scripts/journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
