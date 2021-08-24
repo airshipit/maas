@@ -35,6 +35,20 @@ HELM              := $(BUILD_DIR)/helm
 SSTREAM_IMAGE     := "https://images.maas.io/ephemeral-v3/stable/"
 SSTREAM_RELEASE   := "bionic"
 UBUNTU_BASE_IMAGE ?= ubuntu:18.04
+USE_CACHED_IMG    ?= false
+DOCKER_EXTRA_ARGS ?=
+
+ifeq ($(USE_CACHED_IMG), true)
+	DOCKER_EXTRA_ARGS += --build-arg BUILDKIT_INLINE_CACHE=1
+else
+	DOCKER_EXTRA_ARGS += --pull --no-cache --build-arg BUILDKIT_INLINE_CACHE=0
+endif
+
+ifeq ($(USE_PROXY), true)
+	DOCKER_EXTRA_ARGS += --build-arg "http_proxy=$(PROXY)" --build-arg "https_proxy=$(PROXY)"
+	DOCKER_EXTRA_ARGS += --build-arg "HTTP_PROXY=$(PROXY)" --build-arg "HTTPS_PROXY=$(PROXY)"
+	DOCKER_EXTRA_ARGS += --build-arg "no_proxy=$(NO_PROXY)" --build-arg "NO_PROXY=$(NO_PROXY)"
+endif
 
 .PHONY: images
 #Build all images in the list
@@ -69,33 +83,16 @@ helm-install:
 
 .PHONY: build
 build:
-ifeq ($(USE_PROXY), true)
 	docker build -t $(IMAGE) --label $(LABEL) --network=host \
 		--label "org.opencontainers.image.revision=$(COMMIT)" \
 		--label "org.opencontainers.image.created=$(shell date --rfc-3339=seconds --utc)" \
 		--label "org.opencontainers.image.title=$(IMAGE_NAME)" \
 		-f $(IMAGE_DIR)/Dockerfile \
-		--build-arg FROM=$(UBUNTU_BASE_IMAGE) \
-		--build-arg http_proxy=$(PROXY) \
-		--build-arg https_proxy=$(PROXY) \
-		--build-arg HTTP_PROXY=$(PROXY) \
-		--build-arg HTTPS_PROXY=$(PROXY) \
-		--build-arg no_proxy=$(NO_PROXY) \
-		--build-arg NO_PROXY=$(NO_PROXY) \
-		--build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) \
-		--build-arg SSTREAM_RELEASE=$(SSTREAM_RELEASE) \
-		$(IMAGE_DIR)
-else
-	docker build -t $(IMAGE) --label $(LABEL) --network=host \
-		--label "org.opencontainers.image.revision=$(COMMIT)" \
-		--label "org.opencontainers.image.created=$(shell date --rfc-3339=seconds --utc)" \
-		--label "org.opencontainers.image.title=$(IMAGE_NAME)" \
-		-f $(IMAGE_DIR)/Dockerfile \
+		$(DOCKER_EXTRA_ARGS) \
 		--build-arg FROM=$(UBUNTU_BASE_IMAGE) \
 		--build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) \
 		--build-arg SSTREAM_RELEASE=$(SSTREAM_RELEASE) \
 		$(IMAGE_DIR)
-endif
 ifeq ($(PUSH_IMAGE), true)
 	docker push $(IMAGE)
 endif
