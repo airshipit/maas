@@ -18,7 +18,7 @@ ARG no_proxy
 ENV DEBIAN_FRONTEND noninteractive
 ENV container docker
 
-ENV MAAS_VERSION 2.8.6-8602-g.07cdffcaa-0ubuntu1~18.04.1
+ENV MAAS_VERSION 2.8.7-8610-g.4a04daa43-0ubuntu1~18.04.1
 
 RUN apt-get -qq update \
  && apt-get install -y \
