@@ -30,6 +30,7 @@ RUN apt-get -qq update \
         software-properties-common \
         sudo \
         systemd \
+        ca-certificates \
 # Don't start any optional services except for the few we need.
 # (specifically, don't start avahi-daemon, isc-dhcp-server, or libvirtd)
  && find /etc/systemd/system \
