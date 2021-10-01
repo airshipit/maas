@@ -23,6 +23,8 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: maas-bootstrap-admin-user
+  labels:
+{{ tuple $envAll "maas" "bootstrap-admin-user" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
   annotations:
     {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
 spec:
