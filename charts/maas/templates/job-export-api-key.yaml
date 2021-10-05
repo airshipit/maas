@@ -69,6 +69,8 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: maas-export-api-key
+  labels:
+{{ tuple $envAll "maas" "export-api-key" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
 spec:
   template:
     metadata:
