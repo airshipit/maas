@@ -16,39 +16,53 @@
 
 {{- if and .Values.manifests.ingress_region .Values.network.region_api.ingress.public }}
 ---
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: maas-region-api
-  annotations:
-    kubernetes.io/ingress.class: {{ .Values.network.region_api.ingress.classes.cluster | quote }}
 spec:
+  ingressClassName: {{ .Values.network.region_api.ingress.classes.cluster | quote }}
   rules:
     - host: {{ tuple "maas_region" "public" . | include "helm-toolkit.endpoints.hostname_fqdn_endpoint_lookup" }}
       http:
         paths:
 {{- if .Values.conf.maas.ingress_disable_gui }}
           - path: /MAAS/api
+            pathType: ImplementationSpecific
             backend:
-              serviceName: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
-              servicePort: region-api
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api
           - path: /MAAS/images-stream
+            pathType: ImplementationSpecific
             backend:
-              serviceName: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
-              servicePort: region-api
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api
           - path: /MAAS/metadata
+            pathType: ImplementationSpecific
             backend:
-              serviceName: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
-              servicePort: region-api
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api
           - path: /MAAS/rpc
+            pathType: ImplementationSpecific
             backend:
-              serviceName: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
-              servicePort: region-api
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api
 {{- else }}
           - path: /
+            pathType: ImplementationSpecific
             backend:
-              serviceName: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
-              servicePort: region-api
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api
 {{- end }}
 ...
 {{ end }}
