@@ -169,6 +169,10 @@ spec:
               subPath: curtin
               readOnly: true
 {{- end }}
+            - name: maas-etc
+              mountPath: /etc/default/bind9
+              subPath: bind9
+              readOnly: true
 {{- if $mounts_maas_region.volumeMounts }}{{ toYaml $mounts_maas_region.volumeMounts | indent 12 }}{{ end }}
       volumes:
         - name: host-sys-fs-cgroup

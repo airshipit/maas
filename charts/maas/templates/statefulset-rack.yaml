@@ -138,6 +138,14 @@ spec:
               subPath: PRIVATE_KEY
               mountPath: /var/lib/maas/id_rsa
 {{- end }}
+            - name: maas-etc
+              mountPath: /var/lib/maas/http/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+            - name: maas-etc
+              mountPath: /etc/default/bind9
+              subPath: bind9
+              readOnly: true
 {{ if $mounts_maas_rack.volumeMounts }}{{ toYaml $mounts_maas_rack.volumeMounts | indent 12 }}{{ end }}
       volumes:
         - name: host-sys-fs-cgroup

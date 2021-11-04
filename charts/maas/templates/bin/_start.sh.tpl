@@ -21,11 +21,11 @@ env > /tmp/env
 
 # Ensure PVC volumes have correct ownership
 # Also restore the subdirectory structure and any default files
-# (i.e. /var/lib/maas/http/nginx.conf)
+# that are not overridden
 
 chown maas:maas ~maas/
 chown maas:maas /etc/maas
-[[ -r /opt/maas/var-lib-maas.tgz ]] && tar -C/ -xvzf /opt/maas/var-lib-maas.tgz
+[[ -r /opt/maas/var-lib-maas.tgz ]] && tar -C/ -xvzf /opt/maas/var-lib-maas.tgz || true
 [[ -d ~maas/boot-resources ]] && chown -R maas:maas ~maas/boot-resources
 
 # MAAS must be able to ssh to libvirt hypervisors

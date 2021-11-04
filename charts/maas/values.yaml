@@ -181,6 +181,14 @@ conf:
   bind:
     override:
     append:
+    # 'cpus: n' number of CPUs for bind to use
+    # 'cpus: ""' to revert to the default (all of them)
+    cpus: 1
+  nginx:
+    # 'worker_processes: auto' (the maas default) launches one worker per core
+    worker_processes: 1
+    # 'worker_connections: 768' is the MAAS default, 512 is the nginx default
+    worker_connections: 768
   curtin:
     override: true
     late_commands: {}

@@ -74,5 +74,8 @@ RUN systemctl enable journalctl-to-tty.service
 # quiet sudo for the maas user
 RUN umask 0337; echo 'Defaults:maas !pam_session, !syslog' > /etc/sudoers.d/99-maas-no-log
 
+# avoid triggering bind9 high cpu utilization bug
+RUN sed -i -e '$a\include "/etc/bind/bind.keys";' /etc/bind/named.conf
+
 # initalize systemd
 CMD ["/bin/bash", "-c", "exec /sbin/init --log-target=console 3>&1"]
