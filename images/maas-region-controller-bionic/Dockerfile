@@ -1,5 +1,4 @@
-ARG FROM=ubuntu:20.04
-FROM ${FROM}
+FROM ubuntu:18.04
 
 LABEL org.opencontainers.image.authors='airship-discuss@lists.airshipit.org, irc://#airshipit@freenode'
 LABEL org.opencontainers.image.url='https://airshipit.org'
@@ -18,7 +17,7 @@ ARG no_proxy
 ENV DEBIAN_FRONTEND noninteractive
 ENV container docker
 
-ENV MAAS_VERSION 1:3.0.0-10029-g.986ea3e45-0ubuntu1~20.04.1
+ENV MAAS_VERSION 2.8.7-8611-g.f2514168f-0ubuntu1~18.04.1
 
 RUN apt-get -qq update \
         && apt-get install -y \
@@ -29,12 +28,6 @@ RUN apt-get -qq update \
         sudo \
         systemd \
         ca-certificates \
-        # NOTE: required for maas-syslog
-        # Error: failed to create containerd task:
-        # failed to create shim: OCI runtime create failed: container_linux.go:380:
-        # starting container process caused: exec: "cron":
-        # executable file not found in $PATH: unknown
-        cron \
         # Don't start any optional services except for the few we need.
         # (specifically, don't start avahi-daemon)
         && find /etc/systemd/system \
@@ -46,36 +39,40 @@ RUN apt-get -qq update \
         -exec rm \{} \; \
         && systemctl set-default multi-user.target \
         # Install maas from the ppa
-        && add-apt-repository -yu ppa:maas/3.0 \
+        && add-apt-repository -yu ppa:maas/2.8 \
         && apt-get install -y \
         maas-region-api=$MAAS_VERSION \
         # tcpdump is required by /usr/lib/maas/beacon-monitor
         tcpdump \
         && rm -rf /var/lib/apt/lists/*
 
-# Update latest packages, including security updates
-RUN apt-get -qq update \
-        && apt-get upgrade -y
-
 # Preserve the directory structure, permissions, and contents of /var/lib/maas
 RUN mkdir -p /opt/maas/ && tar -cvzf /opt/maas/var-lib-maas.tgz /var/lib/maas
 
 # MAAS workarounds
-COPY route.patch /tmp/route.patch
-COPY kernel_package.patch /tmp/kernel_package.patch
-COPY bios_grub_partition.patch /tmp/bios_grub_partition.patch
+COPY 2.8_route.patch /tmp/2.8_route.patch
+COPY 2.8_kernel_package.patch /tmp/2.8_kernel_package.patch
+COPY 2.8_bios_grub_partition.patch /tmp/2.8_bios_grub_partition.patch
 # sh8121att: allow all requests via the proxy to allow it to work
 # behind ingress
-COPY proxy_acl.patch /tmp/proxy_acl.patch
-COPY region_secret_rotate.patch /tmp/region_secret_rotate.patch
-COPY partitiontable_does_not_exists.patch /tmp/partitiontable_does_not_exists.patch
+COPY 2.8_proxy_acl.patch /tmp/2.8_proxy_acl.patch
+# Patch to add retrying to MaaS BMC user setup, and improve exception handling
+COPY 2.8_configure_ipmi_user.patch /tmp/2.8_configure_ipmi_user.patch
+COPY 2.8_secure_headers.patch /tmp/2.8_secure_headers.patch
+COPY 2.8_region_secret_rotate.patch /tmp/2.8_region_secret_rotate.patch
+COPY 2.8_partitiontable_does_not_exist.patch /tmp/2.8_partitiontable_does_not_exist.patch
+# Avoid enlistment failures due to exceptions during moonshot detect attempts
+COPY 2.8_maas_ipmi_autodetect_tool.patch /tmp/2.8_maas_ipmi_autodetect_tool.patch
 
-RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/route.patch
-# RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/kernel_package.patch
-# RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch partition.py < /tmp/bios_grub_partition.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver && patch security.py < /tmp/region_secret_rotate.patch
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patch maas-proxy.conf.template < /tmp/proxy_acl.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver/api && patch partitions.py < /tmp/partitiontable_does_not_exists.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.8_route.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/2.8_kernel_package.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch partition.py < /tmp/2.8_bios_grub_partition.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver && patch security.py < /tmp/2.8_region_secret_rotate.patch
+RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets && patch maas_ipmi_autodetect.py < /tmp/2.8_configure_ipmi_user.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patch maas-proxy.conf.template < /tmp/2.8_proxy_acl.patch
+RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/2.8_secure_headers.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver/api && patch partitions.py < /tmp/2.8_partitiontable_does_not_exist.patch
+RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets/ && patch maas_ipmi_autodetect_tool.py < /tmp/2.8_maas_ipmi_autodetect_tool.patch
 
 # echo journalctl logs to the container's stdout
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service

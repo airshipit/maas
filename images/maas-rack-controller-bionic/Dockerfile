@@ -1,5 +1,4 @@
-ARG FROM=ubuntu:20.04
-FROM ${FROM}
+FROM ubuntu:18.04
 
 LABEL org.opencontainers.image.authors='airship-discuss@lists.airshipit.org, irc://#airshipit@freenode'
 LABEL org.opencontainers.image.url='https://airshipit.org'
@@ -18,15 +17,14 @@ ARG no_proxy
 ENV DEBIAN_FRONTEND noninteractive
 ENV container docker
 
-ENV MAAS_VERSION 1:3.0.0-10029-g.986ea3e45-0ubuntu1~20.04.1
+ENV MAAS_VERSION 2.8.7-8611-g.f2514168f-0ubuntu1~18.04.1
 
 RUN apt-get -qq update \
         && apt-get install -y \
         avahi-daemon \
         isc-dhcp-server \
         jq \
-        libvirt-daemon-system \
-        libvirt-clients \
+        libvirt-bin \
         patch \
         software-properties-common \
         sudo \
@@ -43,35 +41,33 @@ RUN apt-get -qq update \
         -exec rm \{} \; \
         && systemctl set-default multi-user.target \
         # Install maas from the ppa
-        && add-apt-repository -yu ppa:maas/3.0 \
+        && add-apt-repository -yu ppa:maas/2.8 \
         && apt-get install -y \
         maas-rack-controller=$MAAS_VERSION \
         && rm -rf /var/lib/apt/lists/*
-
-# Update latest packages, including security updates
-RUN apt-get -qq update \
-        && apt-get upgrade -y
 
 # Preserve the directory structure, permissions, and contents of /var/lib/maas
 RUN mkdir -p /opt/maas/ && tar -cvzf /opt/maas/var-lib-maas.tgz /var/lib/maas
 
 # register ourselves with the region controller
-COPY register-rack-controller.service /lib/systemd/system/register-rack-controller.service
+COPY scripts/register-rack-controller.service /lib/systemd/system/register-rack-controller.service
 RUN systemctl enable register-rack-controller.service
 
 # Patch so that Calico interfaces are ignored
-COPY nic_filter.patch /tmp/nic_filter.patch
+COPY 2.8_nic_filter.patch /tmp/2.8_nic_filter.patch
+COPY 2.8_secure_headers.patch /tmp/2.8_secure_headers.patch
 # Patch so maas knows that "BMC error" is retriable
-COPY ipmi_error.patch /tmp/ipmi_error.patch
+COPY 2.8_ipmi_error.patch /tmp/2.8_ipmi_error.patch
 # Patch to space redfish request retries apart a bit, to avoid overwhelming the BMC
-COPY redfish_retries.patch /tmp/redfish_retries.patch
+COPY 2.8_redfish_retries.patch /tmp/2.8_redfish_retries.patch
 
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch network.py < /tmp/nic_filter.patch
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch ipmi.py < /tmp/ipmi_error.patch
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch redfish.py < /tmp/redfish_retries.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch network.py < /tmp/2.8_nic_filter.patch
+RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/2.8_secure_headers.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch ipmi.py < /tmp/2.8_ipmi_error.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch redfish.py < /tmp/2.8_redfish_retries.patch
 
 # echo journalctl logs to the container's stdout
-COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
+COPY scripts/journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
 RUN systemctl enable journalctl-to-tty.service
 
 # quiet sudo for the maas user

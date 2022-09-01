@@ -22,6 +22,6 @@ index e99b807ce..8f56dc77a 100644
      ip_extractor = make_ip_extractor("power_address")
 -    wait_time = (4, 8, 16, 32)
 +    wait_time = (4, 4, 8, 8, 16, 16, 32, 32)
- 
+
      def detect_missing_packages(self):
          if not shell.has_command_available("ipmipower"):

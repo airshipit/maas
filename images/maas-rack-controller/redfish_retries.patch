@@ -1,12 +1,12 @@
 diff --git a/src/provisioningserver/drivers/power/redfish.py b/src/provisioningserver/drivers/power/redfish.py
-index 27f63545a..9c39d577e 100644
+index 19d9ecd88..0075997dd 100644
 --- a/src/provisioningserver/drivers/power/redfish.py
 +++ b/src/provisioningserver/drivers/power/redfish.py
-@@ -149,6 +149,7 @@ class RedfishPowerDriver(RedfishPowerDriverBase):
+@@ -170,6 +170,7 @@ class RedfishPowerDriver(RedfishPowerDriverBase):
          make_setting_field("node_id", "Node ID", scope=SETTING_SCOPE.NODE),
      ]
      ip_extractor = make_ip_extractor("power_address")
 +    wait_time = (4, 8, 16, 32)
- 
+
      def detect_missing_packages(self):
          # no required packages

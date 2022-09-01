@@ -3,8 +3,8 @@ index f8ca88467..530bc7d15 100755
 --- a/src/metadataserver/user_data/templates/snippets/maas_ipmi_autodetect_tool.py
 +++ b/src/metadataserver/user_data/templates/snippets/maas_ipmi_autodetect_tool.py
 @@ -33,7 +33,11 @@ def detect_ipmi():
- 
- 
+
+
  def is_host_moonshot():
 -    output = subprocess.check_output(["ipmitool", "raw", "06", "01"])
 +    (status, output) = subprocess.getstatusoutput(
