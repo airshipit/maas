@@ -178,11 +178,10 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: rackd-state
-        annotations:
-          {{ .Values.storage.rackd.pvc.class_path }}: {{ .Values.storage.rackd.pvc.class_name }}
       spec:
         accessModes: [ "ReadWriteOnce" ]
         resources:
           requests:
             storage: {{ .Values.storage.rackd.pvc.size }}
+        storageClassName: {{ .Values.storage.rackd.pvc.class_name }}
 {{- end }}

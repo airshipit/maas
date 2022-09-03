@@ -104,7 +104,7 @@ clean:
 .PHONY: helm_lint
 helm_lint: clean helm-install
 	tools/helm_tk.sh $(HELM)
-	mkdir -p build/charts/maas
-	cp -R charts/maas build/charts/
+	mkdir -p build/charts/
+	cp -R charts/* build/charts/
 	$(HELM) dep up build/charts/maas
 	$(HELM) lint build/charts/maas

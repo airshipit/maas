@@ -200,13 +200,12 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: syslog-archive
-        annotations:
-          {{ .Values.storage.syslog.pvc.class_path }}: {{ .Values.storage.syslog.pvc.class_name }}
       spec:
         accessModes: [ "ReadWriteOnce" ]
         resources:
           requests:
             storage: {{ .Values.storage.syslog.pvc.size }}
+        storageClassName: {{ .Values.storage.syslog.pvc.class_name }}
 {{- end }}
 ...
 {{- end }}

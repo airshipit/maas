@@ -161,12 +161,10 @@ network:
 storage:
   syslog:
     pvc:
-      class_path: volume.beta.kubernetes.io/storage-class
       class_name: general
       size: 1Gi
   rackd:
     pvc:
-      class_path: volume.beta.kubernetes.io/storage-class
       class_name: general
       size: 5Gi
 
