@@ -4,8 +4,8 @@ index 13188ecb8..7b3dad4d4 100755
 +++ b/src/metadataserver/user_data/templates/snippets/maas_ipmi_autodetect.py
 @@ -235,8 +235,30 @@ def make_ipmi_user_settings(username, password):
      return user_settings
-
-
+ 
+ 
 +def configure_ipmi_user_with_backoff(username):
 +    """Create/configure an IPMI user, but with several tries"""
 +    attempt = 1
@@ -45,15 +45,15 @@ index 13188ecb8..7b3dad4d4 100755
 +    raise IPMIError(
 +        "Unable to set BMC password:\n{}".format(exceptions_caught)
 +    )
-
-
+ 
+ 
  def set_ipmi_lan_channel_settings():
 @@ -389,7 +413,7 @@ def main():
      IPMI_MAAS_USER = args.maas_ipmi_user
      IPMI_MAAS_PASSWORD = None
-
+ 
 -    IPMI_MAAS_PASSWORD = configure_ipmi_user(IPMI_MAAS_USER)
 +    IPMI_MAAS_PASSWORD = configure_ipmi_user_with_backoff(IPMI_MAAS_USER)
-
+ 
      # Attempt to enable IPMI Over Lan. If it is disabled, MAAS won't
      # be able to remotely communicate to the BMC.

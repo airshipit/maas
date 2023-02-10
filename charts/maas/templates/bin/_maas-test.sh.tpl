@@ -17,16 +17,6 @@
 
 set -ex
 
-function check_admin_api {
-    if maas local version read;
-    then
-        echo 'Admin API is responding'
-        return 0
-    else
-        return 1
-    fi
-}
-
 function check_boot_images {
     if maas local boot-resources is-importing | grep -q 'true';
     then
@@ -81,14 +71,6 @@ check_rack_controllers
 if [[ $? -eq 1 ]]
 then
     echo "Rack controller query FAILED!"
-    exit 1
-fi
-
-check_admin_api
-
-if [[ $? -eq 1 ]]
-then
-    echo "Admin API response FAILED!"
     exit 1
 fi
 

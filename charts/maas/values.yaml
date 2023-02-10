@@ -96,7 +96,7 @@ manifests:
 
 images:
   tags:
-    db_init: docker.io/postgres:14.5
+    db_init: docker.io/postgres:9.5
     db_sync: quay.io/airshipit/maas-region-controller:latest
     maas_rack: quay.io/airshipit/maas-rack-controller:latest
     maas_region: quay.io/airshipit/maas-region-controller:latest
@@ -104,9 +104,9 @@ images:
     export_api_key: quay.io/airshipit/maas-region-controller:latest
     maas_cache: quay.io/airshipit/sstream-cache:latest
     dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
-    ingress: k8s.gcr.io/ingress-nginx/controller:v1.2.0
+    ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.26.1
     ingress_vip: docker.io/busybox:latest
-    error_pages: k8s.gcr.io/defaultbackend-amd64:1.5
+    error_pages: gcr.io/google_containers/ingress-gce-404-server-with-metrics-amd64:v1.6.0
     maas_syslog: quay.io/airshipit/maas-region-controller:latest
   pull_policy: IfNotPresent
   local_registry:
@@ -258,8 +258,8 @@ conf:
       proxy_server: null
     images:
       default_os: 'ubuntu'
-      default_image: 'focal'
-      default_kernel: 'ga-20.04'
+      default_image: 'bionic'
+      default_kernel: 'ga-18.04'
     credentials:
       secret:
         namespace: maas

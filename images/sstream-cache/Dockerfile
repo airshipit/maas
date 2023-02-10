@@ -1,4 +1,4 @@
-ARG FROM=ubuntu:20.04
+ARG FROM=ubuntu:18.04
 FROM ${FROM}
 
 LABEL org.opencontainers.image.authors='airship-discuss@lists.airshipit.org, irc://#airshipit@freenode'
@@ -16,28 +16,21 @@ ARG https_proxy
 ARG no_proxy
 
 ARG SSTREAM_IMAGE=https://images.maas.io/ephemeral-v3/stable/
-ARG SSTREAM_RELEASE=focal
-
-ENV DEBIAN_FRONTEND noninteractive
-ENV container docker
+ARG SSTREAM_RELEASE=bionic
 
 RUN apt-get -qq update && \
     apt install -y simplestreams \
-    apache2 \
-    gpgv \
-    ubuntu-cloudimage-keyring \
-    python-certifi --no-install-recommends \
-    file
-
-# Update latest packages, including security updates
-RUN apt-get -qq update \
-    && apt-get upgrade -y
+                   apache2 \
+                   gpgv \
+                   ubuntu-cloudimage-keyring \
+                   python-certifi --no-install-recommends \
+                   file
 
 RUN sstream-mirror --keyring=/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg ${SSTREAM_IMAGE} \
     /var/www/html/maas/images/ephemeral-v3/daily 'arch=amd64' "release~${SSTREAM_RELEASE}" --max=1 --progress
 
 RUN sstream-mirror --keyring=/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg ${SSTREAM_IMAGE} \
-    /var/www/html/maas/images/ephemeral-v3/daily 'os~(grub*|pxelinux)' --max=1 --progress
+   /var/www/html/maas/images/ephemeral-v3/daily 'os~(grub*|pxelinux)' --max=1 --progress
 
 RUN sh -c 'echo "" > /etc/apache2/ports.conf'
 

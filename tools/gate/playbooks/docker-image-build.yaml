@@ -28,7 +28,7 @@
             msg: "{{ tags | to_json }}"
 
     - name: Determine tags
-      shell: echo '{{ tags | to_json }}' | python {{ zuul.project.src_dir }}/tools/image_tags.py
+      shell: echo '{{ tags | to_json }}' | python3 {{ zuul.project.src_dir }}/tools/image_tags.py
       environment:
         BRANCH: "{{ zuul.branch | default('') }}"
         CHANGE: "{{ zuul.change | default('') }}"
@@ -40,51 +40,9 @@
       debug:
         var: image_tags
 
-    - name: Install Docker (Debian)
-      when: ansible_os_family == 'Debian'
-      block:
-        - file:
-            path: "{{ item }}"
-            state: directory
-          with_items:
-            - /etc/docker/
-            - /etc/systemd/system/docker.service.d/
-            - /var/lib/docker/
-        - mount:
-            path: /var/lib/docker/
-            src: tmpfs
-            fstype: tmpfs
-            opts: size=25g
-            state: mounted
-        - copy: "{{ item }}"
-          with_items:
-            - content: "{{ docker_daemon | to_json }}"
-              dest: /etc/docker/daemon.json
-            - src: files/docker-systemd.conf
-              dest: /etc/systemd/system/docker.service.d/
-        - apt_key:
-            url: https://download.docker.com/linux/ubuntu/gpg
-        - apt_repository:
-            repo: deb http://{{ zuul_site_mirror_fqdn }}/deb-docker/{{ ansible_distribution_release }} {{ ansible_distribution_release }} stable
-        - apt:
-            name: "{{ item }}"
-            allow_unauthenticated: True
-          with_items:
-            - docker-ce
-            - python3-pip
-            - python3-setuptools
-        - pip:
-            name: docker
-            version: 2.7.0
-            executable: pip3
-        # NOTE(SamYaple): Allow all connections from containers to host so the
-        # containers can access the http server for git and wheels
-        - iptables:
-            action: insert
-            chain: INPUT
-            in_interface: docker0
-            jump: ACCEPT
-      become: True
+    - name: docker install
+      include_role:
+        name: ensure-docker
 
     - name: Make images
       when: not publish

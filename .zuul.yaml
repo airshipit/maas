@@ -18,9 +18,6 @@
         - airship-maas-chart-build-latest-htk
         - airship-maas-docker-build-gate
         - airship-maas-lint-yaml
-        # NOTE(sanselme): This job is disabled until fixed
-        # waiting for coredns to be ready timeout
-        # - airship-maas-helm-deploy
     gate:
       jobs:
         - airship-maas-lint-ws
@@ -84,14 +81,6 @@
     nodeset: ubuntu-bionic
     irrelevant-files:
       - '^charts/maas/templates/.*'
-
-- job:
-    name: airship-maas-helm-deploy
-    timeout: 7200
-    run: tools/gate/playbooks/helm-deploy.yaml
-    nodeset: airship-maas-single-node
-    files:
-      - '^charts/.*'
 
 - job:
     name: airship-maas-docker-publish
