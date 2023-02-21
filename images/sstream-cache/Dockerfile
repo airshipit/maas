@@ -18,6 +18,8 @@ ARG no_proxy
 ARG SSTREAM_IMAGE=https://images.maas.io/ephemeral-v3/stable/
 ARG SSTREAM_RELEASE=bionic
 
+ENV DEBIAN_FRONTEND noninteractive
+
 RUN apt-get -qq update && \
     apt install -y simplestreams \
                    apache2 \
