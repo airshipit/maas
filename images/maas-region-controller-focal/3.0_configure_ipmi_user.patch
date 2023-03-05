@@ -1,0 +1,52 @@
+diff --git a/src/metadataserver/builtin_scripts/commissioning_scripts/bmc_config.py b/src/metadataserver/builtin_scripts/commissioning_scripts/bmc_config.py
+index 42e4c79e4..11df96313 100755
+--- a/src/metadataserver/builtin_scripts/commissioning_scripts/bmc_config.py
++++ b/src/metadataserver/builtin_scripts/commissioning_scripts/bmc_config.py
+@@ -396,6 +396,29 @@ class IPMI(BMCConfig):
+         return first_unused
+ 
+     def add_bmc_user(self):
++        """Create/configure an IPMI user, but with several tries"""
++        attempt = 1
++        max_attempts = 5
++        backoff_amount = 30
++        exceptions_caught = []
++        while attempt <= max_attempts:
++            print("INFO: Attempt to add IPMI BMC user - %s" % attempt)
++            try:
++                self._add_bmc_user()
++            except Exception as e:
++                exceptions_caught.append(e)
++                if (attempt + 1) > max_attempts:
++                    # This is our last attempt, exiting
++                    print("ERROR: Unable to add BMC user!\n{}".format(exceptions_caught), file=sys.stderr)
++                    sys.exit(1)
++
++            if self.password is None:
++                time.sleep(attempt * backoff_amount)
++            else:
++                return
++            attempt += 1
++
++    def _add_bmc_user(self):
+         if not self.username:
+             self.username = "maas"
+         user_number = self._pick_user_number(self.username)
+@@ -417,7 +440,7 @@ class IPMI(BMCConfig):
+                     if self._bmc_config[user_number].get(key) != value:
+                         self._bmc_set(user_number, key, value)
+             except Exception:
+-                pass
++                raise
+             else:
+                 self.password = password
+                 # Not all user settings are available on all BMC keys, its
+@@ -432,8 +455,6 @@ class IPMI(BMCConfig):
+                     "Yes",
+                 )
+                 return
+-        print("ERROR: Unable to add BMC user!", file=sys.stderr)
+-        sys.exit(1)
+ 
+     def _config_ipmi_lan_channel_settings(self):
+         """Enable IPMI-over-Lan (Lan_Channel) if it is disabled"""

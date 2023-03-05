@@ -45,6 +45,16 @@ function check_rack_controllers {
     fi
 }
 
+function check_admin_api {
+    if maas local version read;
+    then
+        echo 'Admin API is responding'
+        return 0
+    else
+        return 1
+    fi
+}
+
 function establish_session {
     maas login local ${MAAS_URL} ${MAAS_API_KEY}
     return $?
@@ -71,6 +81,14 @@ check_rack_controllers
 if [[ $? -eq 1 ]]
 then
     echo "Rack controller query FAILED!"
+    exit 1
+fi
+
+check_admin_api
+
+if [[ $? -eq 1 ]]
+then
+    echo "Admin API response FAILED!"
     exit 1
 fi
 

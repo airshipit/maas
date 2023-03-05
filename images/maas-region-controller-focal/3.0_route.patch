@@ -1,0 +1,13 @@
+diff --git a/src/maasserver/preseed_network.py b/src/maasserver/preseed_network.py
+index 3851424fc..8bfa90e7d 100644
+--- a/src/maasserver/preseed_network.py
++++ b/src/maasserver/preseed_network.py
+@@ -309,7 +309,7 @@ class InterfaceConfiguration:
+ 
+     def _get_matching_routes(self, source):
+         """Return all route objects matching `source`."""
+-        return {route for route in self.routes if route.source == source}
++        return {route for route in self.routes if str(route.source.cidr) == str(source.cidr)}
+ 
+     def _generate_addresses(self, version=1):
+         """Generate the various addresses needed for this interface."""

@@ -1,0 +1,13 @@
+diff --git a/src/provisioningserver/utils/network.py b/src/provisioningserver/utils/network.py
+index d8c781e38..3d2e6264c 100644
+--- a/src/provisioningserver/utils/network.py
++++ b/src/provisioningserver/utils/network.py
+@@ -1129,6 +1129,8 @@ def get_all_interfaces_definition(
+         # interfaces for guests. By themselves, they're not useful for MAAS to
+         # manage.
+         "tunnel",
++        # Always exclude non-specific ethernet interfaces.
++        "ethernet",
+     ]
+     if not running_in_container():
+         # When not running in a container, we should be able to identify
