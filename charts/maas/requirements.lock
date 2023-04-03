@@ -1,0 +1,6 @@
+dependencies:
+- name: helm-toolkit
+  repository: file://../deps/helm-toolkit
+  version: 2024.2.0
+digest: sha256:68a561f57ba60b9f040679cd768b0abb8d5b48175f0da0977d168d31667e8635
+generated: "2025-03-18T21:30:44.577523-04:00"

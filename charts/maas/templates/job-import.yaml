@@ -46,6 +46,15 @@ spec:
         - name: region-import-resources
           image: {{ .Values.images.tags.maas_region }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
+{{- if (and .Values.conf.maas.tls.enabled .Values.conf.maas.tls.insecure) }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - sleep 15; update-ca-certificates
+{{- end }}
           env:
             - name: USE_IMAGE_CACHE
               value: {{ .Values.conf.cache.enabled | quote }}
@@ -100,6 +109,12 @@ spec:
             - /tmp/import-boot-resources.sh
 {{ dict "envAll" $envAll "component" "import-resources" "container" "region-import-resources" "type" "readiness" "probeTemplate" (include "jobreadinessProbeTemplate" $envAll | fromYaml) | include "helm-toolkit.snippets.kubernetes_probe" | indent 10 }}
           volumeMounts:
+{{- if (and .Values.conf.maas.tls.enabled .Values.conf.maas.tls.insecure) }}
+            - name: ca-cert
+              mountPath: /usr/local/share/ca-certificates/ca.crt
+              subPath: ca.crt
+              readOnly: true
+{{- end }}
             - name: maas-bin
               mountPath: /tmp/import-boot-resources.sh
               subPath: import-boot-resources.sh
@@ -125,3 +140,11 @@ spec:
           configMap:
             name: maas-etc
             defaultMode: 0444
+{{- if (and .Values.conf.maas.tls.enabled .Values.conf.maas.tls.insecure) }}
+        - name: ca-cert
+          secret:
+            secretName: {{ .Values.secrets.maas_cert }}
+            items:
+              - key: ca.crt
+                path: ca.crt
+{{ end }}

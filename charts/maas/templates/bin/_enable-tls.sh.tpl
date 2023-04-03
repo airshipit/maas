@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright 2017 The Openstack-Helm Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
----
-dependencies:
-  - name: helm-toolkit
-    repository: file://../deps/helm-toolkit
-    version: ">= 0.1.0"
+set -e
+
+maas config-tls enable --yes --cacert /etc/maas/ssl/ca.crt /etc/maas/ssl/tls.key /etc/maas/ssl/tls.crt

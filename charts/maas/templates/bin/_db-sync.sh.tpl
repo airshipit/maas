@@ -16,7 +16,8 @@
 
 set -ex
 
-rm -f /var/run/rsyslogd.pid
-service rsyslog restart
+# error: rsyslog: Unrecognized service
+rm -f /var/run/rsyslogd.pid || true
+service rsyslog restart || true
 
 maas-region dbupgrade

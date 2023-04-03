@@ -20,8 +20,16 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: maas-region-api
+  annotations:
+{{ toYaml .Values.network.region_api.ingress.annotations | indent 4 }}
 spec:
   ingressClassName: {{ .Values.network.region_api.ingress.classes.cluster | quote }}
+{{- if .Values.conf.maas.tls.enabled }}
+  tls:
+    - secretName: maas-region-api-tls
+      hosts:
+        - {{ tuple "maas_region" "public" . | include "helm-toolkit.endpoints.hostname_fqdn_endpoint_lookup" }}
+{{ end }}
   rules:
     - host: {{ tuple "maas_region" "public" . | include "helm-toolkit.endpoints.hostname_fqdn_endpoint_lookup" }}
       http:
@@ -55,6 +63,43 @@ spec:
                 name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
                 port:
                   name: region-api
+{{- else if (and .Values.conf.maas.ingress_disable_gui .Values.conf.maas.tls.enabled) }}
+          - path: /MAAS/api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api-tls
+          - path: /MAAS/images-stream
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api-tls
+          - path: /MAAS/metadata
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api-tls
+          - path: /MAAS/rpc
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api-tls
+{{- else if .Values.conf.maas.tls.enabled }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api-tls
 {{- else }}
           - path: /
             pathType: Prefix

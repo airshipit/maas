@@ -23,6 +23,9 @@ metadata:
 data:
   db-init.sh: |+
 {{-  include "helm-toolkit.scripts.pg_db_init" . | indent 4 }}
+
+    #set maasdb owner to maas
+    pgsql_superuser_cmd "ALTER DATABASE $USER_DB_NAME OWNER to $USER_DB_USER;"
   db-sync.sh: |+
 {{ tuple "bin/_db-sync.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   bootstrap-admin-user.sh: |
@@ -35,6 +38,8 @@ data:
 {{ tuple "bin/_start.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   export-api-key.sh: |
 {{ tuple "bin/_export-api-key.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  export-secret-key.sh: |
+{{ tuple "bin/_export-secret-key.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   register-rack-controller.sh: |
 {{ tuple "bin/_register-rack-controller.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   maas-test.sh: |
@@ -49,3 +54,7 @@ data:
 {{ tuple "bin/_maas-vip-configure.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   start-syslog.sh: |
 {{ tuple "bin/_start-syslog.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+{{- if .Values.conf.maas.tls.enabled }}
+  enable-tls.sh: |
+{{ tuple "bin/_enable-tls.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+{{- end }}

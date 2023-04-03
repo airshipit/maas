@@ -71,6 +71,15 @@ spec:
           image: {{ .Values.images.tags.maas_rack }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
           tty: true
+{{- if (and .Values.conf.maas.tls.enabled .Values.conf.maas.tls.insecure) }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - sleep 15; update-ca-certificates
+{{- end }}
 {{ dict "envAll" $envAll "application" "rack" "container" "maas_rack" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           env:
             - name: MAAS_ENDPOINT
@@ -97,7 +106,6 @@ spec:
 {{- if not .Values.conf.maas.cgroups.disable_cgroups_rack }}
             - mountPath: /sys/fs/cgroup
               name: host-sys-fs-cgroup
-              readOnly: true
 {{- end }}
             - mountPath: /run
               name: pod-run
@@ -112,6 +120,12 @@ spec:
             - name: maas-bin
               mountPath: /usr/sbin/ntpd
               subPath: ntpd.sh
+              readOnly: true
+{{- end }}
+{{- if (and .Values.conf.maas.tls.enabled .Values.conf.maas.tls.insecure) }}
+            - name: ca-cert
+              mountPath: /usr/local/share/ca-certificates/ca.crt
+              subPath: ca.crt
               readOnly: true
 {{- end }}
             - name: maas-bin
@@ -185,6 +199,14 @@ spec:
           configMap:
             name: maas-etc
             defaultMode: 0444
+{{- if (and .Values.conf.maas.tls.enabled .Values.conf.maas.tls.insecure) }}
+        - name: ca-cert
+          secret:
+            secretName: {{ .Values.secrets.maas_cert }}
+            items:
+              - key: ca.crt
+                path: ca.crt
+{{ end }}
 {{ if $mounts_maas_rack.volumes }}{{ toYaml $mounts_maas_rack.volumes | indent 8 }}{{ end }}
   volumeClaimTemplates:
     - metadata:

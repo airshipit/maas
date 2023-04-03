@@ -1,4 +1,4 @@
-ARG FROM=public.ecr.aws/docker/library/ubuntu:bionic
+ARG FROM=quay.io/airshipit/ubuntu:jammy
 FROM ${FROM}
 
 LABEL org.opencontainers.image.authors='airship-discuss@lists.airshipit.org, irc://#airshipit@freenode'
@@ -16,7 +16,7 @@ ARG https_proxy
 ARG no_proxy
 
 ARG SSTREAM_IMAGE=https://images.maas.io/ephemeral-v3/stable/
-ARG SSTREAM_RELEASE=bionic
+ARG SSTREAM_RELEASE=jammy
 
 ENV DEBIAN_FRONTEND=noninteractive
 

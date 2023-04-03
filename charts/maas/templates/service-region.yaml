@@ -28,6 +28,14 @@ spec:
       {{ if .Values.network.region_api.node_port.enabled }}
       nodePort: {{ tuple "maas_region" "nodeport" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
       {{ end }}
+{{- if .Values.conf.maas.tls.enabled }}
+    - name: region-api-tls
+      port: {{ tuple "maas_region" "secure" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podporttls" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      {{ if .Values.network.region_api.node_port.enabled }}
+      nodePort: {{ tuple "maas_region" "nodeporttls" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      {{ end }}
+{{- end }}
     - name: region-proxy
       port: {{ tuple "maas_region" "internal" "region_proxy" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
       targetPort: {{ tuple "maas_region" "podport" "region_proxy" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
@@ -41,6 +49,18 @@ spec:
     - name: region-syslog
       port: 514
       targetPort: {{ tuple "maas_region" "podport" "region_syslog" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-server
+      port: 5271
+      targetPort: 5271
+    - name: temporal-matching
+      port: 5272
+      targetPort: 5272
+    - name: temporal-history
+      port: 5273
+      targetPort: 5273
+    - name: temporal-worker
+      port: 5274
+      targetPort: 5274
   selector:
 {{ tuple $envAll "maas" "region" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
   {{ if or .Values.network.region_proxy.node_port.enabled .Values.network.region_api.node_port.enabled }}

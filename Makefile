@@ -15,13 +15,10 @@
 DOCKER_REGISTRY   ?= quay.io
 REGION_SUFFIX     ?= maas-region
 IMG_COMMON_DIR    ?= images
-REGION_IMG_DIR    ?= images/maas-region-controller
 RACK_SUFFIX       ?= maas-rack
-RACK_IMG_DIR      ?= images/maas-rack-controller
 CACHE_SUFFIX      ?= maas-cache
-CACHE_IMG_DIR     ?= images/sstream-cache
 IMAGE_PREFIX      ?= airshipit
-IMAGE_TAG         ?= untagged
+IMAGE_TAG         ?= latest
 PROXY             ?= http://proxy.foo.com:8000
 NO_PROXY          ?= localhost,127.0.0.1,.svc.cluster.local
 USE_PROXY         ?= false
@@ -29,12 +26,12 @@ PUSH_IMAGE        ?= false
 # use this variable for image labels added in internal build process
 LABEL             ?= org.airshipit.build=community
 COMMIT            ?= $(shell git rev-parse HEAD)
-IMAGE_NAME        := maas-rack-controller maas-region-controller sstream-cache
+IMAGE_NAME        := maas-rack-controller-jammy maas-region-controller-jammy sstream-cache-jammy
 BUILD_DIR         := $(shell mktemp -d)
 HELM              := $(BUILD_DIR)/helm
 SSTREAM_IMAGE     := "https://images.maas.io/ephemeral-v3/stable/"
-SSTREAM_RELEASE   := "bionic"
-UBUNTU_BASE_IMAGE ?= ubuntu:18.04
+SSTREAM_RELEASE   := "jammy"
+UBUNTU_BASE_IMAGE ?= quay.io/airshipit/ubuntu:jammy
 USE_CACHED_IMG    ?= false
 DOCKER_EXTRA_ARGS ?=
 

@@ -1,0 +1,12 @@
+diff --git a/src/twisted/web/server.py b/src/twisted/web/server.py
+index d30156b..3a04ecb 100644
+--- a/src/twisted/web/server.py
++++ b/src/twisted/web/server.py
+@@ -206,7 +206,6 @@ class Request(Copyable, http.Request, components.Componentized):
+         self.site = self.channel.site
+
+         # set various default headers
+-        self.setHeader(b"server", version)
+         self.setHeader(b"date", http.datetimeToString())
+
+         # Resource Identification

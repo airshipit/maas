@@ -7,4 +7,5 @@ build/
 
 .vscode/
 
-charts/deps
+charts/deps/
+!charts/deps/.gitkeep

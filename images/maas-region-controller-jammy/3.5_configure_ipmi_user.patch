@@ -1,0 +1,70 @@
+diff --git a/src/metadataserver/builtin_scripts/commissioning_scripts/bmc_config.py b/src/metadataserver/builtin_scripts/commissioning_scripts/bmc_config.py
+index 9d032ee..b01a12a 100755
+--- a/src/metadataserver/builtin_scripts/commissioning_scripts/bmc_config.py
++++ b/src/metadataserver/builtin_scripts/commissioning_scripts/bmc_config.py
+@@ -129,17 +129,27 @@ class BMCConfig(metaclass=ABCMeta):
+         """Returns boolean value of whether the BMC was detected."""
+
+     def add_bmc_user(self):
+-        """Add the specified BMC user and (re)set its password.
+-
+-        Should set the username and password, even if it hasn't been
+-        changed.
+-        """
+-        # MAAS is the default user and will always be passed to the script.
+-        if self.username not in (None, "maas"):
+-            print(
+-                "WARNING: Unable to set a specific username or password on %s!"
+-                % self
+-            )
++        """Create/configure an IPMI user, but with several tries"""
++        attempt = 1
++        max_attempts = 5
++        backoff_amount = 30
++        exceptions_caught = []
++        while attempt <= max_attempts:
++            print("INFO: Attempt to add IPMI BMC user - %s" % attempt)
++            try:
++                self._add_bmc_user()
++            except Exception as e:
++                exceptions_caught.append(e)
++                if (attempt + 1) > max_attempts:
++                    # This is our last attempt, exiting
++                    print("ERROR: Unable to add BMC user!\n{}".format(exceptions_caught), file=sys.stderr)
++                    sys.exit(1)
++
++            if self.password is None:
++                time.sleep(attempt * backoff_amount)
++            else:
++                return
++            attempt += 1
+
+     def configure(self):
+         """Configure the BMC for use."""
+@@ -188,7 +198,7 @@ class IPMIBase(BMCConfig):
+                 first_unused = section_name
+         return first_unused
+
+-    def add_bmc_user(self):
++    def _add_bmc_user(self):
+         if not self.username:
+             self.username = "maas"
+         user_number = self._pick_user_number(self.username)
+@@ -212,7 +222,7 @@ class IPMIBase(BMCConfig):
+                     if self._bmc_config[user_number].get(key) != value:
+                         self._bmc_set(user_number, key, value)
+             except Exception:
+-                pass
++                raise
+             else:
+                 self.password = password
+                 # Not all user settings are available on all BMC keys, its
+@@ -227,8 +237,6 @@ class IPMIBase(BMCConfig):
+                     "Yes",
+                 )
+                 return
+-        print("ERROR: Unable to add BMC user!", file=sys.stderr)
+-        sys.exit(1)
+
+     def _bmc_get_config(self, section=None):
+         """Fetch and cache all BMC settings."""

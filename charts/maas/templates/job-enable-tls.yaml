@@ -1,0 +1,79 @@
+{{/*
+Copyright 2017 The Openstack-Helm Authors.
+Copyright (c) 2018 AT&T Intellectual Property. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/}}
+
+{{- if .Values.conf.maas.tls.enabled }}
+{{- $envAll := . }}
+{{- $serviceAccountName := "maas-enable-tls" }}
+{{ tuple $envAll "enable_tls" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: maas-enable-tls
+  labels:
+{{ tuple $envAll "maas" "enable-tls" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
+  annotations:
+    {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
+spec:
+  template:
+    metadata:
+      labels:
+{{ tuple $envAll "maas" "enable-tls" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+{{ dict "envAll" $envAll "podName" "maas-enable-tls" "containerNames" (list "init" "maas-enable-tls") | include "helm-toolkit.snippets.kubernetes_mandatory_access_control_annotation" | indent 8 }}
+    spec:
+{{ dict "envAll" $envAll "application" "enable_tls" | include "helm-toolkit.snippets.kubernetes_pod_security_context" | indent 6 }}
+      serviceAccountName: {{ $serviceAccountName }}
+      restartPolicy: OnFailure
+      nodeSelector:
+        {{ .Values.labels.region.node_selector_key }}: {{ .Values.labels.region.node_selector_value }}
+      initContainers:
+{{ tuple $envAll "enable_tls" list | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      containers:
+        - name: maas-enable-tls
+          image: {{ .Values.images.tags.enable_tls }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+{{ tuple $envAll $envAll.Values.pod.resources.jobs.enable_tls | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+{{ dict "envAll" $envAll "application" "enable_tls" "container" "maas_enable_tls" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
+          command:
+            - /tmp/enable-tls.sh
+          volumeMounts:
+            - name: maas-bin
+              mountPath: /tmp/enable-tls.sh
+              subPath: enable-tls.sh
+              readOnly: true
+            - name: maas-etc
+              mountPath: /etc/maas/regiond.conf
+              subPath: regiond.conf
+              readOnly: true
+            - name: maas-tls
+              mountPath: /etc/maas/ssl
+              readOnly: true
+      volumes:
+        - name: maas-bin
+          configMap:
+            name: maas-bin
+            defaultMode: 0555
+        - name: maas-etc
+          configMap:
+            name: maas-etc
+            defaultMode: 0444
+        - name: maas-tls
+          secret:
+            secretName: {{ .Values.secrets.maas_cert }}
+            defaultMode: 0444
+{{ end }}

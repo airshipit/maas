@@ -17,6 +17,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+---
 dependencies:
   static:
     maas_ingress: {}
@@ -29,6 +30,7 @@ dependencies:
           endpoint: monitor
       jobs:
         - maas-export-api-key
+        - maas-export-secret-key
     region_controller:
       jobs:
         - maas-db-sync
@@ -74,6 +76,12 @@ dependencies:
           endpoint: internal
         - service: maas_ingress
           endpoint: monitor
+    enable_tls:
+      jobs:
+        - maas-bootstrap-admin-user
+      services:
+        - service: maas_region
+          endpoint: internal
 
 network_policy:
   maas:
@@ -96,18 +104,19 @@ manifests:
 
 images:
   tags:
-    db_init: docker.io/postgres:9.5
+    db_init: docker.io/library/postgres:14.5
     db_sync: quay.io/airshipit/maas-region-controller:latest
     maas_rack: quay.io/airshipit/maas-rack-controller:latest
     maas_region: quay.io/airshipit/maas-region-controller:latest
     bootstrap: quay.io/airshipit/maas-region-controller:latest
     export_api_key: quay.io/airshipit/maas-region-controller:latest
     maas_cache: quay.io/airshipit/sstream-cache:latest
-    dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
+    dep_check: quay.io/airshipit/kubernetes-entrypoint:latest-ubuntu_focal
     ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.26.1
     ingress_vip: docker.io/busybox:latest
     error_pages: gcr.io/google_containers/ingress-gce-404-server-with-metrics-amd64:v1.6.0
     maas_syslog: quay.io/airshipit/maas-region-controller:latest
+    enable_tls: quay.io/airshipit/maas-region-controller:latest
   pull_policy: IfNotPresent
   local_registry:
     # TODO(portdirect): this chart does not yet support local image cacheing
@@ -119,7 +128,7 @@ jobs:
   import_boot_resources:
     try_limit: 1
     retry_timer: 10
-    #default timeout: 15 minutes
+    # default timeout: 15 minutes
     timeout: 900
 
 labels:
@@ -222,12 +231,12 @@ conf:
     logfile: nodeboot.log
     logrotate:
       # How many rotated logs to keep
-      rotate: '30'
+      rotate: "30"
       # Size threshold when a log should rotate
-      size: '100M'
+      size: "100M"
     # levels (emerg,alert,crit,error,warning,notice,info,debug)
     # use 'info' as default when overwritting the default
-    log_level: 'info'
+    log_level: "info"
   maas:
     override:
     append:
@@ -262,9 +271,9 @@ conf:
       # An external proxy server to use
       proxy_server: null
     images:
-      default_os: 'ubuntu'
-      default_image: 'bionic'
-      default_kernel: 'ga-18.04'
+      default_os: "ubuntu"
+      default_image: "focal"
+      default_kernel: "ga-20.04"
     credentials:
       secret:
         namespace: maas
@@ -292,8 +301,15 @@ conf:
       # enlist_commissioning: if true, directly go into commissioning during enlistment
       enlist_commissioning: false
     # system user for console login/recovery in early phases of deployment
-    system_user: 'root'
-    system_passwd: 'password'
+    system_user: "root"
+    system_passwd: "password"
+    tls:
+      enabled: false
+      create: false
+      insecure: false # set to true to allow self-signed certs
+      ca: ""
+      cert: ""
+      key: ""
   drivers: null
   #### If you populates drivers, it will replace the 3rd party driver
   #### info that comes with MaaS. see structure below if it is needed
@@ -339,8 +355,9 @@ secrets:
     admin: maas-admin
   maas_region:
     name: maas-region-secret
-    value: 3858f62230ac3c915f300c664312c63f
   ssh_key: ssh-private-key
+  maas_cert: maas-region-api-tls
+  maas_ingress_cert: maas-region-api-ingress-tls
 
 pod:
   mandatory_access_control:
@@ -389,19 +406,19 @@ pod:
           readOnlyRootFilesystem: false
           capabilities:
             add:
-              - 'NET_ADMIN'
-              - 'SYS_MODULE'
+              - "NET_ADMIN"
+              - "SYS_MODULE"
           runAsUser: 0
         maas_ingress_vip:
           readOnlyRootFilesystem: false
           capabilities:
             add:
-              - 'NET_ADMIN'
+              - "NET_ADMIN"
         maas_ingress:
           readOnlyRootFilesystem: false
           capabilities:
             add:
-              - 'NET_BIND_SERVICE'
+              - "NET_BIND_SERVICE"
     ingress_errors:
       pod:
         runAsUser: 65534
@@ -455,12 +472,12 @@ pod:
           readOnlyRootFilesystem: false
           capabilities:
             add:
-              - 'DAC_READ_SEARCH'
-              - 'NET_ADMIN'
-              - 'SYS_ADMIN'
-              - 'SYS_PTRACE'
-              - 'SYS_RESOURCE'
-              - 'SYS_TIME'
+              - "DAC_READ_SEARCH"
+              - "NET_ADMIN"
+              - "SYS_ADMIN"
+              - "SYS_PTRACE"
+              - "SYS_RESOURCE"
+              - "SYS_TIME"
     region:
       pod:
         runAsUser: 0
@@ -471,12 +488,12 @@ pod:
           readOnlyRootFilesystem: false
           capabilities:
             add:
-              - 'SYS_ADMIN'
-              - 'NET_ADMIN'
-              - 'SYS_PTRACE'
-              - 'SYS_TIME'
-              - 'SYS_RESOURCE'
-              - 'DAC_READ_SEARCH'
+              - "SYS_ADMIN"
+              - "NET_ADMIN"
+              - "SYS_PTRACE"
+              - "SYS_TIME"
+              - "SYS_RESOURCE"
+              - "DAC_READ_SEARCH"
     api_test:
       pod:
         runAsUser: 0
@@ -659,7 +676,6 @@ endpoints:
       syslog:
         public: 514
         podport: 514
-
   maas_db:
     auth:
       admin:
@@ -690,12 +706,15 @@ endpoints:
     path:
       default: /MAAS
     scheme:
-      default: 'http'
+      default: "http"
     port:
       region_api:
         default: 80
+        secure: 443
         nodeport: 31900
+        nodeporttls: 31901
         podport: 5240
+        podporttls: 5443
         public: 80
       region_proxy:
         default: 8000
@@ -722,3 +741,10 @@ endpoints:
       default: http
     host_fqdn_override:
       default: null
+
+cert_manager:
+  enabled: false
+  create: false
+  issuer:
+    kind: ClusterIssuer
+    name: ca-issuer

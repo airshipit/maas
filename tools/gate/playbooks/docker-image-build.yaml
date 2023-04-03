@@ -13,6 +13,12 @@
 # limitations under the License.
 
 - hosts: primary
+  roles:
+    - bindep
+    - ensure-docker
+    - ensure-python
+    - ensure-pip
+
   tasks:
     - include_vars: vars.yaml
 
@@ -40,9 +46,19 @@
       debug:
         var: image_tags
 
-    - name: docker install
-      include_role:
-        name: ensure-docker
+    - name: Install Docker python module for ansible docker login
+      block:
+        - pip:
+            name: docker
+            executable: pip3
+      become: True
+
+    - name: Install tox python module for ansible docker login
+      block:
+        - pip:
+            name: tox
+            executable: pip3
+      become: True
 
     - name: Make images
       when: not publish
@@ -65,9 +81,10 @@
     - name: Publish images
       block:
         - docker_login:
-            username: "{{ airship_maas_quay_creds.username }}"
-            password: "{{ airship_maas_quay_creds.password }}"
+            username: "{{ airship_armada_quay_creds.username }}"
+            password: "{{ airship_armada_quay_creds.password }}"
             registry_url: "https://quay.io/api/v1/"
+            api_version: "1.43"
 
         - make:
             chdir: "{{ zuul.project.src_dir }}"

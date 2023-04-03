@@ -38,7 +38,11 @@ spec:
     - name: maas-api-test
       env:
         - name: 'MAAS_URL'
-          value: {{ tuple "maas_region" "internal" "region_api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | quote }}
+{{- if empty .Values.conf.maas.url.maas_url }}
+          value: {{ tuple "maas_region" "public" "region_api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | quote }}
+{{- else }}
+          value: {{ .Values.conf.maas.url.maas_url }}
+{{- end }}
         - name: 'MAAS_API_KEY'
           valueFrom:
             secretKeyRef:
@@ -50,6 +54,12 @@ spec:
 {{ dict "envAll" $envAll "application" "api_test" "container" "maas_api_test" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 6 }}
       command: ["/tmp/maas-test.sh"]
       volumeMounts:
+{{- if (and .Values.conf.maas.tls.enabled .Values.conf.maas.tls.insecure) }}
+        - name: ca-cert
+          mountPath: /usr/local/share/ca-certificates/ca.crt
+          subPath: ca.crt
+          readOnly: true
+{{- end }}
         - name: maas-bin
           mountPath: /tmp/maas-test.sh
           subPath: maas-test.sh
@@ -59,5 +69,13 @@ spec:
       configMap:
         name: maas-bin
         defaultMode: 0555
+{{- if (and .Values.conf.maas.tls.enabled .Values.conf.maas.tls.insecure) }}
+    - name: ca-cert
+      secret:
+        secretName: {{ .Values.secrets.maas_cert }}
+        items:
+          - key: ca.crt
+            path: ca.crt
+{{ end }}
 ...
 {{- end }}

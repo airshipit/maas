@@ -17,8 +17,52 @@
 {{- $serviceAccountName := "maas-region" }}
 {{- $mounts_maas_region := .Values.pod.mounts.maas_region.maas_region }}
 {{- $mounts_maas_region_init := .Values.pod.mounts.maas_region.init_container }}
-
 {{ tuple $envAll "region_controller" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $envAll.Release.Name }}-{{ $envAll.Release.Namespace }}-{{ $serviceAccountName }}-export
+  namespace: {{ $envAll.Release.Namespace }}
+rules:
+  - apiGroups:
+      - ""
+      - extensions
+      - batch
+      - apps
+    verbs:
+      - get
+      - list
+    resources:
+      - services
+      - endpoints
+      - jobs
+      - pods
+  - apiGroups:
+      - ""
+    verbs:
+      - get
+      - create
+      - update
+      - delete
+    resources:
+      - secrets
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $envAll.Release.Name }}-{{ $serviceAccountName }}-export
+  namespace: {{ $envAll.Release.Namespace }}
+  annotations:
+    {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $envAll.Release.Name }}-{{ $envAll.Release.Namespace }}-{{ $serviceAccountName }}-export
+subjects:
+  - kind: ServiceAccount
+    name: {{ $serviceAccountName }}
+    namespace: {{ $envAll.Release.Namespace }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -94,12 +138,29 @@ spec:
           image: {{ .Values.images.tags.maas_region }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
           tty: true
-
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - sleep 15; update-ca-certificates; /tmp/export-secret-key.sh
 {{ tuple $envAll $envAll.Values.pod.resources.maas_region | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
 {{ dict "envAll" $envAll "application" "region" "container" "maas_region" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
+          env:
+            - name: MAAS_REGION_SECRET_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: MAAS_REGION_SECRET
+              value: {{ .Values.secrets.maas_region.name }}
           ports:
             - name: region-api
               containerPort: {{ tuple "maas_region" "podport" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+{{- if .Values.conf.maas.tls.enabled }}
+            - name: region-api-tls
+              containerPort: {{ tuple "maas_region" "podporttls" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+{{- end }}
             - name: region-proxy
               containerPort: {{ tuple "maas_region" "podport" "region_proxy" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
           readinessProbe:
@@ -111,7 +172,6 @@ spec:
 {{- if not .Values.conf.maas.cgroups.disable_cgroups_region }}
             - mountPath: /sys/fs/cgroup
               name: host-sys-fs-cgroup
-              readOnly: true
 {{- end }}
             - mountPath: /run
               name: pod-run
@@ -119,9 +179,15 @@ spec:
               name: pod-run-lock
             - mountPath: /tmp
               name: pod-tmp
-            - name: maas-region-secret
-              mountPath: /var/lib/maas/secret
-              subPath: REGION_SECRET
+{{- if (and .Values.conf.maas.tls.enabled .Values.conf.maas.tls.insecure) }}
+            - name: ca-cert
+              mountPath: /usr/local/share/ca-certificates/ca.crt
+              subPath: ca.crt
+              readOnly: true
+{{- end }}
+            - name: maas-bin
+              mountPath: /tmp/export-secret-key.sh
+              subPath: export-secret-key.sh
               readOnly: true
             - name: maas-etc
               mountPath: /etc/bind/named.conf.options
@@ -200,9 +266,14 @@ spec:
           configMap:
             name: maas-bin
             defaultMode: 0555
-        - name: maas-region-secret
+{{- if (and .Values.conf.maas.tls.enabled .Values.conf.maas.tls.insecure) }}
+        - name: ca-cert
           secret:
-            secretName: {{ .Values.secrets.maas_region.name }}
+            secretName: {{ .Values.secrets.maas_cert }}
+            items:
+              - key: ca.crt
+                path: ca.crt
+{{ end }}
 {{- if $mounts_maas_region.volumes }}{{ toYaml $mounts_maas_region.volumes | indent 8 }}{{ end }}
 {{- if .Values.manifests.maas_syslog }}
   volumeClaimTemplates:

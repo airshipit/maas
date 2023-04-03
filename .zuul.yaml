@@ -16,13 +16,13 @@
         - airship-maas-lint-ws
         - airship-maas-chart-build-gate
         - airship-maas-chart-build-latest-htk
-        - airship-maas-docker-build-gate-bionic
+        - airship-maas-docker-build-gate
         - airship-maas-lint-yaml
     gate:
       jobs:
         - airship-maas-lint-ws
         - airship-maas-chart-build-gate
-        - airship-maas-docker-build-gate-bionic
+        - airship-maas-docker-build-gate
         - airship-maas-lint-yaml
     post:
       jobs:
@@ -47,14 +47,14 @@
       Lints all files for trailing whitespace
     run: tools/gate/playbooks/zuul-linter.yaml
     timeout: 300
-    nodeset: airship-maas-single-node
+    nodeset: airship-maas-single-node-jammy
 
 - job:
     name: airship-maas-chart-build-gate
     description: Build charts using pinned Helm toolkit.
     run: tools/gate/playbooks/helm-linter.yaml
     timeout: 600
-    nodeset: airship-maas-single-node
+    nodeset: airship-maas-single-node-jammy
     vars:
       HTK_COMMIT: 49c117443391cec75e0bd52bb4a9d033325927ad
 
@@ -64,17 +64,17 @@
     voting: false
     run: tools/gate/playbooks/helm-linter.yaml
     timeout: 600
-    nodeset: airship-maas-single-node
+    nodeset: airship-maas-single-node-jammy
     vars:
       HTK_COMMIT: master
 
 - job:
-    name: airship-maas-docker-build-gate-bionic
-    timeout: 1800
+    name: airship-maas-docker-build-gate
+    timeout: 3600
     run: tools/gate/playbooks/docker-image-build.yaml
-    nodeset: airship-maas-single-node
+    nodeset: airship-maas-single-node-jammy
     files:
-      - '^images/.*'
+      - "^images/.*"
     vars:
       publish: false
       tags:
@@ -88,17 +88,17 @@
     run: tools/gate/playbooks/lint-yaml.yaml
     nodeset: airship-maas-single-node
     irrelevant-files:
-      - '^charts/maas/templates/.*'
+      - "^charts/maas/templates/.*"
 
 - job:
     name: airship-maas-docker-publish
-    timeout: 1800
+    timeout: 3600
     run: tools/gate/playbooks/docker-image-build.yaml
-    nodeset: airship-maas-single-node
+    nodeset: airship-maas-single-node-jammy
     secrets:
       - airship_maas_quay_creds
     irrelevant-files:
-      - '^images/.*'
+      - "^images/.*"
     vars:
       publish: true
       tags:
@@ -142,53 +142,53 @@
       git_mirror_repository: airshipit/maas
     secrets:
       - name: git_mirror_credentials
-        secret: maas-airshipit-github-secret
+        secret: maas-airshipit-github-secret-2023-03-23
         pass-to-parent: true
 
 - secret:
-    name: maas-airshipit-github-secret
+    name: maas-airshipit-github-secret-2023-03-23
     data:
       user: git
       host: github.com
-      host_key: github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==
+      host_key: github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
       ssh_key: !encrypted/pkcs1-oaep
-        - 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
+        - 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

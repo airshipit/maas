@@ -1,0 +1,24 @@
+diff --git a/src/maasserver/models/ownerdata.py b/src/maasserver/models/ownerdata.py
+index 2cbaa9d..bb83b4b 100644
+--- a/src/maasserver/models/ownerdata.py
++++ b/src/maasserver/models/ownerdata.py
+@@ -17,7 +17,7 @@ from django.db.models import (
+
+ from maasserver.models.cleansave import CleanSave
+
+-DATA_KEY_RE = re.compile(r"[\w.-]+$")
++#DATA_KEY_RE = re.compile(r"[\w.-]+$")
+
+
+ class OwnerDataManager(Manager):
+@@ -32,8 +32,8 @@ class OwnerDataManager(Manager):
+             if value is None:
+                 to_remove.add(key)
+             else:
+-                if not DATA_KEY_RE.match(key):
+-                    raise ValueError("Invalid character in key name")
++                # if not DATA_KEY_RE.match(key):
++                #     raise ValueError("Invalid character in key name")
+
+                 self.update_or_create(
+                     node=node, key=key, defaults={"value": value}

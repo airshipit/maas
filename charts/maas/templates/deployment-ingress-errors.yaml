@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */}}
 
-{{- if .Values.manifests.rack_statefulset }}
+{{- if and .Values.manifests.maas_ingress .Values.manifests.rack_statefulset }}
 {{- $envAll := . }}
 {{- $labels := tuple $envAll "maas" "ingress-errors" | include "helm-toolkit.snippets.kubernetes_metadata_labels" -}}
 {{- $serviceAccountName := "maas-ingress-errors" }}

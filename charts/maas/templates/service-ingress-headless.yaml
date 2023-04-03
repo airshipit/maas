@@ -24,6 +24,10 @@ spec:
   ports:
     - name: http
       port: 80
+{{- if .Values.conf.maas.tls.enabled }}
+    - name: https
+      port: 443
+{{- end }}
   selector:
 {{ tuple . "maas" "ingress" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
 ...
