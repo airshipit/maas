@@ -192,6 +192,28 @@ function configure_boot_sources {
   fi
 }
 
+function create_extra_commissioning_script {
+  cat > /tmp/script.sh << 'EOF'
+#!/bin/bash
+set -e
+
+output=""
+for net_iface in /sys/class/net/ens*
+do
+  if [ -z "$output" ]; then output="{"; else output+=","; fi
+  output+=" \"$(basename "$net_iface")\": \"$(udevadm test-builtin net_id "$net_iface" 2>/dev/null | grep ID_NET_NAME_PATH | awk -F '=' '{print $2}')\""
+done
+if [ -z "$output" ]; then output="{}"; else output+=" }"; fi
+
+echo $output
+
+EOF
+
+  maas "${ADMIN_USERNAME}" commissioning-scripts create name='99-netiface-names.sh' content@=/tmp/script.sh
+
+  rm /tmp/script.sh
+}
+
 function configure_extra_settings {
 {{- range $k, $v := .Values.conf.maas.extra_settings }}
   check_then_set {{$k}} {{$v}}
@@ -217,6 +239,7 @@ configure_ntp
 configure_dns
 configure_syslog
 configure_extra_settings
+create_extra_commissioning_script
 
 # make call to import images
 timer "$RETRY_TIMER" configure_boot_sources
