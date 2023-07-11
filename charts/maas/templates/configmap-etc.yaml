@@ -36,7 +36,7 @@ data:
 {{- if .Values.conf.bind.append -}}
 {{ .Values.conf.bind.append | indent 4 }}
 {{- end }}
-  bind9: |
+  named: |
 {{ tuple "etc/_bind9.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   nginx.conf: |
 {{ tuple "etc/_nginx.conf.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}

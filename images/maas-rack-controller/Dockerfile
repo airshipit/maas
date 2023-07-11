@@ -61,11 +61,14 @@ COPY 2.8_secure_headers.patch /tmp/2.8_secure_headers.patch
 COPY 2.8_ipmi_error.patch /tmp/2.8_ipmi_error.patch
 # Patch to space redfish request retries apart a bit, to avoid overwhelming the BMC
 COPY 2.8_redfish_retries.patch /tmp/2.8_redfish_retries.patch
+# Patch to allow any recursion and cache queries
+COPY 2.8_allow_query.patch /tmp/2.8_allow_query.patch
 
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch network.py < /tmp/2.8_nic_filter.patch
 RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/2.8_secure_headers.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch ipmi.py < /tmp/2.8_ipmi_error.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch redfish.py < /tmp/2.8_redfish_retries.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/dns && patch named.conf.options.inside.maas.template < /tmp/2.8_allow_query.patch
 
 # echo journalctl logs to the container's stdout
 COPY scripts/journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
@@ -75,7 +78,7 @@ RUN systemctl enable journalctl-to-tty.service
 RUN umask 0337; echo 'Defaults:maas !pam_session, !syslog' > /etc/sudoers.d/99-maas-no-log
 
 # avoid triggering bind9 high cpu utilization bug
-RUN sed -i -e '$a\include "/etc/bind/bind.keys";' /etc/bind/named.conf
+RUN sed -i -e '$a\include "/etc/bind/bind.keys";' /etc/bind/named.conf && /usr/lib/maas/maas-common setup-dns
 
 # initalize systemd
 CMD ["/bin/bash", "-c", "exec /sbin/init --log-target=console 3>&1"]

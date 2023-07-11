@@ -170,8 +170,12 @@ spec:
               readOnly: true
 {{- end }}
             - name: maas-etc
+              mountPath: /etc/default/named
+              subPath: named
+              readOnly: true
+            - name: maas-etc
               mountPath: /etc/default/bind9
-              subPath: bind9
+              subPath: named
               readOnly: true
 {{- if $mounts_maas_region.volumeMounts }}{{ toYaml $mounts_maas_region.volumeMounts | indent 12 }}{{ end }}
       volumes:

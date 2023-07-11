@@ -143,8 +143,16 @@ spec:
               subPath: nginx.conf
               readOnly: true
             - name: maas-etc
+              mountPath: /etc/default/named
+              subPath: named
+              readOnly: true
+            - name: maas-etc
               mountPath: /etc/default/bind9
-              subPath: bind9
+              subPath: named
+              readOnly: true
+            - name: maas-etc
+              mountPath: /etc/bind/named.conf.options
+              subPath: named.conf.options
               readOnly: true
 {{ if $mounts_maas_rack.volumeMounts }}{{ toYaml $mounts_maas_rack.volumeMounts | indent 12 }}{{ end }}
       volumes:

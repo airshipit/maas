@@ -18,7 +18,7 @@ ARG no_proxy
 ENV DEBIAN_FRONTEND noninteractive
 ENV container docker
 
-ENV MAAS_VERSION 1:3.0.0-10029-g.986ea3e45-0ubuntu1~20.04.1
+ENV MAAS_VERSION 1:3.0.1-10052-g.82c730c57-0ubuntu1~20.04.1
 
 RUN apt-get -qq update \
  && apt-get install -y \
@@ -62,11 +62,14 @@ COPY 3.0_secure_headers.patch /tmp/3.0_secure_headers.patch
 COPY 3.0_ipmi_error.patch /tmp/3.0_ipmi_error.patch
 # Patch to space redfish request retries apart a bit, to avoid overwhelming the BMC
 COPY 3.0_redfish_retries.patch /tmp/3.0_redfish_retries.patch
+# Patch to allow any recursion and cache queries
+COPY 3.0_allow_query.patch /tmp/3.0_allow_query.patch
 
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch network.py < /tmp/3.0_nic_filter.patch
 RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/3.0_secure_headers.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch ipmi.py < /tmp/3.0_ipmi_error.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch redfish.py < /tmp/3.0_redfish_retries.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/dns && patch named.conf.options.inside.maas.template < /tmp/3.0_allow_query.patch
 
 # echo journalctl logs to the container's stdout
 COPY scripts/journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
@@ -76,7 +79,7 @@ RUN systemctl enable journalctl-to-tty.service
 RUN umask 0337; echo 'Defaults:maas !pam_session, !syslog' > /etc/sudoers.d/99-maas-no-log
 
 # avoid triggering bind9 high cpu utilization bug
-RUN sed -i -e '$a\include "/etc/bind/bind.keys";' /etc/bind/named.conf
+RUN sed -i -e '$a\include "/etc/bind/bind.keys";' /etc/bind/named.conf && /usr/lib/maas/maas-common setup-dns
 
 # initalize systemd
 CMD ["/bin/bash", "-c", "exec /sbin/init --log-target=console 3>&1"]
