@@ -15,8 +15,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */}}
 
-{{- if .Values.manifests.rack_statefulset }}
 {{- $envAll := . }}
+{{- define "maasrackreadinessProbeTemplate" }}
+exec:
+  command:
+    - ls
+    - /tmp/maas-rack.done
+{{- end }}
+{{- if .Values.manifests.rack_statefulset }}
 {{- $serviceAccountName := "maas-rack" }}
 {{- $mounts_maas_rack := .Values.pod.mounts.maas_rack }}
 {{- $mounts_maas_rack_init := .Values.pod.mounts.maas_rack.init_container }}
@@ -86,14 +92,7 @@ spec:
 {{ tuple $envAll $envAll.Values.pod.resources.maas_rack | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           command:
             - /tmp/start.sh
-          readinessProbe:
-            initialDelaySeconds: 60
-            periodSeconds: 60
-            timeoutSeconds: 60
-            exec:
-              command:
-                - ls
-                - /tmp/maas-rack.done
+{{ dict "envAll" $envAll "component" "rack" "container" "maas-rack" "type" "readiness" "probeTemplate" (include "maasrackreadinessProbeTemplate" $envAll | fromYaml) | include "helm-toolkit.snippets.kubernetes_probe" | indent 10 }}
           volumeMounts:
             - mountPath: /sys/fs/cgroup
               name: host-sys-fs-cgroup

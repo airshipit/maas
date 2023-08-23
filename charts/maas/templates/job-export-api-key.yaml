@@ -104,11 +104,7 @@ spec:
               value: {{ .Values.conf.maas.credentials.secret.name }}
           command:
             - /tmp/export-api-key.sh
-          readinessProbe:
-            exec:
-              command:
-                - /tmp/job-readiness.sh
-            initialDelaySeconds: 60
+{{ dict "envAll" $envAll "component" "export-api-key" "container" "exporter" "type" "readiness" "probeTemplate" (include "jobreadinessProbeTemplate" $envAll | fromYaml) | include "helm-toolkit.snippets.kubernetes_probe" | indent 10 }}
           volumeMounts:
             - name: maas-bin
               mountPath: /tmp/export-api-key.sh

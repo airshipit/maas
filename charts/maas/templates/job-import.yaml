@@ -98,11 +98,7 @@ spec:
 {{ dict "envAll" $envAll "application" "import_resources" "container" "region_import_resources" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           command:
             - /tmp/import-boot-resources.sh
-          readinessProbe:
-            exec:
-              command:
-                - /tmp/job-readiness.sh
-            initialDelaySeconds: 60
+{{ dict "envAll" $envAll "component" "import-resources" "container" "region-import-resources" "type" "readiness" "probeTemplate" (include "jobreadinessProbeTemplate" $envAll | fromYaml) | include "helm-toolkit.snippets.kubernetes_probe" | indent 10 }}
           volumeMounts:
             - name: maas-bin
               mountPath: /tmp/import-boot-resources.sh

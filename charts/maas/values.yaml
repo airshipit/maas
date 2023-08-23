@@ -592,6 +592,31 @@ pod:
         limits:
           memory: "1024Mi"
           cpu: "2000m"
+  probes:
+    rack:
+      maas-rack:
+        readiness:
+          enabled: true
+          params:
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 60
+    export-api-key:
+      exporter:
+        readiness:
+          enabled: true
+          params:
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 60
+    import-resources:
+      region-import-resources:
+        readiness:
+          enabled: true
+          params:
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 60
 
 endpoints:
   cluster_domain_suffix: cluster.local
