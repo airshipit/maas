@@ -234,6 +234,11 @@ conf:
     url:
       maas_url: null
     ingress_disable_gui: false
+    cgroups:
+      # When set to true, this won't mount the host path /sys/fs/cgroup. Used
+      # to enable use of cgroups v2. Also requires running container as privileged
+      disable_cgroups_region: false
+      disable_cgroups_rack: false
     ntp:
       # These options allow you to mock out the ntpd binary within the container
       # by overwriting it with a script that simply sleeps - this is useful in

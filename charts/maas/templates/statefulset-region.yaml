@@ -108,9 +108,11 @@ spec:
           command:
             - /tmp/start.sh
           volumeMounts:
+{{- if not .Values.conf.maas.cgroups.disable_cgroups_region }}
             - mountPath: /sys/fs/cgroup
               name: host-sys-fs-cgroup
               readOnly: true
+{{- end }}
             - mountPath: /run
               name: pod-run
             - mountPath: /run/lock
@@ -179,9 +181,11 @@ spec:
               readOnly: true
 {{- if $mounts_maas_region.volumeMounts }}{{ toYaml $mounts_maas_region.volumeMounts | indent 12 }}{{ end }}
       volumes:
+{{- if not .Values.conf.maas.cgroups.disable_cgroups_region }}
         - name: host-sys-fs-cgroup
           hostPath:
             path: /sys/fs/cgroup
+{{- end }}
         - name: pod-run
           emptyDir: {}
         - name: pod-run-lock
