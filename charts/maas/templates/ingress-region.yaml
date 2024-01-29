@@ -28,28 +28,28 @@ spec:
         paths:
 {{- if .Values.conf.maas.ingress_disable_gui }}
           - path: /MAAS/api
-            pathType: ImplementationSpecific
+            pathType: Prefix
             backend:
               service:
                 name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
                 port:
                   name: region-api
           - path: /MAAS/images-stream
-            pathType: ImplementationSpecific
+            pathType: Prefix
             backend:
               service:
                 name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
                 port:
                   name: region-api
           - path: /MAAS/metadata
-            pathType: ImplementationSpecific
+            pathType: Prefix
             backend:
               service:
                 name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
                 port:
                   name: region-api
           - path: /MAAS/rpc
-            pathType: ImplementationSpecific
+            pathType: Prefix
             backend:
               service:
                 name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
@@ -57,7 +57,7 @@ spec:
                   name: region-api
 {{- else }}
           - path: /
-            pathType: ImplementationSpecific
+            pathType: Prefix
             backend:
               service:
                 name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
