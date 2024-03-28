@@ -62,14 +62,14 @@ COPY 3.0_secure_headers.patch /tmp/3.0_secure_headers.patch
 COPY 3.0_ipmi_error.patch /tmp/3.0_ipmi_error.patch
 # Patch to space redfish request retries apart a bit, to avoid overwhelming the BMC
 COPY 3.0_redfish_retries.patch /tmp/3.0_redfish_retries.patch
-# Patch to allow any recursion and cache queries
-COPY 3.0_allow_query.patch /tmp/3.0_allow_query.patch
+# Patch to restrict access to zone transfers
+COPY 3.0_transfer_trusted_only.patch /tmp/3.0_transfer_trusted_only.patch
 
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/utils && patch network.py < /tmp/3.0_nic_filter.patch
 RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/3.0_secure_headers.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch ipmi.py < /tmp/3.0_ipmi_error.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch redfish.py < /tmp/3.0_redfish_retries.patch
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/dns && patch named.conf.options.inside.maas.template < /tmp/3.0_allow_query.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/dns && patch named.conf.options.inside.maas.template < /tmp/3.0_transfer_trusted_only.patch
 
 # echo journalctl logs to the container's stdout
 COPY scripts/journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service

@@ -65,8 +65,8 @@ COPY 3.0_region_secret_rotate.patch /tmp/3.0_region_secret_rotate.patch
 COPY 3.0_partitiontable_does_not_exist.patch /tmp/3.0_partitiontable_does_not_exist.patch
 # Allow tags with '/' symbols
 COPY 3.0_regex_tags.patch /tmp/3.0_regex_tags.patch
-# Patch to allow any recursion and cache queries
-COPY 3.0_allow_query.patch /tmp/3.0_allow_query.patch
+# Patch to restrict access to zone transfers
+COPY 3.0_transfer_trusted_only.patch /tmp/3.0_transfer_trusted_only.patch
 
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/3.0_route.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/3.0_kernel_package.patch
@@ -77,7 +77,7 @@ RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patc
 RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/3.0_secure_headers.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver/api && patch partitions.py < /tmp/3.0_partitiontable_does_not_exist.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch ownerdata.py < /tmp/3.0_regex_tags.patch
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/dns && patch named.conf.options.inside.maas.template < /tmp/3.0_allow_query.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/dns && patch named.conf.options.inside.maas.template < /tmp/3.0_transfer_trusted_only.patch
 
 # echo journalctl logs to the container's stdout
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service

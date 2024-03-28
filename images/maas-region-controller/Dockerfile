@@ -64,8 +64,8 @@ COPY 2.8_region_secret_rotate.patch /tmp/2.8_region_secret_rotate.patch
 COPY 2.8_partitiontable_does_not_exist.patch /tmp/2.8_partitiontable_does_not_exist.patch
 # Avoid enlistment failures due to exceptions during moonshot detect attempts
 COPY 2.8_maas_ipmi_autodetect_tool.patch /tmp/2.8_maas_ipmi_autodetect_tool.patch
-# Patch to allow any recursion and cache queries
-COPY 2.8_allow_query.patch /tmp/2.8_allow_query.patch
+# Patch to restrict access to zone transfers
+COPY 2.8_transfer_trusted_only.patch /tmp/2.8_transfer_trusted_only.patch
 
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/2.8_route.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/2.8_kernel_package.patch
@@ -76,7 +76,7 @@ RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patc
 RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/2.8_secure_headers.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver/api && patch partitions.py < /tmp/2.8_partitiontable_does_not_exist.patch
 RUN cd /usr/lib/python3/dist-packages/metadataserver/user_data/templates/snippets/ && patch maas_ipmi_autodetect_tool.py < /tmp/2.8_maas_ipmi_autodetect_tool.patch
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/dns && patch named.conf.options.inside.maas.template < /tmp/2.8_allow_query.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/dns && patch named.conf.options.inside.maas.template < /tmp/2.8_transfer_trusted_only.patch
 
 # echo journalctl logs to the container's stdout
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service

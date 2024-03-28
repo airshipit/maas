@@ -1,0 +1,9 @@
+diff --git a/src/provisioningserver/templates/dns/named.conf.options.inside.maas.template b/src/provisioningserver/templates/dns/named.conf.options.inside.maas.template
+index ba1aee316..6eda771b0 100644
+--- a/src/provisioningserver/templates/dns/named.conf.options.inside.maas.template
++++ b/src/provisioningserver/templates/dns/named.conf.options.inside.maas.template
+@@ -18,3 +18,4 @@ allow-recursion { trusted; };
+ {{if not upstream_allow_query_cache}}
+ allow-query-cache { trusted; };
+ {{endif}}
++allow-transfer { trusted; };
