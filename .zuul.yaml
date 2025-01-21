@@ -10,6 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+---
 - project:
     check:
       jobs:
@@ -18,12 +19,14 @@
         - airship-maas-chart-build-latest-htk
         - airship-maas-docker-build-gate
         - airship-maas-lint-yaml
+        - airship-maas-deploy-kubeadm
     gate:
       jobs:
         - airship-maas-lint-ws
         - airship-maas-chart-build-gate
         - airship-maas-docker-build-gate
         - airship-maas-lint-yaml
+        - airship-maas-deploy-kubeadm
     post:
       jobs:
         - airship-maas-docker-publish
@@ -107,6 +110,87 @@
           commit: true
         static:
           - latest
+
+- job:
+    name: airship-maas-deploy-kubeadm
+    description: Deploys all UC's and Executes functional tests
+    nodeset: treasuremap-airskiff-1node-ubuntu_jammy
+    roles:
+      - zuul: airship/kubernetes-entrypoint
+      - zuul: openstack/openstack-helm
+      - zuul: zuul/zuul-jobs
+    required-projects:
+      - name: openstack/openstack-helm
+      - name: openstack/openstack-helm-plugin
+      - name: airship/treasuremap
+        override-checkout: v1.9
+    irrelevant-files:
+      - ^.*\.rst$
+      - ^doc/.*$
+      - ^releasenotes/.*$
+      - ^site/seaworthy/.*$
+      - ^site/airsloop/.*$
+      - ^site/aiab/.*$
+    timeout: 10800
+    pre-run:
+      - tools/gate/playbooks/prepare-hosts.yaml
+      - tools/gate/playbooks/mount-volumes.yaml
+    run:
+      - tools/gate/playbooks/deploy-env.yaml
+      - tools/gate/playbooks/airship-run-scripts.yaml
+    post-run:
+      - tools/gate/playbooks/osh-infra-collect-logs.yaml
+    vars:
+      treasuremap_ref: v1.9
+      extra_volume:
+        size: 80G
+        type: Linux
+        mount_point: /opt/ext_vol
+      docker:
+        root_path: "/opt/ext_vol/docker"
+      containerd:
+        root_path: "/opt/ext_vol/containerd"
+      kubeadm:
+        pod_network_cidr: "10.244.0.0/16"
+        service_cidr: "10.96.0.0/16"
+      osh_plugin_repo: "{{ zuul.project.src_dir }}/../../openstack/openstack-helm-plugin"
+      loopback_setup: true
+      loopback_device: /dev/loop100
+      loopback_image: "/opt/ext_vol/openstack-helm/ceph-loop.img"
+      ceph_osd_data_device: /dev/loop100
+      kube_version_repo: "v1.32"
+      kube_version: "1.32.1-1.1"
+      calico_setup: true
+      calico_version: "v3.27.4"
+      cilium_setup: false
+      cilium_version: "1.16.0"
+      flannel_setup: false
+      flannel_version: v0.25.4
+      metallb_setup: false
+      metallb_version: "0.13.12"
+      helm_version: "v3.14.0"
+      crictl_version: "v1.30.1"
+      osh_helm_repo: ../../openstack/openstack-helm
+      osh_values_overrides_path: ../../openstack/openstack-helm/values_overrides
+      zuul_osh_relative_path: ../../openstack/openstack-helm
+      zuul_treasuremap_relative_path: ../../airship/treasuremap
+      gate_scripts_relative_path: .
+      run_helm_tests: "no"
+      distro_suffix: ubuntu_jammy
+      osh_params:
+        container_distro_name: ubuntu
+        container_distro_version: jammy
+      HELM_ARTIFACT_URL: https://get.helm.sh/helm-v3.16.4-linux-amd64.tar.gz
+      HTK_COMMIT: 49c117443391cec75e0bd52bb4a9d033325927ad
+      OSH_COMMIT: 49c117443391cec75e0bd52bb4a9d033325927ad
+      gate_scripts:
+        - ./tools/deployment/002-build-charts.sh
+        - ./tools/deployment/003-prepare-k8s.sh
+        - ./tools/deployment/004-make-images.sh
+        - ./tools/maas/100-cert-manager.sh
+        - ./tools/maas/115-ceph.sh
+        - ./tools/maas/120-postgresql.sh
+        - ./tools/maas/121-maas.sh
 
 - secret:
     name: airship_maas_quay_creds
