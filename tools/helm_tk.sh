@@ -16,8 +16,8 @@
 
 set -eux
 
-HTK_REPO=${HTK_REPO:-"https://opendev.org/openstack/openstack-helm-infra.git"}
-HTK_STABLE_COMMIT=${HTK_COMMIT:-"d0c93b5648704b9d9999412d932f8329c80362c0"}
+HTK_REPO=${HTK_REPO:-"https://opendev.org/openstack/openstack-helm.git"}
+HTK_STABLE_COMMIT=${HTK_COMMIT:-"master"}
 
 TMP_DIR=$(mktemp -d)
 
