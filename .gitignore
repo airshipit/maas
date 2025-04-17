@@ -4,3 +4,7 @@ build/
 
 # devcontainer
 .devcontainer/
+
+.vscode/
+
+charts/deps

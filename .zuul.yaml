@@ -16,13 +16,13 @@
         - airship-maas-lint-ws
         - airship-maas-chart-build-gate
         - airship-maas-chart-build-latest-htk
-        - airship-maas-docker-build-gate
+        - airship-maas-docker-build-gate-bionic
         - airship-maas-lint-yaml
     gate:
       jobs:
         - airship-maas-lint-ws
         - airship-maas-chart-build-gate
-        - airship-maas-docker-build-gate
+        - airship-maas-docker-build-gate-bionic
         - airship-maas-lint-yaml
     post:
       jobs:
@@ -34,6 +34,12 @@
     nodes:
       - name: primary
         label: ubuntu-bionic
+
+- nodeset:
+    name: airship-maas-single-node-jammy
+    nodes:
+      - name: primary
+        label: ubuntu-jammy
 
 - job:
     name: airship-maas-lint-ws
@@ -49,6 +55,8 @@
     run: tools/gate/playbooks/helm-linter.yaml
     timeout: 600
     nodeset: airship-maas-single-node
+    vars:
+      HTK_COMMIT: 49c117443391cec75e0bd52bb4a9d033325927ad
 
 - job:
     name: airship-maas-chart-build-latest-htk
@@ -61,7 +69,7 @@
       HTK_COMMIT: master
 
 - job:
-    name: airship-maas-docker-build-gate
+    name: airship-maas-docker-build-gate-bionic
     timeout: 1800
     run: tools/gate/playbooks/docker-image-build.yaml
     nodeset: airship-maas-single-node
@@ -78,7 +86,7 @@
     voting: true
     timeout: 900
     run: tools/gate/playbooks/lint-yaml.yaml
-    nodeset: ubuntu-bionic
+    nodeset: airship-maas-single-node
     irrelevant-files:
       - '^charts/maas/templates/.*'
 
