@@ -18,9 +18,10 @@ ARG no_proxy
 ENV DEBIAN_FRONTEND noninteractive
 ENV container docker
 
-ENV MAAS_VERSION 1:3.5.4-16349-g.4dbbed5f4-0ubuntu1~22.04.1
+ENV MAAS_VERSION 1:3.5.5-16357-g.51588a151-0ubuntu1~22.04.1
 
 RUN apt-get -qq update \
+ && apt upgrade -y \
  && apt-get install -y \
         avahi-daemon \
         jq \

@@ -168,7 +168,7 @@
       flannel_version: v0.25.4
       metallb_setup: false
       metallb_version: "0.13.12"
-      helm_version: "v3.14.0"
+      helm_version: "v3.17.3"
       crictl_version: "v1.30.1"
       osh_helm_repo: ../../openstack/openstack-helm
       osh_values_overrides_path: ../../openstack/openstack-helm/values_overrides
@@ -180,7 +180,7 @@
       osh_params:
         container_distro_name: ubuntu
         container_distro_version: jammy
-      HELM_ARTIFACT_URL: https://get.helm.sh/helm-v3.16.4-linux-amd64.tar.gz
+      HELM_ARTIFACT_URL: https://get.helm.sh/helm-v3.17.3-linux-amd64.tar.gz
       HTK_COMMIT: 49c117443391cec75e0bd52bb4a9d033325927ad
       OSH_COMMIT: 49c117443391cec75e0bd52bb4a9d033325927ad
       gate_scripts:

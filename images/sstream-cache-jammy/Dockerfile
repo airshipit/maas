@@ -21,6 +21,7 @@ ARG SSTREAM_RELEASE=jammy
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get -qq update && \
+    apt upgrade -y && \
     apt-get install -y --no-install-recommends \
       apache2 \
       file \
