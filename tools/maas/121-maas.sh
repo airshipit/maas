@@ -70,8 +70,6 @@ network:
     node_port:
       enabled: false
 pod:
-  mandatory_access_control:
-    type: apparmor
   replicas:
     rack: 1
     region: 1

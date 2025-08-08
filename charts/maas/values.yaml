@@ -360,43 +360,6 @@ secrets:
   maas_ingress_cert: maas-region-api-ingress-tls
 
 pod:
-  mandatory_access_control:
-    type: apparmor
-    maas-rack:
-      maas-rack: runtime/default
-      init: runtime/default
-    maas-region:
-      maas-region: runtime/default
-      maas-cache: runtime/default
-      init: runtime/default
-    maas-syslog:
-      syslog: runtime/default
-      logrotate: runtime/default
-      init: runtime/default
-    maas-ingress:
-      maas-ingress-vip: runtime/default
-      maas-ingress: runtime/default
-      init: runtime/default
-      maas-ingress-vip-init: runtime/default
-    maas-ingress-errors:
-      maas-ingress-errors: runtime/default
-    maas-bootstrap-admin-user:
-      maas-bootstrap-admin-user: runtime/default
-      init: runtime/default
-    maas-db-init:
-      maas-db-init: runtime/default
-      init: runtime/default
-    maas-db-sync:
-      maas-db-sync: runtime/default
-      init: runtime/default
-    maas-export-api-key:
-      exporter: runtime/default
-      init: runtime/default
-    maas-import-resources:
-      region-import-resources: runtime/default
-      init: runtime/default
-    maas-api-test:
-      maas-api-test: runtime/default
   security_context:
     ingress:
       pod:

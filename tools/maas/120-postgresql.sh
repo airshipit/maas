@@ -44,8 +44,6 @@ pod:
   replicas:
     server: 1
     prometheus_postgresql_exporter: 0
-  mandatory_access_control:
-    type: apparmor
 storage:
   pvc:
     class_name: general
