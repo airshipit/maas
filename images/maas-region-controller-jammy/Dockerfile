@@ -48,7 +48,8 @@ RUN apt-get -qq update \
         maas-region-api \
         # tcpdump is required by /usr/lib/maas/beacon-monitor
         tcpdump \
- && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*\
+ && rm -f /etc/ssl/private/snakeoil.*
 
 # Preserve the directory structure, permissions, and contents of /var/lib/maas
 RUN mkdir -p /opt/maas/ && tar -cvzf /opt/maas/var-lib-maas.tgz /var/lib/maas

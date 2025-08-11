@@ -1,4 +1,4 @@
-ARG FROM=ubuntu:bionic
+ARG FROM=quay.io/airshipit/ubuntu:focal
 FROM ${FROM}
 
 LABEL org.opencontainers.image.authors='airship-discuss@lists.airshipit.org, irc://#airshipit@freenode'

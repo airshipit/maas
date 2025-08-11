@@ -17,14 +17,16 @@
         - airship-maas-lint-ws
         - airship-maas-chart-build-gate
         - airship-maas-chart-build-latest-htk
-        - airship-maas-docker-build-gate
+        - airship-maas-docker-build-gate-ubuntu-focal
+        - airship-maas-docker-build-gate-ubuntu-jammy
         - airship-maas-lint-yaml
         - airship-maas-deploy-kubeadm
     gate:
       jobs:
         - airship-maas-lint-ws
         - airship-maas-chart-build-gate
-        - airship-maas-docker-build-gate
+        - airship-maas-docker-build-gate-ubuntu-focal
+        - airship-maas-docker-build-gate-ubuntu-jammy
         - airship-maas-lint-yaml
         - airship-maas-deploy-kubeadm
     post:
@@ -72,7 +74,7 @@
       HTK_COMMIT: master
 
 - job:
-    name: airship-maas-docker-build-gate
+    name: airship-maas-docker-build-gate-ubuntu-jammy
     timeout: 3600
     run: tools/gate/playbooks/docker-image-build.yaml
     nodeset: airship-maas-single-node-jammy
@@ -80,9 +82,25 @@
       - "^images/.*"
     vars:
       publish: false
+      distro: ubuntu_jammy
       tags:
         dynamic:
           patch_set: true
+
+- job:
+    name: airship-maas-docker-build-gate-ubuntu-focal
+    timeout: 3600
+    run: tools/gate/playbooks/docker-image-build.yaml
+    nodeset: airship-maas-single-node-jammy
+    files:
+      - "^images/.*"
+    vars:
+      publish: false
+      distro: ubuntu_focal
+      tags:
+        dynamic:
+          patch_set: true
+
 
 - job:
     name: airship-maas-lint-yaml
@@ -104,12 +122,14 @@
       - "^images/.*"
     vars:
       publish: true
+      distro: ubuntu_focal
       tags:
         dynamic:
           branch: true
           commit: true
         static:
           - latest
+
 
 - job:
     name: airship-maas-deploy-base
@@ -185,6 +205,7 @@
 - job:
     name: maas-upload-git-mirror
     parent: upload-git-mirror
+    nodeset: treasuremap-airskiff-1node-ubuntu_jammy
     description: Mirrors airship/maas to airshipit/maas
     vars:
       git_mirror_repository: airshipit/maas

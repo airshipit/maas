@@ -27,6 +27,8 @@
         - debug:
             var: publish
         - debug:
+            var: distro
+        - debug:
             var: tags
         - debug:
             var: zuul
@@ -68,6 +70,7 @@
             target: images
             params:
               IMAGE_TAG: "{{ item }}"
+              DISTRO: "{{ distro }}"
           with_items: "{{ image_tags.stdout_lines }}"
 
         - shell: "docker images"
@@ -81,8 +84,8 @@
     - name: Publish images
       block:
         - docker_login:
-            username: "{{ airship_armada_quay_creds.username }}"
-            password: "{{ airship_armada_quay_creds.password }}"
+            username: "{{ airship_maas_quay_creds.username }}"
+            password: "{{ airship_maas_quay_creds.password }}"
             registry_url: "https://quay.io/api/v1/"
             api_version: "1.43"
 
@@ -93,6 +96,7 @@
               DOCKER_REGISTRY: "quay.io"
               IMAGE_PREFIX: "airshipit"
               IMAGE_TAG: "{{ item }}"
+              DISTRO: "{{ distro }}"
               COMMIT: "{{ zuul.newrev | default('') }}"
               PUSH_IMAGE: "true"
           with_items: "{{ image_tags.stdout_lines }}"
