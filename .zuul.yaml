@@ -122,7 +122,7 @@
       - "^images/.*"
     vars:
       publish: true
-      distro: ubuntu_focal
+      distro: ubuntu_jammy
       tags:
         dynamic:
           branch: true
