@@ -27,8 +27,10 @@ PUSH_IMAGE        ?= false
 LABEL             ?= org.airshipit.build=community
 COMMIT            ?= $(shell git rev-parse HEAD)
 DISTRO            ?= ubuntu_jammy
+DISTRO_ALIAS	  ?= ubuntu_jammy
 STRIPPED_DISTRO   := $(shell echo $(DISTRO) | sed 's/^ubuntu_//')
-IMAGE_NAME        := maas-rack-controller-$(STRIPPED_DISTRO) maas-region-controller-$(STRIPPED_DISTRO) sstream-cache-$(STRIPPED_DISTRO)
+STRIPPED_DISTRO_ALIAS   := $(shell echo $(DISTRO_ALIAS) | sed 's/^ubuntu_//')
+IMAGE_NAME        := maas-rack-controller maas-region-controller sstream-cache
 BUILD_DIR         := $(shell mktemp -d)
 HELM              := $(BUILD_DIR)/helm
 SSTREAM_IMAGE     := "https://images.maas.io/ephemeral-v3/stable/"
@@ -36,6 +38,10 @@ SSTREAM_RELEASE   := $(STRIPPED_DISTRO)
 UBUNTU_BASE_IMAGE ?= quay.io/airshipit/ubuntu:$(STRIPPED_DISTRO)
 USE_CACHED_IMG    ?= false
 DOCKER_EXTRA_ARGS ?=
+
+IMAGE			  := ${DOCKER_REGISTRY}/${IMAGE_PREFIX}/$(IMAGE_NAME):${IMAGE_TAG}
+IMAGE_ALIAS       := ${DOCKER_REGISTRY}/${IMAGE_PREFIX}/${IMAGE_NAME_ALIAS}:${IMAGE_TAG}
+
 
 ifeq ($(USE_CACHED_IMG), true)
     DOCKER_EXTRA_ARGS += --build-arg BUILDKIT_INLINE_CACHE=1
@@ -55,8 +61,12 @@ images: $(IMAGE_NAME)
 
 $(IMAGE_NAME):
 	@echo
-	@echo "===== Processing [$@] image ====="
-	@make build IMAGE=${DOCKER_REGISTRY}/${IMAGE_PREFIX}/$@:${IMAGE_TAG} IMAGE_DIR=images/$@
+	@echo "===== Processing [$@-$(STRIPPED_DISTRO)] image ====="
+	@make build \
+		IMAGE=${DOCKER_REGISTRY}/${IMAGE_PREFIX}/$@-$(STRIPPED_DISTRO):${IMAGE_TAG} \
+		IMAGE_ALIAS=${DOCKER_REGISTRY}/${IMAGE_PREFIX}/$@-$(STRIPPED_DISTRO_ALIAS):${IMAGE_TAG} \
+		IMAGE_NAME_FULL=$@-$(STRIPPED_DISTRO) \
+		IMAGE_DIR=images/$@-$(STRIPPED_DISTRO)
 
 # Create tgz of the chart
 .PHONY: charts
@@ -85,13 +95,22 @@ build:
 	docker build -t $(IMAGE) --label $(LABEL) --network=host \
         --label "org.opencontainers.image.revision=$(COMMIT)" \
         --label "org.opencontainers.image.created=$(shell date --rfc-3339=seconds --utc)" \
-        --label "org.opencontainers.image.title=$(IMAGE_NAME)" \
+        --label "org.opencontainers.image.title=$(IMAGE_NAME_FULL)" \
         -f $(IMAGE_DIR)/Dockerfile \
         $(DOCKER_EXTRA_ARGS) \
         --build-arg FROM=$(UBUNTU_BASE_IMAGE) \
         --build-arg SSTREAM_IMAGE=$(SSTREAM_IMAGE) \
         --build-arg SSTREAM_RELEASE=$(SSTREAM_RELEASE) \
         $(IMAGE_DIR)
+ifneq ($(DISTRO), $(DISTRO_ALIAS))
+	docker tag $(IMAGE) $(IMAGE_ALIAS)
+ifeq ($(DOCKER_REGISTRY), localhost:5000)
+	docker push $(IMAGE_ALIAS)
+endif
+endif
+ifeq ($(DOCKER_REGISTRY), localhost:5000)
+	docker push $(IMAGE)
+endif
 ifeq ($(PUSH_IMAGE), true)
 	docker push $(IMAGE)
 endif

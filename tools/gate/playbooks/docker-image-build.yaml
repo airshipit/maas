@@ -62,6 +62,15 @@
             executable: pip3
       become: True
 
+    - name: Make images - verbosive
+      when: not publish
+      shell: |
+        make images
+      args:
+        chdir: "{{ zuul.project.src_dir }}"
+        executable: /bin/bash
+      become: True
+
     - name: Make images
       when: not publish
       block:
@@ -97,6 +106,7 @@
               IMAGE_PREFIX: "airshipit"
               IMAGE_TAG: "{{ item }}"
               DISTRO: "{{ distro }}"
+              DISTRO_ALIAS: "{{ distro }}"
               COMMIT: "{{ zuul.newrev | default('') }}"
               PUSH_IMAGE: "true"
           with_items: "{{ image_tags.stdout_lines }}"

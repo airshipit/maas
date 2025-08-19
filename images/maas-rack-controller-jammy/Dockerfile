@@ -15,10 +15,10 @@ ARG http_proxy
 ARG https_proxy
 ARG no_proxy
 
-ENV DEBIAN_FRONTEND noninteractive
-ENV container docker
+ENV DEBIAN_FRONTEND=noninteractive
+ENV container=docker
 
-ENV MAAS_VERSION 3.5
+ENV MAAS_VERSION=3.5
 
 RUN apt-get -qq update \
  && apt upgrade -y \

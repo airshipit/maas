@@ -16,7 +16,7 @@ ARG https_proxy
 ARG no_proxy
 
 ARG SSTREAM_IMAGE=https://images.maas.io/ephemeral-v3/stable/
-ARG SSTREAM_RELEASE=bionic
+ARG SSTREAM_RELEASE=focal
 
 ENV DEBIAN_FRONTEND=noninteractive
 
