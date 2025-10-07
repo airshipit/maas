@@ -164,20 +164,52 @@ function configure_images {
 }
 
 function configure_boot_sources {
+	# Set the boot source URL if using local image cache
 	if [[ $USE_IMAGE_CACHE == 'true' ]]; then
 		maas ${ADMIN_USERNAME} boot-source update 1 url=http://localhost:8888/maas/images/ephemeral-v3/daily/
 	fi
 
-	selected_releases="$(maas ${ADMIN_USERNAME} boot-source-selections read 1 | jq -r '.[] | .release')"
+	# Read all selections for boot_source_id 1
+	maas ${ADMIN_USERNAME} boot-source-selections read 1
 
-	if ! echo "${selected_releases}" | grep -q "${MAAS_DEFAULT_DISTRO}"; then
-		# Need to start an import to get the availability data
-		maas "$ADMIN_USERNAME" boot-resources import
-		if ! maas ${ADMIN_USERNAME} boot-source-selections create 1 os="${MAAS_DEFAULT_OS}" \
-			release="${MAAS_DEFAULT_DISTRO}" arches="amd64" subarches='*' labels='*' | grep -q 'Success'; then
-			return 1
-		fi
-	fi
+	# Need to start an import to get the availability data
+	maas "$ADMIN_USERNAME" boot-resources import
+	sleep 10
+	maas "$ADMIN_USERNAME" boot-resources is-importing
+	sleep 10
+	maas "$ADMIN_USERNAME" boot-resources stop-import
+
+	# Create a selection for the desired distro
+	maas ${ADMIN_USERNAME} boot-source-selections create 1 os="${MAAS_DEFAULT_OS}" \
+		release="${MAAS_DEFAULT_DISTRO}" arches="amd64" subarches='*' labels='*'
+
+	# Need to start an import to get the availability data
+	maas "$ADMIN_USERNAME" boot-resources import
+	sleep 10
+	maas "$ADMIN_USERNAME" boot-resources is-importing
+	sleep 10
+
+	# Set as default
+	maas ${ADMIN_USERNAME} maas set-config name=default_distro_series value="${MAAS_DEFAULT_DISTRO}"
+	maas ${ADMIN_USERNAME} maas set-config name=commissioning_distro_series value="${MAAS_DEFAULT_DISTRO}"
+
+
+	# Delete any selections that do not match the desired distro
+	for row in $(maas ${ADMIN_USERNAME} boot-source-selections read 1 | jq -r \
+		--arg distro "$MAAS_DEFAULT_DISTRO" \
+		'.[] | select(.release != $distro) | "\(.id):\(.boot_source_id)"'); do
+		id="${row%%:*}"
+		boot_source_id="${row##*:}"
+		echo "Deleting selection id $id from boot_source_id $boot_source_id"
+		maas ${ADMIN_USERNAME} boot-source-selection delete "$boot_source_id" "$id"
+	done
+
+	# Need to re-start an import to get the availability data
+	sleep 10
+	maas "$ADMIN_USERNAME" boot-resources stop-import
+	sleep 10
+	maas "$ADMIN_USERNAME" boot-resources import
+
 }
 
 function create_extra_commissioning_script {

@@ -144,6 +144,9 @@ spec:
               mountPath: /var/lib/maas
               subPath: home
               readOnly: false
+            - name: rackd-state
+              mountPath: /var/cache/maas/httpproxy
+              subPath: cache
             - name: maas-etc
               mountPath: /etc/nsswitch.conf
               subPath: nsswitch.conf
