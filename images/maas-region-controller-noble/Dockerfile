@@ -1,4 +1,4 @@
-ARG FROM=ubuntu:20.04
+ARG FROM=quay.io/airshipit/ubuntu:noble
 FROM ${FROM}
 
 LABEL org.opencontainers.image.authors='airship-discuss@lists.airshipit.org, irc://#airshipit@freenode'
@@ -18,10 +18,11 @@ ARG no_proxy
 ENV DEBIAN_FRONTEND=noninteractive
 ENV container=docker
 
-ENV MAAS_VERSION=1:3.0.2-10056-g.089ec66c2-0ubuntu1~20.04.1
-ENV MAAS_PPA=ppa:maas/3.0
+ENV MAAS_VERSION=1:3.6.2-17588-g.7b59ae9e8-0ubuntu1~24.04.1
+ENV MAAS_PPA=ppa:maas/3.6
 
 RUN apt-get -qq update \
+ && apt upgrade -y \
  && apt-get install -y \
         avahi-daemon \
         jq \
@@ -31,6 +32,7 @@ RUN apt-get -qq update \
         systemd \
         cron \
         ca-certificates \
+        bind9-dnsutils \
 # Don't start any optional services except for the few we need.
 # (specifically, don't start avahi-daemon)
  && find /etc/systemd/system \
@@ -47,39 +49,35 @@ RUN apt-get -qq update \
         maas-region-api=$MAAS_VERSION \
         # tcpdump is required by /usr/lib/maas/beacon-monitor
         tcpdump \
- && rm -rf /var/lib/apt/lists/* \
- && rm -f /etc/ssl/private/snakeoil.*
+ && rm -rf /var/lib/apt/lists/*\
+ && rm -f /etc/ssl/private/.*snakeoil.*
 
 # Preserve the directory structure, permissions, and contents of /var/lib/maas
 RUN mkdir -p /opt/maas/ && tar -cvzf /opt/maas/var-lib-maas.tgz /var/lib/maas
 
 # MAAS workarounds
-COPY 3.0_route.patch /tmp/3.0_route.patch
-COPY 3.0_kernel_package.patch /tmp/3.0_kernel_package.patch
-COPY 3.0_bios_grub_partition.patch /tmp/3.0_bios_grub_partition.patch
+COPY 3.6_route.patch /tmp/3.6_route.patch
+COPY 3.6_kernel_package.patch /tmp/3.6_kernel_package.patch
 # sh8121att: allow all requests via the proxy to allow it to work
 # behind ingress
-COPY 3.0_proxy_acl.patch /tmp/3.0_proxy_acl.patch
+COPY 3.6_proxy_acl.patch /tmp/3.6_proxy_acl.patch
 # Patch to add retrying to MaaS BMC user setup, and improve exception handling
-COPY 3.0_configure_ipmi_user.patch /tmp/3.0_configure_ipmi_user.patch
-COPY 3.0_secure_headers.patch /tmp/3.0_secure_headers.patch
-COPY 3.0_region_secret_rotate.patch /tmp/3.0_region_secret_rotate.patch
-COPY 3.0_partitiontable_does_not_exist.patch /tmp/3.0_partitiontable_does_not_exist.patch
+COPY 3.6_configure_ipmi_user.patch /tmp/3.6_configure_ipmi_user.patch
+COPY 3.6_secure_headers.patch /tmp/3.6_secure_headers.patch
+COPY 3.6_partitiontable_does_not_exist.patch /tmp/3.6_partitiontable_does_not_exist.patch
 # Allow tags with '/' symbols
-COPY 3.0_regex_tags.patch /tmp/3.0_regex_tags.patch
+COPY 3.6_regex_tags.patch /tmp/3.6_regex_tags.patch
 # Patch to restrict access to zone transfers
-COPY 3.0_transfer_trusted_only.patch /tmp/3.0_transfer_trusted_only.patch
+COPY 3.6_transfer_trusted_only.patch /tmp/3.6_transfer_trusted_only.patch
 
-RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/3.0_route.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/3.0_kernel_package.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch partition.py < /tmp/3.0_bios_grub_partition.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver && patch security.py < /tmp/3.0_region_secret_rotate.patch
-RUN cd /usr/lib/python3/dist-packages/metadataserver/builtin_scripts/commissioning_scripts && patch bmc_config.py < /tmp/3.0_configure_ipmi_user.patch
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patch maas-proxy.conf.template < /tmp/3.0_proxy_acl.patch
-RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/3.0_secure_headers.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver/api && patch partitions.py < /tmp/3.0_partitiontable_does_not_exist.patch
-RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch ownerdata.py < /tmp/3.0_regex_tags.patch
-RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/dns && patch named.conf.options.inside.maas.template < /tmp/3.0_transfer_trusted_only.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/3.6_route.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/3.6_kernel_package.patch
+RUN cd /usr/lib/python3/dist-packages/metadataserver/builtin_scripts/commissioning_scripts && patch bmc_config.py < /tmp/3.6_configure_ipmi_user.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/proxy && patch maas-proxy.conf.template < /tmp/3.6_proxy_acl.patch
+RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/3.6_secure_headers.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver/api && patch partitions.py < /tmp/3.6_partitiontable_does_not_exist.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch ownerdata.py < /tmp/3.6_regex_tags.patch
+RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/dns && patch named.conf.options.inside.maas.template < /tmp/3.6_transfer_trusted_only.patch
 
 # echo journalctl logs to the container's stdout
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
@@ -90,6 +88,9 @@ RUN umask 0337; echo 'Defaults:maas !pam_session, !syslog' > /etc/sudoers.d/99-m
 
 # avoid triggering bind9 high cpu utilization bug
 RUN sed -i -e '$a\include "/etc/bind/bind.keys";' /etc/bind/named.conf && /usr/lib/maas/maas-common setup-dns
+
+# fix chronyd.pid permission
+COPY override.chrony.conf /etc/systemd/system/chrony.service.d/override.conf
 
 # initalize systemd
 CMD ["/bin/bash", "-c", "exec /sbin/init --log-target=console 3>&1"]

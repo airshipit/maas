@@ -19,6 +19,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV container docker
 
 ENV MAAS_VERSION 2.8.7-8611-g.f2514168f-0ubuntu1~18.04.1
+ENV MAAS_PPA ppa:maas/2.8
 
 RUN apt-get -qq update \
  && apt-get install -y \
@@ -40,7 +41,7 @@ RUN apt-get -qq update \
          -exec rm \{} \; \
  && systemctl set-default multi-user.target \
 # Install maas from the ppa
- && add-apt-repository -yu ppa:maas/2.8 \
+ && add-apt-repository -yu $MAAS_PPA \
  && apt-get install -y \
         maas-region-api=$MAAS_VERSION \
         # tcpdump is required by /usr/lib/maas/beacon-monitor

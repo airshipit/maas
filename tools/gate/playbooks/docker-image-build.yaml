@@ -66,6 +66,9 @@
       when: not publish
       shell: |
         make images
+      environment:
+        DISTRO: "{{ distro }}"
+        DISTRO_ALIAS: "{{ distro }}"
       args:
         chdir: "{{ zuul.project.src_dir }}"
         executable: /bin/bash
@@ -79,8 +82,10 @@
             target: images
             params:
               IMAGE_TAG: "{{ item }}"
-              DISTRO: "{{ distro }}"
           with_items: "{{ image_tags.stdout_lines }}"
+          environment:
+            DISTRO: "{{ distro }}"
+            DISTRO_ALIAS: "{{ distro }}"
 
         - shell: "docker images"
           register: docker_images

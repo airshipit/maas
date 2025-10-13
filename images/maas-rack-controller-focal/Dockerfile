@@ -19,6 +19,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV container=docker
 
 ENV MAAS_VERSION=1:3.0.2-10056-g.089ec66c2-0ubuntu1~20.04.1
+ENV MAAS_PPA=ppa:maas/3.0
 
 RUN apt-get -qq update \
  && apt-get install -y \
@@ -43,7 +44,7 @@ RUN apt-get -qq update \
          -exec rm \{} \; \
  && systemctl set-default multi-user.target \
 # Install maas from the ppa
- && add-apt-repository -yu ppa:maas/3.0 \
+ && add-apt-repository -yu $MAAS_PPA \
  && apt-get install -y \
         maas-rack-controller=$MAAS_VERSION \
  && rm -rf /var/lib/apt/lists/*\

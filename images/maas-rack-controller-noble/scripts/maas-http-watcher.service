@@ -1,0 +1,9 @@
+[Unit]
+Description=MAAS HTTP server and reverse proxy server
+After=network.target
+
+[Service]
+ExecStart=bash -c 'until (stat -f /var/run/maas/httpproxy.sock); do sleep 60; done; chmod o+rw /var/run/maas/httpproxy.sock'
+
+[Install]
+WantedBy=multi-user.target
