@@ -18,7 +18,7 @@ ARG no_proxy
 ENV DEBIAN_FRONTEND=noninteractive
 ENV container=docker
 
-ENV MAAS_VERSION=3.5
+ENV MAAS_VERSION=1:3.5.8-16381-g.d7e999261-0ubuntu1~22.04.1
 
 RUN apt-get -qq update \
  && apt upgrade -y \
@@ -44,9 +44,9 @@ RUN apt-get -qq update \
          -exec rm \{} \; \
  && systemctl set-default multi-user.target \
 # Install maas from the ppa
- && add-apt-repository -yu ppa:maas/$MAAS_VERSION \
+ && add-apt-repository -yu ppa:maas/3.5 \
  && apt-get install -y \
-        maas-rack-controller \
+        maas-rack-controller=$MAAS_VERSION \
  && rm -rf /var/lib/apt/lists/*\
  && rm -f /etc/ssl/private/snakeoil.*
 
