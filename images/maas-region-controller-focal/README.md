@@ -1,1 +1,1 @@
-[![Docker Repository on Quay](https://quay.io/repository/airshipit/maas-rack/status "Docker Repository on Quay")](https://quay.io/repository/airshipit/maas-region) Ubuntu MaaS Region Controller
+[![Docker Repository on Quay](https://quay.io/repository/airshipit/maas-region-controller-focal "Docker Repository on Quay")](https://quay.io/repository/airshipit/maas-region-controller-focal) Ubuntu MaaS Region Controller
