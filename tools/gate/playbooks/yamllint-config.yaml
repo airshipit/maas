@@ -11,10 +11,21 @@
 # limitations under the License.
 ---
 extends: default
+# Pathspecs for files to include in linting
+yaml-files:
+  - '*.yaml'
+  - '*.yml'
 
-ignore:
-  /charts/maas/templates/
+# Paths to ignore from linting
+ignore: |
+  **/charts/deps/**
+  **/charts/maas/templates/**
+  **/build/**
+  **/build/charts/maas/templates/job-db-sync.yaml
+  **/docs/**
+
+
 rules:
   line-length:
-    max: 80
+    max: 120
     level: warning

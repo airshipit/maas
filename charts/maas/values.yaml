@@ -206,7 +206,8 @@ conf:
     #   driver_NN_*, drydock_NN, and maas
     # Example:
     # late_commands:
-    #   install_modules_extra: ["curtin", "in-target", "--", "apt-get", "-y", "install", "linux-modules-extra-4.15.0-88-generic"]
+    #   install_modules_extra: ["curtin", "in-target", "--", "apt-get",
+    #      "-y", "install", "linux-modules-extra-4.15.0-88-generic"]
   cloudconfig:
     override: false
     sections: {}
@@ -260,7 +261,7 @@ conf:
       use_external_only: false
       ntp_servers: []
     dns:
-      require_dnssec: no
+      require_dnssec: false
       # These are upstream servers
       dns_servers: []
     proxy:
@@ -296,7 +297,8 @@ conf:
       enable_analytics: false
       # network_discovery: 'enabled' or 'disabled'
       network_discovery: disabled
-      # active_discovery_interval (seconds): one of '0', '604800', '86400', '43200', '21600', '10800', '3600', '1800', '600'
+      # active_discovery_interval (seconds):
+      # one of '0', '604800', '86400', '43200', '21600', '10800', '3600', '1800', '600'
       active_discovery_interval: 0
       # enlist_commissioning: if true, directly go into commissioning during enlistment
       enlist_commissioning: false

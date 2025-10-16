@@ -53,14 +53,14 @@
         - pip:
             name: docker
             executable: pip3
-      become: True
+      become: true
 
     - name: Install tox python module for ansible docker login
       block:
         - pip:
             name: tox
             executable: pip3
-      become: True
+      become: true
 
     - name: Make images - verbosive
       when: not publish
@@ -72,7 +72,7 @@
       args:
         chdir: "{{ zuul.project.src_dir }}"
         executable: /bin/bash
-      become: True
+      become: true
 
     - name: Make images
       when: not publish
@@ -80,12 +80,11 @@
         - make:
             chdir: "{{ zuul.project.src_dir }}"
             target: images
-            params:
-              IMAGE_TAG: "{{ item }}"
           with_items: "{{ image_tags.stdout_lines }}"
           environment:
             DISTRO: "{{ distro }}"
             DISTRO_ALIAS: "{{ distro }}"
+            IMAGE_TAG: "{{ item }}"
 
         - shell: "docker images"
           register: docker_images
@@ -93,7 +92,7 @@
         - debug:
             var: docker_images
 
-      become: True
+      become: true
 
     - name: Publish images
       block:
@@ -106,15 +105,15 @@
         - make:
             chdir: "{{ zuul.project.src_dir }}"
             target: images
-            params:
-              DOCKER_REGISTRY: "quay.io"
-              IMAGE_PREFIX: "airshipit"
-              IMAGE_TAG: "{{ item }}"
-              DISTRO: "{{ distro }}"
-              DISTRO_ALIAS: "{{ distro }}"
-              COMMIT: "{{ zuul.newrev | default('') }}"
-              PUSH_IMAGE: "true"
           with_items: "{{ image_tags.stdout_lines }}"
+          environment:
+            DISTRO: "{{ distro }}"
+            DISTRO_ALIAS: "{{ distro }}"
+            DOCKER_REGISTRY: "quay.io"
+            IMAGE_PREFIX: "airshipit"
+            IMAGE_TAG: "{{ item }}"
+            COMMIT: "{{ zuul.newrev | default('') }}"
+            PUSH_IMAGE: "true"
 
         - shell: "docker images"
           register: docker_images
@@ -123,4 +122,4 @@
             var: docker_images
 
       when: publish
-      become: True
+      become: true

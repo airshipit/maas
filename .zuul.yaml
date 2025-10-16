@@ -141,7 +141,7 @@
     voting: true
     timeout: 900
     run: tools/gate/playbooks/lint-yaml.yaml
-    nodeset: airship-maas-single-node
+    nodeset: airship-maas-single-node-jammy
     irrelevant-files:
       - "^charts/maas/templates/.*"
 

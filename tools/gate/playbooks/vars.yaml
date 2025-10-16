@@ -17,4 +17,4 @@ docker_daemon:
   registry-mirrors:
     - "http://{{ zuul_site_mirror_fqdn }}:8082/"
   storage-driver: overlay2
-  debug: True
+  debug: true
