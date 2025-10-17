@@ -34,6 +34,7 @@ RUN apt-get -qq update \
         sudo \
         systemd \
         ca-certificates \
+        chrony \
 # Don't start any optional services except for the few we need.
 # (specifically, don't start avahi-daemon, isc-dhcp-server, or libvirtd)
  && find /etc/systemd/system \

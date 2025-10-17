@@ -437,6 +437,7 @@ pod:
             add:
               - "DAC_READ_SEARCH"
               - "NET_ADMIN"
+              - "NET_BIND_SERVICE"
               - "SYS_ADMIN"
               - "SYS_PTRACE"
               - "SYS_RESOURCE"
@@ -453,6 +454,7 @@ pod:
             add:
               - "SYS_ADMIN"
               - "NET_ADMIN"
+              - "NET_BIND_SERVICE"
               - "SYS_PTRACE"
               - "SYS_TIME"
               - "SYS_RESOURCE"
