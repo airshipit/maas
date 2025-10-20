@@ -33,6 +33,7 @@ RUN apt-get -qq update \
         cron \
         ca-certificates \
         bind9-dnsutils \
+        chrony \
 # Don't start any optional services except for the few we need.
 # (specifically, don't start avahi-daemon)
  && find /etc/systemd/system \

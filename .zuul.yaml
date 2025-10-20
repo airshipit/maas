@@ -200,7 +200,7 @@
       - "^images/.*"
     vars:
       publish: true
-      distro: ubuntu_jammy
+      distro: ubuntu_noble
       tags:
         dynamic:
           branch: true

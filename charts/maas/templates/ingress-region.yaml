@@ -35,6 +35,27 @@ spec:
       http:
         paths:
 {{- if .Values.conf.maas.ingress_disable_gui }}
+          - path: /MAAS/version
+            pathType: Exact
+            backend:
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api
+          - path: /MAAS
+            pathType: Exact
+            backend:
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api
+          - path: /MAAS/
+            pathType: Exact
+            backend:
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api
           - path: /MAAS/api
             pathType: Prefix
             backend:
@@ -57,6 +78,13 @@ spec:
                 port:
                   name: region-api
           - path: /MAAS/rpc
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+                port:
+                  name: region-api
+          - path: /MAAS/ws
             pathType: Prefix
             backend:
               service:
