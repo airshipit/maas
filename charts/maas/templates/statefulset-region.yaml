@@ -157,6 +157,8 @@ spec:
           ports:
             - name: region-api
               containerPort: {{ tuple "maas_region" "podport" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+            - name: region-int-api
+              containerPort: {{ tuple "maas_region" "podport" "region_int_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
 {{- if .Values.conf.maas.tls.enabled }}
             - name: region-api-tls
               containerPort: {{ tuple "maas_region" "podporttls" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}

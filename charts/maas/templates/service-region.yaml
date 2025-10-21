@@ -25,6 +25,9 @@ spec:
     - name: region-api
       port: {{ tuple "maas_region" "internal" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
       targetPort: {{ tuple "maas_region" "podport" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: region-int-api
+      port: {{ tuple "maas_region" "internal" "region_int_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_int_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
       {{ if .Values.network.region_api.node_port.enabled }}
       nodePort: {{ tuple "maas_region" "nodeport" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
       {{ end }}

@@ -84,7 +84,7 @@ spec:
           env:
             - name: MAAS_ENDPOINT
 {{- if empty .Values.conf.maas.url.maas_url }}
-              value: {{ tuple "maas_region" "public" "region_api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | quote }}
+              value: {{ tuple "maas_region" "internal" "region_api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | quote }}
 {{- else }}
               value: {{ .Values.conf.maas.url.maas_url }}
 {{- end }}

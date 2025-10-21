@@ -33,6 +33,7 @@ RUN apt-get -qq update \
         cron \
         ca-certificates \
         bind9-dnsutils \
+        chrony \
 # Don't start any optional services except for the few we need.
 # (specifically, don't start avahi-daemon)
  && find /etc/systemd/system \
@@ -89,7 +90,10 @@ RUN umask 0337; echo 'Defaults:maas !pam_session, !syslog' > /etc/sudoers.d/99-m
 # avoid triggering bind9 high cpu utilization bug
 RUN sed -i -e '$a\include "/etc/bind/bind.keys";' /etc/bind/named.conf && /usr/lib/maas/maas-common setup-dns
 
-# fix chronyd.pid permission
+# fix chronyd.pid location
+RUN grep -i "^pidfile " /etc/chrony/chrony.conf && \
+    sed -i 's|^pidfile .*|pidfile /run/chronyd.pid|' /etc/chrony/chrony.conf || \
+    echo 'pidfile /run/chronyd.pid' >> /etc/chrony/chrony.conf
 COPY override.chrony.conf /etc/systemd/system/chrony.service.d/override.conf
 
 # initalize systemd

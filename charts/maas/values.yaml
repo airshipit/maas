@@ -683,6 +683,10 @@ endpoints:
         podport: 5240
         podporttls: 5443
         public: 80
+      # NEW: internal API on 5242
+      region_int_api:
+        podport: 5242
+        default: 5242
       region_proxy:
         default: 8000
         # podport and public need to be the same as of MAAS 2.3.4, so
