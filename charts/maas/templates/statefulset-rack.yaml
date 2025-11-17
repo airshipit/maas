@@ -43,7 +43,7 @@ spec:
 {{ tuple $envAll "maas" "rack" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 6 }}
   serviceName: maas-rack
   replicas: {{ .Values.pod.replicas.rack }}
-  podManagementPolicy: 'Parallel'
+  podManagementPolicy: 'OrderedReady'
   updateStrategy:
     type: 'RollingUpdate'
   template:
@@ -78,7 +78,15 @@ spec:
                 command:
                   - /bin/sh
                   - -c
-                  - sleep 15; update-ca-certificates
+                  - sleep 60; update-ca-certificates; /usr/local/bin/rack-dhcp-setup-orphaned-racks-cleanup.sh> /tmp/poststart.log 2>&1
+{{- else }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - sleep 60; /usr/local/bin/rack-dhcp-setup-orphaned-racks-cleanup.sh > /tmp/poststart.log 2>&1
 {{- end }}
 {{ dict "envAll" $envAll "application" "rack" "container" "maas_rack" | include "helm-toolkit.snippets.kubernetes_container_security_context" | indent 10 }}
           env:
@@ -135,6 +143,10 @@ spec:
             - name: maas-bin
               mountPath: /usr/local/bin/register-rack-controller.sh
               subPath: register-rack-controller.sh
+              readOnly: true
+            - name: maas-bin
+              mountPath: /usr/local/bin/rack-dhcp-setup-orphaned-racks-cleanup.sh
+              subPath: rack-dhcp-setup-orphaned-racks-cleanup.sh
               readOnly: true
             - name: rackd-state
               mountPath: /etc/maas
