@@ -19,6 +19,50 @@ limitations under the License.
 {{- $serviceAccountName := "maas-import-resources" }}
 {{ tuple $envAll "import_resources" $serviceAccountName | include "helm-toolkit.snippets.kubernetes_pod_rbac_serviceaccount" }}
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $envAll.Release.Name }}-{{ $serviceAccountName }}-job
+  namespace: {{ $envAll.Release.Namespace }}
+  annotations:
+    {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $envAll.Release.Name }}-{{ $envAll.Release.Namespace }}-{{ $serviceAccountName }}-job
+subjects:
+  - kind: ServiceAccount
+    name: {{ $serviceAccountName }}
+    namespace: {{ $envAll.Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $envAll.Release.Name }}-{{ $envAll.Release.Namespace }}-{{ $serviceAccountName }}-job
+  namespace: {{ $envAll.Release.Namespace }}
+rules:
+  - apiGroups:
+      - ""
+      - extensions
+      - batch
+      - apps
+    verbs:
+      - get
+      - list
+    resources:
+      - services
+      - endpoints
+      - jobs
+      - pods
+  - apiGroups:
+      - apps
+    verbs:
+      - patch
+    resources:
+      - statefulsets
+    resourceNames:
+      - maas-region
+---
 apiVersion: batch/v1
 kind: Job
 metadata:

@@ -18,15 +18,18 @@
 set -ex
 
 function check_boot_images {
-	if maas local boot-resources is-importing | grep -q 'true'; then
-		echo -e '\nBoot resources currently importing\n'
+	local is_importing=$(maas local boot-resources is-importing 2>/dev/null || echo "false")
+	local synced_imgs=$(maas local boot-resources read 2>/dev/null | tr -d '\n' | grep -oE '{[^}]+}' | grep ubuntu | grep -c Synced || echo "0")
+
+	if echo "$is_importing" | grep -q 'true'; then
+		echo "Boot resources currently importing... (synced: $synced_imgs)"
 		return 1
 	else
-		synced_imgs=$(maas local boot-resources read | tr -d '\n' | grep -oE '{[^}]+}' | grep ubuntu | grep -c Synced)
 		if [[ $synced_imgs -gt 0 ]]; then
-			echo 'Boot resources have completed importing'
+			echo "Boot resources have completed importing ($synced_imgs images synced)"
 			return 0
 		else
+			echo "No synced boot images found yet (import status: not importing)"
 			return 1
 		fi
 	fi
@@ -52,8 +55,20 @@ function check_admin_api {
 }
 
 function establish_session {
-	maas login local ${MAAS_URL} ${MAAS_API_KEY}
-	return $?
+	echo "Attempting to establish MAAS session at ${MAAS_URL}..."
+	retry_count=0
+	max_retries=10
+	until maas login local ${MAAS_URL} ${MAAS_API_KEY}; do
+		retry_count=$((retry_count + 1))
+		if [[ $retry_count -ge $max_retries ]]; then
+			echo "Failed to establish MAAS session after $max_retries attempts"
+			return 1
+		fi
+		echo "Session login failed, retrying... (attempt $retry_count/$max_retries)"
+		sleep 5
+	done
+	echo "MAAS session established successfully"
+	return 0
 }
 
 # Import CA Certificate
@@ -68,23 +83,48 @@ if [[ $? -ne 0 ]]; then
 	exit 1
 fi
 
-check_boot_images
+# Wait for rack controllers to register first (max 10 minutes)
+echo "Waiting for rack controllers to register..."
+retry_count=0
+max_retries=60  # 60 * 10 seconds = 10 minutes
+until check_rack_controllers; do
+	retry_count=$((retry_count + 1))
+	if [[ $retry_count -ge $max_retries ]]; then
+		echo "Rack controller query FAILED! Timeout after 10 minutes."
+		echo "This usually means the rack controller pods are not running or cannot connect to the region."
+		exit 1
+	fi
+	if [[ $((retry_count % 6)) -eq 0 ]]; then
+		echo "Rack controllers not ready yet, waiting... (attempt $retry_count/$max_retries, elapsed: $((retry_count * 10 / 60)) minutes)"
+	fi
+	sleep 10
+done
 
-if [[ $? -eq 1 ]]; then
-	echo "Image import test FAILED!"
-	exit 1
-fi
+# Wait for boot images to complete importing (max 20 minutes)
+# The import job should handle any stalls, we just verify the result
+echo "Waiting for boot images to complete importing..."
+retry_count=0
+max_retries=120  # 120 * 10 seconds = 20 minutes
 
-check_rack_controllers
+until check_boot_images; do
+	retry_count=$((retry_count + 1))
 
-if [[ $? -eq 1 ]]; then
-	echo "Rack controller query FAILED!"
-	exit 1
-fi
+	if [[ $retry_count -ge $max_retries ]]; then
+		echo "Image import test FAILED! Timeout after 20 minutes."
+		echo "The import job may have failed or is still running."
+		echo "Check the 'maas-import-resources' job logs for details."
+		exit 1
+	fi
 
-check_admin_api
+	if [[ $((retry_count % 6)) -eq 0 ]]; then
+		echo "Boot images not ready yet, waiting... (attempt $retry_count/$max_retries, elapsed: $((retry_count * 10 / 60)) minutes)"
+	fi
 
-if [[ $? -eq 1 ]]; then
+	sleep 10
+done
+
+# Verify admin API is still responding
+if ! check_admin_api; then
 	echo "Admin API response FAILED!"
 	exit 1
 fi
