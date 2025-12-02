@@ -243,7 +243,7 @@ function restart_region_statefulset {
 
 		sleep 5
 		waited=$((waited + 5))
-		
+
 		if [[ $((waited % 30)) -eq 0 ]]; then
 			echo "Still waiting for rollout... (${waited}s elapsed)"
 		fi

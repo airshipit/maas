@@ -111,40 +111,96 @@ else
   if [[ -z "${VLAN_ID}" || -z "${FABRIC_ID}" ]]; then
     echo "[DHCP] Missing VLAN vid or fabric id (vid=${VLAN_ID:-<none>} fabric=${FABRIC_ID:-<none>}); skipping."
   else
-    # 3. Choose running rack controllers deterministically
-    PRIMARY_RACK_ID=$( maas admin rack-controllers read | jq -r '[ .[] | {system_id, rackd_status: ([.service_set[]? | select(.name=="rackd")] | .[]? .status) } ] | map(select(.rackd_status=="running")) | sort_by(.system_id) | .[0].system_id // empty' )
-    SECONDARY_RACK_ID=$( maas admin rack-controllers read | jq -r '[ .[] | {system_id, rackd_status: ([.service_set[]? | select(.name=="rackd")] | .[]? .status) } ] | map(select(.rackd_status=="running")) | sort_by(.system_id) | .[1].system_id // empty' )
+    # 3. Read current VLAN state (fabric + vid)
+    CURRENT_VLAN_JSON=$(maas admin vlan read "${FABRIC_ID}" "${VLAN_ID}" 2>/dev/null || true)
+    CURRENT_PRIMARY=$(echo "${CURRENT_VLAN_JSON}" | jq -r '.primary_rack // empty')
+    CURRENT_SECONDARY=$(echo "${CURRENT_VLAN_JSON}" | jq -r '.secondary_rack // empty')
+    CURRENT_DHCP=$(echo "${CURRENT_VLAN_JSON}" | jq -r '.dhcp_on // false')
 
-    if [[ -z "${PRIMARY_RACK_ID}" || -z "${SECONDARY_RACK_ID}" ]]; then
-      echo "[DHCP] Not enough running rack controllers to set primary/secondary (primary='${PRIMARY_RACK_ID:-<none>}' secondary='${SECONDARY_RACK_ID:-<none>}')."
+    echo "[DHCP] Current VLAN state: fabric=${FABRIC_ID} vid=${VLAN_ID} current_primary=${CURRENT_PRIMARY:-<none>} current_secondary=${CURRENT_SECONDARY:-<none>} current_dhcp=${CURRENT_DHCP}"
+
+    # 4. Get list of running rack controllers (including those starting up)
+    # Accept both "running" and other non-dead states to avoid deregistering racks that are still initializing
+    ALL_RACKS_JSON=$(maas admin rack-controllers read 2>/dev/null)
+
+    # Get hostnames from rack controllers that have active pods in Kubernetes
+    RACKS_WITH_ACTIVE_PODS=$(echo "${ALL_RACKS_JSON}" | jq -r --argjson active_nodes "${ACTIVE_NODES_ARRAY}" \
+        '.[] | select([.hostname] | inside($active_nodes)) | .system_id')
+
+    # Get racks with running rackd status
+    RUNNING_RACKS=$(echo "${ALL_RACKS_JSON}" | jq -r \
+        '[ .[] | {system_id, rackd_status: ([.service_set[]? | select(.name=="rackd")] | .[]? .status) } ] |
+         map(select(.rackd_status=="running")) | .[].system_id')
+
+    # Combine both lists and deduplicate
+    ACTIVE_RACKS=$(echo -e "${RUNNING_RACKS}\n${RACKS_WITH_ACTIVE_PODS}" | grep -v '^$' | sort -u)
+    RUNNING_RACKS_ARRAY=(${ACTIVE_RACKS})
+
+    echo "[DHCP] Active rack controllers (running or with active pods): ${RUNNING_RACKS_ARRAY[@]}"
+
+    # 5. Determine target primary and secondary
+    # Strategy: Keep existing assignments if they're still running, otherwise assign from available running racks
+    TARGET_PRIMARY=""
+    TARGET_SECONDARY=""
+
+    # Check if current primary is still running
+    if [[ -n "${CURRENT_PRIMARY}" ]] && echo "${RUNNING_RACKS}" | grep -q "^${CURRENT_PRIMARY}$"; then
+        TARGET_PRIMARY="${CURRENT_PRIMARY}"
+        echo "[DHCP] Keeping existing primary: ${TARGET_PRIMARY}"
+    fi
+
+    # Check if current secondary is still running
+    if [[ -n "${CURRENT_SECONDARY}" ]] && echo "${RUNNING_RACKS}" | grep -q "^${CURRENT_SECONDARY}$"; then
+        TARGET_SECONDARY="${CURRENT_SECONDARY}"
+        echo "[DHCP] Keeping existing secondary: ${TARGET_SECONDARY}"
+    fi
+
+    # Fill in missing primary from running racks
+    if [[ -z "${TARGET_PRIMARY}" ]] && [[ ${#RUNNING_RACKS_ARRAY[@]} -ge 1 ]]; then
+        for rack in "${RUNNING_RACKS_ARRAY[@]}"; do
+            if [[ "${rack}" != "${TARGET_SECONDARY}" ]]; then
+                TARGET_PRIMARY="${rack}"
+                echo "[DHCP] Assigning new primary: ${TARGET_PRIMARY}"
+                break
+            fi
+        done
+    fi
+
+    # Fill in missing secondary from running racks
+    if [[ -z "${TARGET_SECONDARY}" ]] && [[ ${#RUNNING_RACKS_ARRAY[@]} -ge 2 ]]; then
+        for rack in "${RUNNING_RACKS_ARRAY[@]}"; do
+            if [[ "${rack}" != "${TARGET_PRIMARY}" ]]; then
+                TARGET_SECONDARY="${rack}"
+                echo "[DHCP] Assigning new secondary: ${TARGET_SECONDARY}"
+                break
+            fi
+        done
+    fi
+
+    if [[ -z "${TARGET_PRIMARY}" ]] || [[ -z "${TARGET_SECONDARY}" ]]; then
+      echo "[DHCP] Not enough running rack controllers to set primary/secondary (primary='${TARGET_PRIMARY:-<none>}' secondary='${TARGET_SECONDARY:-<none>}')."
     else
-      # 4. Read current VLAN state (fabric + vid)
-      CURRENT_VLAN_JSON=$(maas admin vlan read "${FABRIC_ID}" "${VLAN_ID}" 2>/dev/null || true)
-      CURRENT_PRIMARY=$(echo "${CURRENT_VLAN_JSON}" | jq -r '.primary_rack // empty')
-      CURRENT_SECONDARY=$(echo "${CURRENT_VLAN_JSON}" | jq -r '.secondary_rack // empty')
-      CURRENT_DHCP=$(echo "${CURRENT_VLAN_JSON}" | jq -r '.dhcp_on // false')
-
-      echo "[DHCP] Target subnet=${PXE_SUBNET_ID} fabric=${FABRIC_ID} vid=${VLAN_ID} current_primary=${CURRENT_PRIMARY:-<none>} requested_primary=${PRIMARY_RACK_ID} current_secondary=${CURRENT_SECONDARY:-<none>} requested_secondary=${SECONDARY_RACK_ID} current_dhcp=${CURRENT_DHCP}"
+      echo "[DHCP] Target configuration: primary=${TARGET_PRIMARY} secondary=${TARGET_SECONDARY}"
 
       NEED_PRIMARY_CHANGE=false
       NEED_SECONDARY_CHANGE=false
       NEED_DHCP_ENABLE=false
 
-      [[ "${CURRENT_PRIMARY}" != "${PRIMARY_RACK_ID}" && -n "${PRIMARY_RACK_ID}" ]] && NEED_PRIMARY_CHANGE=true
-      [[ "${CURRENT_SECONDARY}" != "${SECONDARY_RACK_ID}" && -n "${SECONDARY_RACK_ID}" ]] && NEED_SECONDARY_CHANGE=true
+      [[ "${CURRENT_PRIMARY}" != "${TARGET_PRIMARY}" ]] && NEED_PRIMARY_CHANGE=true
+      [[ "${CURRENT_SECONDARY}" != "${TARGET_SECONDARY}" ]] && NEED_SECONDARY_CHANGE=true
       [[ "${CURRENT_DHCP}" != "true" ]] && NEED_DHCP_ENABLE=true
 
       if ! $NEED_PRIMARY_CHANGE && ! $NEED_SECONDARY_CHANGE && ! $NEED_DHCP_ENABLE; then
         echo "[DHCP] VLAN already matches desired primary/secondary & DHCP enabled."
       else
-        # 5. Perform update(s)
+        # 6. Perform update(s)
         if $NEED_DHCP_ENABLE && ( $NEED_PRIMARY_CHANGE || $NEED_SECONDARY_CHANGE ); then
-          echo "[DHCP] Updating primary='${PRIMARY_RACK_ID}' secondary='${SECONDARY_RACK_ID}' and enabling DHCP..."
-          maas admin vlan update "${FABRIC_ID}" "${VLAN_ID}" primary_rack="${PRIMARY_RACK_ID}" secondary_rack="${SECONDARY_RACK_ID}" dhcp_on=true
+          echo "[DHCP] Updating primary='${TARGET_PRIMARY}' secondary='${TARGET_SECONDARY}' and enabling DHCP..."
+          maas admin vlan update "${FABRIC_ID}" "${VLAN_ID}" primary_rack="${TARGET_PRIMARY}" secondary_rack="${TARGET_SECONDARY}" dhcp_on=true
         else
           if $NEED_PRIMARY_CHANGE || $NEED_SECONDARY_CHANGE; then
-            echo "[DHCP] Updating racks: primary='${PRIMARY_RACK_ID}' secondary='${SECONDARY_RACK_ID}'..."
-            maas admin vlan update "${FABRIC_ID}" "${VLAN_ID}" primary_rack="${PRIMARY_RACK_ID}" secondary_rack="${SECONDARY_RACK_ID}"
+            echo "[DHCP] Updating racks: primary='${TARGET_PRIMARY}' secondary='${TARGET_SECONDARY}'..."
+            maas admin vlan update "${FABRIC_ID}" "${VLAN_ID}" primary_rack="${TARGET_PRIMARY}" secondary_rack="${TARGET_SECONDARY}"
           fi
           if $NEED_DHCP_ENABLE; then
             echo "[DHCP] Enabling DHCP..."
@@ -152,7 +208,7 @@ else
           fi
         fi
 
-        # 6. Verify post state
+        # 7. Verify post state
         POST_JSON=$(maas admin vlan read "${FABRIC_ID}" "${VLAN_ID}" 2>/dev/null || true)
         echo "[DHCP] Post-update state: $(echo "${POST_JSON}" | jq '{fabric: .fabric_id, vid: .vid, dhcp_on: .dhcp_on, primary_rack: .primary_rack, secondary_rack: .secondary_rack}')"
       fi
