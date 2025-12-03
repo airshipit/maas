@@ -177,9 +177,43 @@ else
         done
     fi
 
-    if [[ -z "${TARGET_PRIMARY}" ]] || [[ -z "${TARGET_SECONDARY}" ]]; then
-      echo "[DHCP] Not enough running rack controllers to set primary/secondary (primary='${TARGET_PRIMARY:-<none>}' secondary='${TARGET_SECONDARY:-<none>}')."
+    if [[ -z "${TARGET_PRIMARY}" ]]; then
+      echo "[DHCP] No running rack controllers available to set as primary."
+    elif [[ -z "${TARGET_SECONDARY}" ]]; then
+      # Only one rack available - set it as primary only
+      echo "[DHCP] Only one rack controller available. Setting primary='${TARGET_PRIMARY}' without secondary."
+      echo "[DHCP] Target configuration: primary=${TARGET_PRIMARY} secondary=<none>"
+
+      NEED_PRIMARY_CHANGE=false
+      NEED_DHCP_ENABLE=false
+
+      [[ "${CURRENT_PRIMARY}" != "${TARGET_PRIMARY}" ]] && NEED_PRIMARY_CHANGE=true
+      [[ "${CURRENT_DHCP}" != "true" ]] && NEED_DHCP_ENABLE=true
+
+      if ! $NEED_PRIMARY_CHANGE && ! $NEED_DHCP_ENABLE; then
+        echo "[DHCP] VLAN already has correct primary & DHCP enabled."
+      else
+        # 6. Perform update(s) for single rack
+        if $NEED_DHCP_ENABLE && $NEED_PRIMARY_CHANGE; then
+          echo "[DHCP] Updating primary='${TARGET_PRIMARY}' and enabling DHCP..."
+          maas admin vlan update "${FABRIC_ID}" "${VLAN_ID}" primary_rack="${TARGET_PRIMARY}" dhcp_on=true
+        else
+          if $NEED_PRIMARY_CHANGE; then
+            echo "[DHCP] Updating primary rack: primary='${TARGET_PRIMARY}'..."
+            maas admin vlan update "${FABRIC_ID}" "${VLAN_ID}" primary_rack="${TARGET_PRIMARY}"
+          fi
+          if $NEED_DHCP_ENABLE; then
+            echo "[DHCP] Enabling DHCP..."
+            maas admin vlan update "${FABRIC_ID}" "${VLAN_ID}" dhcp_on=true
+          fi
+        fi
+
+        # 7. Verify post state
+        POST_JSON=$(maas admin vlan read "${FABRIC_ID}" "${VLAN_ID}" 2>/dev/null || true)
+        echo "[DHCP] Post-update state: $(echo "${POST_JSON}" | jq '{fabric: .fabric_id, vid: .vid, dhcp_on: .dhcp_on, primary_rack: .primary_rack, secondary_rack: .secondary_rack}')"
+      fi
     else
+      # Two or more racks available - set both primary and secondary
       echo "[DHCP] Target configuration: primary=${TARGET_PRIMARY} secondary=${TARGET_SECONDARY}"
 
       NEED_PRIMARY_CHANGE=false
