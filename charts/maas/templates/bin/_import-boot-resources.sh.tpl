@@ -20,7 +20,7 @@ import_tries=0
 
 TRY_LIMIT=${TRY_LIMIT:-1}
 JOB_TIMEOUT=${JOB_TIMEOUT:-900}
-RETRY_TIMER=${RETRY_TIMER:-30}
+RETRY_TIMER=${RETRY_TIMER:-10}
 
 function timer {
 	retry_wait=$1
@@ -61,10 +61,12 @@ function start_import {
 	local last_progress_time=$import_start_time
 	local stall_restart_done=false
 	local last_synced_count=$(get_synced_count)
-	local stall_check_interval=300  # Check for stalls every 5 minutes
+	local last_downloading_count=$(get_downloading_count)
+	local last_total_count=$(get_total_resource_count)
+	local stall_check_interval=180  # Check for stalls every 3 minutes
 
 	echo "Starting import at $(date) (timeout: ${JOB_TIMEOUT}s)"
-	echo "Initial synced count: ${last_synced_count}"
+	echo "Initial resource state - synced: ${last_synced_count}, downloading: ${last_downloading_count}, total: ${last_total_count}"
 
 	# Custom loop with stall detection based on progress
 	while [[ ${JOB_TIMEOUT} -gt 0 ]]; do
@@ -79,17 +81,23 @@ function start_import {
 		local current_time=$(date +%s)
 		local elapsed=$((current_time - import_start_time))
 		local current_synced_count=$(get_synced_count)
+		local current_downloading_count=$(get_downloading_count)
+		local current_total_count=$(get_total_resource_count)
 
-		# Track progress - if synced count increased, update progress time
-		if [[ $current_synced_count -gt $last_synced_count ]]; then
-			echo "Progress detected: synced count increased from ${last_synced_count} to ${current_synced_count}"
+		# Track progress - detect any state changes (not just completed synced images)
+		if [[ $current_synced_count -gt $last_synced_count ]] || \
+		   [[ $current_downloading_count -ne $last_downloading_count ]] || \
+		   [[ $current_total_count -ne $last_total_count ]]; then
+			echo "Progress detected - synced: ${last_synced_count}→${current_synced_count}, downloading: ${last_downloading_count}→${current_downloading_count}, total: ${last_total_count}→${current_total_count}"
 			last_synced_count=$current_synced_count
+			last_downloading_count=$current_downloading_count
+			last_total_count=$current_total_count
 			last_progress_time=$current_time
 		fi
 
-		# Check if import appears stalled (no progress for 5 minutes)
+		# Check if import appears stalled (no progress for 3 minutes)
 		if [[ $stall_restart_done == false ]]; then
-			if check_import_stalled "$last_synced_count" "$current_synced_count" "$stall_check_interval" "$last_progress_time"; then
+			if check_import_stalled "$last_synced_count" "$current_synced_count" "$last_downloading_count" "$current_downloading_count" "$stall_check_interval" "$last_progress_time"; then
 				echo "Stalled import detected - attempting restart..."
 				restart_stalled_import
 				import_start_time=$(date +%s)
@@ -138,18 +146,36 @@ function get_synced_count {
 	maas ${ADMIN_USERNAME} boot-resources read 2>/dev/null | tail -n +1 | jq '.[] | select( .type | contains("Synced")) | .name ' 2>/dev/null | grep -c $MAAS_DEFAULT_DISTRO || echo "0"
 }
 
+function get_downloading_count {
+	# Count resources in Downloading state (stuck downloads will remain in this state)
+	maas ${ADMIN_USERNAME} boot-resources read 2>/dev/null | tail -n +1 | jq '[.[] | select(.type | contains("Downloading"))] | length' 2>/dev/null || echo "0"
+}
+
+function get_total_resource_count {
+	# Count all boot resources to detect state transitions
+	maas ${ADMIN_USERNAME} boot-resources read 2>/dev/null | tail -n +1 | jq 'length' 2>/dev/null || echo "0"
+}
+
+function get_resource_states {
+	# Get detailed state information for all resources
+	maas ${ADMIN_USERNAME} boot-resources read 2>/dev/null | tail -n +1 | jq -r '.[] | "\(.name): \(.type)"' 2>/dev/null || echo "No resources found"
+}
+
 function check_import_stalled {
 	# Check if import has been running without making progress
-	# This detects both stuck downloads and queued-but-never-starting imports
+	# This detects stuck downloads at any completion percentage, not just incomplete syncs
 	local last_synced_count=${1:-0}
 	local current_synced_count=${2:-0}
-	local check_interval=${3:-300}  # How long to wait for progress (5 minutes)
-	local last_progress_time=${4:-0}
+	local last_downloading_count=${3:-0}
+	local current_downloading_count=${4:-0}
+	local check_interval=${5:-180}  # How long to wait for progress (3 minutes)
+	local last_progress_time=${6:-0}
 
 	local current_time=$(date +%s)
 
-	# If synced count increased, we're making progress
-	if [[ $current_synced_count -gt $last_synced_count ]]; then
+	# If any state changed, we're making progress
+	if [[ $current_synced_count -gt $last_synced_count ]] || \
+	   [[ $current_downloading_count -ne $last_downloading_count ]]; then
 		return 1  # Not stalled, making progress
 	fi
 
@@ -161,11 +187,21 @@ function check_import_stalled {
 	local stall_duration=$((current_time - last_progress_time))
 
 	if [[ $stall_duration -gt $check_interval ]]; then
-		echo "WARNING: No import progress for ${stall_duration}s (synced count stuck at ${current_synced_count})"
-		echo "Checking import status details..."
+		echo "========================================"
+		echo "WARNING: Import stalled for ${stall_duration}s"
+		echo "Resource state stuck at:"
+		echo "  - Synced: ${current_synced_count}"
+		echo "  - Downloading: ${current_downloading_count}"
+		echo "========================================"
+		echo "Detailed resource states:"
+		get_resource_states | head -30
+		echo "========================================"
 
-		# Show what's in the queue
-		maas ${ADMIN_USERNAME} boot-resources read 2>/dev/null | jq -r '.[] | "\(.name): \(.type)"' | head -20 || true
+		# Check if we have downloads stuck in progress
+		if [[ $current_downloading_count -gt 0 ]]; then
+			echo "DETECTED: ${current_downloading_count} resource(s) stuck in Downloading state"
+			echo "This indicates a partial download failure (e.g., stuck at 91% completion)"
+		fi
 
 		return 0  # Import appears stalled
 	fi
@@ -259,10 +295,8 @@ function restart_stalled_import {
 	maas ${ADMIN_USERNAME} boot-resources stop-import || true
 	sleep 15
 
-	# Clean boot resource metadata that may be causing issues
-	clean_boot_resources
-
 	# Restart the region statefulset to clear stuck state
+	# Note: Database cleanup removed - statefulset restart alone is sufficient
 	restart_region_statefulset
 
 	echo "Waiting for region to be ready after restart..."
