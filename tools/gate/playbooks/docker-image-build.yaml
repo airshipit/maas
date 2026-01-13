@@ -97,10 +97,10 @@
     - name: Publish images
       block:
         - docker_login:
-            username: "{{ airship_maas_quay_creds.username }}"
-            password: "{{ airship_maas_quay_creds.password }}"
+            username: "{{ airship_maas_quay_creds_2026.username }}"
+            password: "{{ airship_maas_quay_creds_2026.password }}"
             registry_url: "https://quay.io/api/v1/"
-            api_version: "1.43"
+            api_version: "1.45"
 
         - make:
             chdir: "{{ zuul.project.src_dir }}"

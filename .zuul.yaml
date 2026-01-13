@@ -153,7 +153,7 @@
     run: tools/gate/playbooks/docker-image-build.yaml
     nodeset: airship-maas-single-node-jammy
     secrets:
-      - airship_maas_quay_creds
+      - airship_maas_quay_creds_2026
     irrelevant-files:
       - "^images/.*"
     vars:
@@ -174,7 +174,7 @@
     run: tools/gate/playbooks/docker-image-build.yaml
     nodeset: airship-maas-single-node-jammy
     secrets:
-      - airship_maas_quay_creds
+      - airship_maas_quay_creds_2026
     irrelevant-files:
       - "^images/.*"
     vars:
@@ -195,7 +195,7 @@
     run: tools/gate/playbooks/docker-image-build.yaml
     nodeset: airship-maas-single-node-jammy
     secrets:
-      - airship_maas_quay_creds
+      - airship_maas_quay_creds_2026
     irrelevant-files:
       - "^images/.*"
     vars:
@@ -300,6 +300,32 @@
           AQfFdvKSs5s1ytan8O2orSm0OtAMSjlL45WO/WXOk8xh9NcHh3XnOdLHm++A0x5vRDx9S
           XOd766NTksnmoHHWP27YvRXxxFA+EBjgLq+xCiKS2QlYtOp88aBO+0hVHDTcLE=
 
+- secret:
+    name: airship_maas_quay_creds_2026
+    data:
+      username: !encrypted/pkcs1-oaep
+        - JL/NqVJ2BQE/jOprOIybgQHwJ9tE8P2eLUxP6onaTNU6Tcs0ExqJhecEu0Rxj2ZdcWQ8U
+          FiO5NrGmCdOmYBfkytGDMed6fFPetX0Oel7Oj5+EpaqDHxBSQrg7/V38poGHTP41Y2ai7
+          4LB2BZwv/sDVMBlO+OuIEu+oKy2fm6KWQYk3jHMqH6nO5/+vKGx7MDLnU3GSSPlyX3hDT
+          r7XJtgpJPs4LoFxo3/xefdi0RMCSywNxnQ4CKsetDVJDX/Q+51ngf7kMiCYrcbZpogXyG
+          TO04KeeG0cCV9pgtO7Iv4wsyHlzNYls9NnX0QYysPbjS1+tOpvBEHKecdIfck38709JX1
+          AccKveO+wVepp0TmqgHVigOj6GhXGe+zwx49N4xW3nrceAmY8e7vfsG6CV2jYdUEE9JJn
+          v41+nPCtjUlVrudr3XYbcYpllxBXSWaOv4UKpQfQaZ3sTjIdQu6YmipHKR9Ds6/sDVU+t
+          d33gcA9b7BifYDeYPIJh5DTfP+I8GmX5Lja+VMSnX5tLxSCHN7m+5bUjgj4BNmF4ql6HC
+          YQPm/CXHxuLcGnTfgh2p1gANDwkYwGwHjkYr13XghAeSmLE5D3R35lQGPKKMwPC66r7DB
+          mqrGR0S67hWriXCZilc1vD+IhCkP6KYvNchobVyiGgdEA81ZRDMeFix1vJ+D2c=
+      password: !encrypted/pkcs1-oaep
+        - C2aN+A6cheVwQG9SwzIG1fX1Rs0kuniysEB02jz9ZizaA/2H8Xz96bxzo2JAHmCxaa6bq
+          HYepIjbrUyyq3WYok8Fx3G1P5Y7F1bYqPYDOw0JexB9MS4FGYE+ZmV1iWb4fwEDKdDpWa
+          4FIb//4g9X/1hKWJoGE9jeYefyNLMSDYOWSezM4i1iiz7gYZiZ/Up0k1amVBiY4kw000Z
+          UkizSNZk7Oxbx2u20AA8NJHsBk0h15Fh68buYoPNcjcwPsn1Ogi9zXao9MewBpycYYSVx
+          n02z2bspWP+K8VWoPtUj7N0J95g2JglsBAIm1CdarOcFIW9VSg5ptbwh7aBN0aslvoHpp
+          ZEY6JPickwS87vK4h8RuZ5OXDaT1+KNI0X3rSr1QN0u7IeY9BkITriN3n37CRa0xV+PUB
+          GJIjMi8hAhh5gP7zQjVHkNCUwhQ4b6mD2gtpezt0PfQtLvaLWpyvI3GTe4BHFeGeCa6QD
+          ms1aL02c0ZSASp7pO3Z9AH9w1csT2BT/ls4iOaw4MFaJ8B8Xc1gELe+qKeuwmHKCU8ubO
+          Tk1hIFfttUg4p1a3SZgc7J9hQak5AGrve+Qj+dRq2aryEDEBpa7a0UD0IOAZ2RROsBbLy
+          bxBxasZoE/w8mSyQDCRBSobEdb1YW+6URaJvw1wKtG8SpapTnJmN4w8AIlBr8k=
+
 - job:
     name: maas-upload-git-mirror
     # Pinned for now due to Ansible 11 stopped verbosive output.
@@ -311,7 +337,7 @@
       git_mirror_repository: airshipit/maas
     secrets:
       - name: git_mirror_credentials
-        secret: maas-airshipit-github-secret-2023-03-23
+        secret: maas-airshipit-github-ed25519-secret-2026-01-13
         pass-to-parent: true
 
 - secret:
@@ -361,3 +387,21 @@
           fm17RWjM2EbRdFuNmPymrHSvc3gWTUe25nPbKDpovPhU0K1493QZgYLUqmlvh7RRw4eHa
           GHLQTPtXMpsrl+c3A/2hpXcUvYHhmxvlFLla7p0mgmD2uNB5wRDqU88p/ub0z0jHCLO5Q
           +izMoqA6r8FuVMjccHc8DEwZcsuQ3jvZk1XCxY3mAkPHiAoyxvQtxfNeRuBZw0=
+
+- secret:
+    name: maas-airshipit-github-ed25519-secret-2026-01-13
+    data:
+      user: git
+      host: github.com
+      host_key: github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+      ssh_key: !encrypted/pkcs1-oaep
+        - jsoh9Ku7yN2pb/r79LD6/PSLs7Gg0kP699trwMIiFhpHhygHeCY8JQSbic83lLEYNlZG+
+          fOGbZpohwyvjLzFkyFU7IUnmt/aI5CoWT/orKr9mn2luIH+AB6d1DsHcdhX/Dmx59lPmr
+          nroiBldw5OxMkJJflRYlaVPdLtw2LLLntBAUjJBOhKkuzFgKrI7H4iR4nY17d2ykWa0gu
+          zwGMFWAFbmGe/IJo/YRor1ESCaHehUFNcilwo/kN7j8BDeCDo9890nZOjYVrzxaxRgrac
+          1xgaEvTqNeih8o9FfJO5JZu3uC3YOp6wSCvKTw5ftDLNqQRxaB2ZJKIGJEbtu1aIptvn7
+          bo919RVjE/ksecA1Nya7or1ZljDNU7SIZmYmhuHzK3ip3ylW9JxkO0ibLZFadjRLfziW0
+          LtRgIgb2ughb0xeffn2A4O2HoF1S56Sydp1FdLpQEXLEHJTniKYwzzmKdLJvmR8RLh3J8
+          o2n9qYIu/obqABskKCqxHJNCxcgy/f6u2cYAL0O9pSuGJD6ne1G1Gh2qE4uf2wKGQh5wT
+          lf4xlR1pTf0D+n7/ru/VZ4BiPMtkb6f/pi4ndMTfeuiEPOiFSfW7EPXqhCgVnHAQpwq+1
+          dQz6yhDDk+VAKdoc2lEtjG8rrrk8nCYF08kEN00G6tSX/spbrHl8UVy/ZBCB7s=
