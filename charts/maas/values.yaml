@@ -126,8 +126,7 @@ images:
 
 jobs:
   import_boot_resources:
-    try_limit: 1
-    retry_timer: 10
+    retry_timer: 60
     # default timeout: 15 minutes
     timeout: 900
 
@@ -432,6 +431,7 @@ pod:
     rack:
       pod:
         runAsUser: 0
+        fsGroup: 113
       container:
         maas_rack:
           readOnlyRootFilesystem: false
@@ -447,6 +447,7 @@ pod:
     region:
       pod:
         runAsUser: 0
+        fsGroup: 111
       container:
         maas_cache:
           readOnlyRootFilesystem: false
@@ -687,6 +688,121 @@ endpoints:
       region_int_api:
         podport: 5242
         default: 5242
+      # Internal services range 5241-5247
+      region_internal_5241:
+        podport: 5241
+        default: 5241
+      region_internal_5243:
+        podport: 5243
+        default: 5243
+      region_internal_5244:
+        podport: 5244
+        default: 5244
+      region_internal_5245:
+        podport: 5245
+        default: 5245
+      region_internal_5246:
+        podport: 5246
+        default: 5246
+      region_internal_5247:
+        podport: 5247
+        default: 5247
+      # NEW: Rack HTTP communication for MAAS 3.6.2+
+      region_rack_http:
+        podport: 5248
+        default: 5248
+      # NEW: Temporal for MAAS 3.6.2+
+      region_temporal:
+        podport: 5250
+        default: 5250
+      # NEW: Temporal workers for MAAS 3.6.2+
+      region_temporal_worker1:
+        podport: 5251
+        default: 5251
+      region_temporal_worker2:
+        podport: 5252
+        default: 5252
+      region_temporal_worker3:
+        podport: 5253
+        default: 5253
+      # Extended Temporal range 5254-5270
+      region_temporal_5254:
+        podport: 5254
+        default: 5254
+      region_temporal_5255:
+        podport: 5255
+        default: 5255
+      region_temporal_5256:
+        podport: 5256
+        default: 5256
+      region_temporal_5257:
+        podport: 5257
+        default: 5257
+      region_temporal_5258:
+        podport: 5258
+        default: 5258
+      region_temporal_5259:
+        podport: 5259
+        default: 5259
+      region_temporal_5260:
+        podport: 5260
+        default: 5260
+      region_temporal_5261:
+        podport: 5261
+        default: 5261
+      region_temporal_5262:
+        podport: 5262
+        default: 5262
+      region_temporal_5263:
+        podport: 5263
+        default: 5263
+      region_temporal_5264:
+        podport: 5264
+        default: 5264
+      region_temporal_5265:
+        podport: 5265
+        default: 5265
+      region_temporal_5266:
+        podport: 5266
+        default: 5266
+      region_temporal_5267:
+        podport: 5267
+        default: 5267
+      region_temporal_5268:
+        podport: 5268
+        default: 5268
+      region_temporal_5269:
+        podport: 5269
+        default: 5269
+      region_temporal_5270:
+        podport: 5270
+        default: 5270
+      # Rack-Region communication for MAAS 3.6.2+
+      region_rack_agent_5271:
+        podport: 5271
+        default: 5271
+      region_rack_agent_5272:
+        podport: 5272
+        default: 5272
+      region_rack_agent_5273:
+        podport: 5273
+        default: 5273
+      region_rack_agent_5274:
+        podport: 5274
+        default: 5274
+      # Temporal cluster gossip for MAAS 3.6.2+
+      region_temporal_gossip_5281:
+        podport: 5281
+        default: 5281
+      region_temporal_gossip_5282:
+        podport: 5282
+        default: 5282
+      region_temporal_gossip_5283:
+        podport: 5283
+        default: 5283
+      region_temporal_gossip_5284:
+        podport: 5284
+        default: 5284
       region_proxy:
         default: 8000
         # podport and public need to be the same as of MAAS 2.3.4, so

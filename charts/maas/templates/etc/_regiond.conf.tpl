@@ -20,7 +20,7 @@ database_pass: {{ .Values.endpoints.maas_db.auth.user.password }}
 database_user: {{ .Values.endpoints.maas_db.auth.user.username }}
 
 {{- if empty .Values.conf.maas.url.maas_url }}
-maas_url: {{ tuple "maas_region" "public" "region_api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | quote }}
+maas_url: {{ tuple "maas_region" "internal" "region_api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | quote }}
 {{- else }}
 maas_url: {{ .Values.conf.maas.url.maas_url }}
 {{- end }}

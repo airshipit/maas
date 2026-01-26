@@ -51,6 +51,7 @@ spec:
       labels:
 {{ tuple $envAll "maas" "rack" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        rollout-revision: "{{ .Release.Revision }}"
 {{ tuple $envAll | include "helm-toolkit.snippets.release_uuid" | indent 8 }}
         configmap-bin-hash: {{ tuple "configmap-bin.yaml" . | include "helm-toolkit.utils.hash" }}
         configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}
@@ -157,8 +158,9 @@ spec:
               subPath: home
               readOnly: false
             - name: rackd-state
-              mountPath: /var/cache/maas/httpproxy
+              mountPath: /var/cache/maas
               subPath: cache
+              readOnly: false
             - name: maas-etc
               mountPath: /etc/nsswitch.conf
               subPath: nsswitch.conf

@@ -52,18 +52,114 @@ spec:
     - name: region-syslog
       port: 514
       targetPort: {{ tuple "maas_region" "podport" "region_syslog" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
-    - name: temporal-server
-      port: 5271
-      targetPort: 5271
-    - name: temporal-matching
-      port: 5272
-      targetPort: 5272
-    - name: temporal-history
-      port: 5273
-      targetPort: 5273
-    - name: temporal-worker
-      port: 5274
-      targetPort: 5274
+    - name: region-int-5241
+      port: {{ tuple "maas_region" "internal" "region_internal_5241" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_internal_5241" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: region-int-5243
+      port: {{ tuple "maas_region" "internal" "region_internal_5243" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_internal_5243" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: region-int-5244
+      port: {{ tuple "maas_region" "internal" "region_internal_5244" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_internal_5244" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: region-int-5245
+      port: {{ tuple "maas_region" "internal" "region_internal_5245" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_internal_5245" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: region-int-5246
+      port: {{ tuple "maas_region" "internal" "region_internal_5246" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_internal_5246" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: region-int-5247
+      port: {{ tuple "maas_region" "internal" "region_internal_5247" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_internal_5247" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: rack-http
+      port: {{ tuple "maas_region" "internal" "region_rack_http" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_rack_http" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: region-temporal
+      port: {{ tuple "maas_region" "internal" "region_temporal" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-w1
+      port: {{ tuple "maas_region" "internal" "region_temporal_worker1" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_worker1" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-w2
+      port: {{ tuple "maas_region" "internal" "region_temporal_worker2" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_worker2" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-w3
+      port: {{ tuple "maas_region" "internal" "region_temporal_worker3" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_worker3" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5254
+      port: {{ tuple "maas_region" "internal" "region_temporal_5254" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5254" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5255
+      port: {{ tuple "maas_region" "internal" "region_temporal_5255" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5255" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5256
+      port: {{ tuple "maas_region" "internal" "region_temporal_5256" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5256" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5257
+      port: {{ tuple "maas_region" "internal" "region_temporal_5257" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5257" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5258
+      port: {{ tuple "maas_region" "internal" "region_temporal_5258" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5258" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5259
+      port: {{ tuple "maas_region" "internal" "region_temporal_5259" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5259" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5260
+      port: {{ tuple "maas_region" "internal" "region_temporal_5260" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5260" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5261
+      port: {{ tuple "maas_region" "internal" "region_temporal_5261" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5261" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5262
+      port: {{ tuple "maas_region" "internal" "region_temporal_5262" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5262" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5263
+      port: {{ tuple "maas_region" "internal" "region_temporal_5263" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5263" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5264
+      port: {{ tuple "maas_region" "internal" "region_temporal_5264" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5264" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5265
+      port: {{ tuple "maas_region" "internal" "region_temporal_5265" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5265" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5266
+      port: {{ tuple "maas_region" "internal" "region_temporal_5266" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5266" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5267
+      port: {{ tuple "maas_region" "internal" "region_temporal_5267" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5267" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5268
+      port: {{ tuple "maas_region" "internal" "region_temporal_5268" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5268" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5269
+      port: {{ tuple "maas_region" "internal" "region_temporal_5269" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5269" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: temporal-5270
+      port: {{ tuple "maas_region" "internal" "region_temporal_5270" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_5270" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: rack-agent-5271
+      port: {{ tuple "maas_region" "internal" "region_rack_agent_5271" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_rack_agent_5271" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: rack-agent-5272
+      port: {{ tuple "maas_region" "internal" "region_rack_agent_5272" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_rack_agent_5272" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: rack-agent-5273
+      port: {{ tuple "maas_region" "internal" "region_rack_agent_5273" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_rack_agent_5273" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: rack-agent-5274
+      port: {{ tuple "maas_region" "internal" "region_rack_agent_5274" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_rack_agent_5274" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: gossip-5281
+      port: {{ tuple "maas_region" "internal" "region_temporal_gossip_5281" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_gossip_5281" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: gossip-5282
+      port: {{ tuple "maas_region" "internal" "region_temporal_gossip_5282" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_gossip_5282" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: gossip-5283
+      port: {{ tuple "maas_region" "internal" "region_temporal_gossip_5283" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_gossip_5283" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    - name: gossip-5284
+      port: {{ tuple "maas_region" "internal" "region_temporal_gossip_5284" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ tuple "maas_region" "podport" "region_temporal_gossip_5284" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
   selector:
 {{ tuple $envAll "maas" "region" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
   {{ if or .Values.network.region_proxy.node_port.enabled .Values.network.region_api.node_port.enabled }}

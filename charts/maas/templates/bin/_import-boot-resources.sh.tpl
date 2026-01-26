@@ -16,9 +16,6 @@
 
 set -x
 
-import_tries=0
-
-TRY_LIMIT=${TRY_LIMIT:-1}
 JOB_TIMEOUT=${JOB_TIMEOUT:-900}
 RETRY_TIMER=${RETRY_TIMER:-10}
 
@@ -26,13 +23,16 @@ function timer {
 	retry_wait=$1
 	shift
 
-	while [[ ${JOB_TIMEOUT} -gt 0 ]]; do
+	# Use local timeout to avoid polluting global JOB_TIMEOUT
+	local timeout=$JOB_TIMEOUT
+
+	while [[ ${timeout} -gt 0 ]]; do
 		"$@"
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			return $rc
 		else
-			JOB_TIMEOUT=$((JOB_TIMEOUT - retry_wait))
+			timeout=$((timeout - retry_wait))
 			sleep $retry_wait
 		fi
 	done
@@ -40,218 +40,121 @@ function timer {
 	return 124
 }
 
-function import_resources {
-	check_for_download
-	rc=$?
-
-	if [ $rc -ne 0 ]; then
-		echo "Starting image import try ${import_tries}..."
-		maas ${ADMIN_USERNAME} boot-resources import
-		sleep 30
-		check_for_download
-		rc=$?
-	fi
-
-	return $rc
-}
-
 function start_import {
 	local import_start_time=$(date +%s)
-	local stall_check_time=$import_start_time
-	local last_progress_time=$import_start_time
-	local stall_restart_done=false
-	local last_synced_count=$(get_synced_count)
-	local last_downloading_count=$(get_downloading_count)
-	local last_total_count=$(get_total_resource_count)
-	local stall_check_interval=180  # Check for stalls every 3 minutes
+	local last_log_time=$import_start_time
+	local last_status_change_time=$import_start_time
+	local last_is_importing="unknown"
+	local import_issued=false
+	local restart_done=false
+	local stall_threshold=$((RETRY_TIMER * 3))
+	# Use local timeout to avoid polluting global JOB_TIMEOUT
+	local timeout=$JOB_TIMEOUT
 
-	echo "Starting import at $(date) (timeout: ${JOB_TIMEOUT}s)"
-	echo "Initial resource state - synced: ${last_synced_count}, downloading: ${last_downloading_count}, total: ${last_total_count}"
+	echo "Starting import at $(date) (timeout: ${timeout}s, stall threshold: ${stall_threshold}s)"
 
-	# Custom loop with stall detection based on progress
-	while [[ ${JOB_TIMEOUT} -gt 0 ]]; do
-		import_resources
-		rc=$?
-
-		if [ $rc -eq 0 ]; then
-			echo "Import completed successfully!"
-			return 0
+	while [[ ${timeout} -gt 0 ]]; do
+		# Issue import command once at the start
+		if [[ $import_issued == false ]]; then
+			echo "Issuing boot-resources import command..."
+			maas ${ADMIN_USERNAME} boot-resources import
+			import_issued=true
+			sleep 30
 		fi
 
 		local current_time=$(date +%s)
 		local elapsed=$((current_time - import_start_time))
-		local current_synced_count=$(get_synced_count)
-		local current_downloading_count=$(get_downloading_count)
-		local current_total_count=$(get_total_resource_count)
+		local is_importing=$(maas ${ADMIN_USERNAME} boot-resources is-importing 2>/dev/null || echo "unknown")
 
-		# Track progress - detect any state changes (not just completed synced images)
-		if [[ $current_synced_count -gt $last_synced_count ]] || \
-		   [[ $current_downloading_count -ne $last_downloading_count ]] || \
-		   [[ $current_total_count -ne $last_total_count ]]; then
-			echo "Progress detected - synced: ${last_synced_count}→${current_synced_count}, downloading: ${last_downloading_count}→${current_downloading_count}, total: ${last_total_count}→${current_total_count}"
-			last_synced_count=$current_synced_count
-			last_downloading_count=$current_downloading_count
-			last_total_count=$current_total_count
-			last_progress_time=$current_time
+		# Check if import is complete
+		if [[ "$is_importing" == "false" ]]; then
+			echo "Import completed successfully after ${elapsed}s!"
+			return 0
 		fi
 
-		# Check if import appears stalled (no progress for 3 minutes)
-		if [[ $stall_restart_done == false ]]; then
-			if check_import_stalled "$last_synced_count" "$current_synced_count" "$last_downloading_count" "$current_downloading_count" "$stall_check_interval" "$last_progress_time"; then
-				echo "Stalled import detected - attempting restart..."
-				restart_stalled_import
+		# Track status changes
+		if [[ "$is_importing" != "$last_is_importing" ]]; then
+			echo "Status changed: ${last_is_importing} → ${is_importing}"
+			last_is_importing="$is_importing"
+			last_status_change_time=$current_time
+			# Reset restart flag on status change - allows restart if stalls again
+			restart_done=false
+		fi
+
+		# Detect stall: no status change for stall_threshold seconds
+		local time_since_change=$((current_time - last_status_change_time))
+		if [[ $restart_done == false ]] && [[ $time_since_change -ge $stall_threshold ]] && [[ "$is_importing" != "false" ]]; then
+			echo "========================================"
+			echo "WARNING: Import stalled - no status change for ${time_since_change}s (threshold: ${stall_threshold}s)"
+			echo "Current status: is_importing=${is_importing}"
+			echo "Attempting recovery via region restart..."
+			echo "========================================"
+
+			if restart_stalled_import; then
+				echo "Recovery successful, continuing import monitoring..."
+				# Reset state after successful restart
 				import_start_time=$(date +%s)
-				last_progress_time=$import_start_time
-				stall_restart_done=true
-				stall_check_time=$import_start_time
-				# Don't update last_synced_count - we want to see if restart helps
+				last_log_time=$import_start_time
+				last_status_change_time=$(date +%s)
+				last_is_importing="unknown"
+				restart_done=true
+				import_issued=false
+				sleep 15
+			else
+				echo "========================================"
+				echo "ERROR: Failed to recover from stalled import"
+				echo "Region restart or re-login failed"
+				echo "Cannot continue - aborting import"
+				echo "========================================"
+				return 1
 			fi
 		fi
 
-		# Progress update every 2 minutes
-		if [[ $((current_time - stall_check_time)) -gt 120 ]]; then
-			echo "Import still in progress... (elapsed: ${elapsed}s, synced: ${current_synced_count}, timeout remaining: ${JOB_TIMEOUT}s)"
-			stall_check_time=$current_time
+		# Progress log every 2 iterations
+		if [[ $((current_time - last_log_time)) -ge $((RETRY_TIMER * 2)) ]]; then
+			echo "Import in progress... (elapsed: ${elapsed}s, is_importing: ${is_importing}, stalled: ${time_since_change}s/${stall_threshold}s, timeout: ${timeout}s)"
+			last_log_time=$current_time
 		fi
 
-		JOB_TIMEOUT=$((JOB_TIMEOUT - RETRY_TIMER))
+		timeout=$((timeout - RETRY_TIMER))
 		sleep $RETRY_TIMER
 	done
 
-	echo "ERROR: Import timed out after reaching JOB_TIMEOUT"
-	echo "Last known state before timeout:"
-	check_for_download || true
+	echo "========================================"
+	echo "ERROR: Import timed out after ${elapsed}s"
+	echo "Final state: is_importing=${is_importing}"
+	echo "========================================"
+	echo "Increase 'jobs.import_boot_resources.timeout' in values.yaml"
 	return 124
 }
 
-function check_for_download {
-	local is_importing=$(maas ${ADMIN_USERNAME} boot-resources is-importing 2>/dev/null || echo "false")
-	local synced_imgs=$(maas ${ADMIN_USERNAME} boot-resources read 2>/dev/null | tail -n +1 | jq '.[] | select( .type | contains("Synced")) | .name ' 2>/dev/null | grep -c $MAAS_DEFAULT_DISTRO || echo "0")
-
-	if echo "$is_importing" | grep -q 'true'; then
-		echo -e "\nBoot resources currently importing (synced: ${synced_imgs})\n"
-		return 1
-	else
-		if [[ $synced_imgs -gt 0 ]]; then
-			echo "Boot resources have completed importing (synced: ${synced_imgs})"
-			return 0
-		else
-			echo 'Import failed - no synced images found!'
-			return 1
-		fi
-	fi
-}
-
-function get_synced_count {
-	maas ${ADMIN_USERNAME} boot-resources read 2>/dev/null | tail -n +1 | jq '.[] | select( .type | contains("Synced")) | .name ' 2>/dev/null | grep -c $MAAS_DEFAULT_DISTRO || echo "0"
-}
-
-function get_downloading_count {
-	# Count resources in Downloading state (stuck downloads will remain in this state)
-	maas ${ADMIN_USERNAME} boot-resources read 2>/dev/null | tail -n +1 | jq '[.[] | select(.type | contains("Downloading"))] | length' 2>/dev/null || echo "0"
-}
-
-function get_total_resource_count {
-	# Count all boot resources to detect state transitions
-	maas ${ADMIN_USERNAME} boot-resources read 2>/dev/null | tail -n +1 | jq 'length' 2>/dev/null || echo "0"
-}
-
-function get_resource_states {
-	# Get detailed state information for all resources
-	maas ${ADMIN_USERNAME} boot-resources read 2>/dev/null | tail -n +1 | jq -r '.[] | "\(.name): \(.type)"' 2>/dev/null || echo "No resources found"
-}
-
-function check_import_stalled {
-	# Check if import has been running without making progress
-	# This detects stuck downloads at any completion percentage, not just incomplete syncs
-	local last_synced_count=${1:-0}
-	local current_synced_count=${2:-0}
-	local last_downloading_count=${3:-0}
-	local current_downloading_count=${4:-0}
-	local check_interval=${5:-180}  # How long to wait for progress (3 minutes)
-	local last_progress_time=${6:-0}
-
-	local current_time=$(date +%s)
-
-	# If any state changed, we're making progress
-	if [[ $current_synced_count -gt $last_synced_count ]] || \
-	   [[ $current_downloading_count -ne $last_downloading_count ]]; then
-		return 1  # Not stalled, making progress
-	fi
-
-	# No progress detected, check how long it's been
-	if [[ $last_progress_time -eq 0 ]]; then
-		return 1  # First check, can't determine stall yet
-	fi
-
-	local stall_duration=$((current_time - last_progress_time))
-
-	if [[ $stall_duration -gt $check_interval ]]; then
-		echo "========================================"
-		echo "WARNING: Import stalled for ${stall_duration}s"
-		echo "Resource state stuck at:"
-		echo "  - Synced: ${current_synced_count}"
-		echo "  - Downloading: ${current_downloading_count}"
-		echo "========================================"
-		echo "Detailed resource states:"
-		get_resource_states | head -30
-		echo "========================================"
-
-		# Check if we have downloads stuck in progress
-		if [[ $current_downloading_count -gt 0 ]]; then
-			echo "DETECTED: ${current_downloading_count} resource(s) stuck in Downloading state"
-			echo "This indicates a partial download failure (e.g., stuck at 91% completion)"
-		fi
-
-		return 0  # Import appears stalled
-	fi
-
-	return 1  # Not stalled yet
-}
-
-function clean_boot_resources {
-	echo "Cleaning boot resource metadata from database..."
-
-	# Use maas-region command to access the database
-	maas-region shell << 'PYTHON_EOF'
-from maasserver.models import BootResource, BootResourceFile, BootResourceSet
-from django.db import transaction
-
-print("Checking for boot resources in database...")
-resources = BootResource.objects.all()
-print(f"Found {resources.count()} boot resources in database")
-
-if resources.count() > 0:
-    print("Deleting all boot resource metadata to force fresh download...")
-    with transaction.atomic():
-        deleted_files = BootResourceFile.objects.all().delete()
-        deleted_sets = BootResourceSet.objects.all().delete()
-        deleted_resources = BootResource.objects.all().delete()
-        print(f"Deleted: {deleted_resources[0]} resources, {deleted_sets[0]} sets, {deleted_files[0]} files")
-    print("Database cleaned successfully")
-else:
-    print("No boot resources found")
-PYTHON_EOF
-
-	echo "Boot resource cleanup completed"
-}
-
 function restart_region_statefulset {
+	# Disable debug output to avoid cluttering logs with large JSON responses
+	set +x
+
 	echo "Triggering rollout restart of maas-region statefulset via Kubernetes API..."
 
 	PATCH_DATA='{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}}}}}'
 
-	wget \
-		--server-response \
+	local patch_response=$(wget -qO- \
 		--ca-certificate=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
 		--header='Content-Type: application/strategic-merge-patch+json' \
 		--header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
 		--method=PATCH \
 		--body-data="$PATCH_DATA" \
 		https://kubernetes.default.svc.cluster.local/apis/apps/v1/namespaces/{{ .Release.Namespace }}/statefulsets/maas-region \
-		2>&1 | grep -E '200 OK|error|Error' || true
+		2>&1)
 
-	echo "Restart command sent, waiting for statefulset rollout to complete..."
+	# Check if patch was successful by looking for error in response
+	if echo "$patch_response" | grep -qi "error"; then
+		echo "ERROR: Failed to patch statefulset:"
+		echo "$patch_response" | jq -r '.message // .' 2>/dev/null || echo "$patch_response"
+		return 1
+	else
+		echo "Restart command sent successfully"
+	fi
+
+	echo "Waiting for statefulset rollout to complete..."
 
 	# Wait for statefulset to be ready (equivalent to kubectl rollout status)
 	local max_wait=300  # 5 minutes timeout
@@ -286,23 +189,29 @@ function restart_region_statefulset {
 	done
 
 	echo "WARNING: Timeout waiting for statefulset rollout after ${max_wait}s"
+	set -x
 	return 1
 }
 
 function restart_stalled_import {
+	# Disable debug output to avoid cluttering logs
+	set +x
+
 	echo "Attempting to restart stalled import..."
 	echo "Stopping current import..."
 	maas ${ADMIN_USERNAME} boot-resources stop-import || true
 	sleep 15
 
 	# Restart the region statefulset to clear stuck state
-	# Note: Database cleanup removed - statefulset restart alone is sufficient
-	restart_region_statefulset
+	if ! restart_region_statefulset; then
+		echo "ERROR: Failed to restart region statefulset"
+		return 1
+	fi
 
 	echo "Waiting for region to be ready after restart..."
 	max_wait=90
 	waited=0
-	until curl -sf ${MAAS_ENDPOINT}/MAAS/ > /dev/null 2>&1; do
+	until wget --spider -q ${MAAS_ENDPOINT} 2>/dev/null; do
 		sleep 3
 		waited=$((waited + 3))
 		if [[ $waited -gt $max_wait ]]; then
@@ -315,13 +224,17 @@ function restart_stalled_import {
 	done
 
 	echo "Re-establishing MAAS session after restart..."
-	maas_login
+	if ! maas_login; then
+		echo "ERROR: Failed to re-establish MAAS session"
+		return 1
+	fi
 
 	echo "Restarting import after region restart and cleanup..."
 	maas ${ADMIN_USERNAME} boot-resources import
 	sleep 10
 
 	echo "Import restarted at $(date)"
+	set -x
 }
 
 function check_then_set_single {
@@ -348,35 +261,6 @@ function check_then_set {
 	timer "$RETRY_TIMER" check_then_set_single "$option" "$value"
 }
 
-# Get rack controllers reporting a healthy rackd
-function get_active_rack_controllers {
-	maas ${ADMIN_USERNAME} rack-controllers read | jq -r 'map({"system_id":.system_id,"service_set":(.service_set[] | select(.name=="rackd"))}) | map(select(.service_set.status == "running")) | .[] | .system_id'
-}
-
-function check_for_rack_sync_single {
-	sync_list=""
-
-	rack_list=$(get_active_rack_controllers)
-	for rack_id in ${rack_list}; do
-		selected_imgs=$(maas ${ADMIN_USERNAME} rack-controller list-boot-images ${rack_id} | tail -n +1 | jq ".images[] | select( .name | contains(\"${MAAS_DEFAULT_DISTRO}\")) | .name")
-		synced_ctlr=$(maas ${ADMIN_USERNAME} rack-controller list-boot-images ${rack_id} | tail -n +1 | jq '.status == "synced"')
-		if [[ $synced_ctlr == "true" && -n ${selected_imgs} ]]; then
-			sync_list=$(echo -e "${sync_list}\n${rack_id}" | sort | uniq)
-		else
-			maas ${ADMIN_USERNAME} rack-controller import-boot-images ${rack_id}
-		fi
-		if [[ $(echo -e "${rack_list}" | sort | uniq | grep -v '^$') == $(echo -e "${sync_list}" | sort | uniq | grep -v '^$') ]]; then
-			return 0
-		fi
-	done
-
-	return 1
-}
-
-function check_for_rack_sync {
-	timer "$RETRY_TIMER" check_for_rack_sync_single
-}
-
 function configure_proxy {
 	check_then_set enable_http_proxy ${MAAS_PROXY_ENABLED}
 	check_then_set use_peer_proxy ${MAAS_PEER_PROXY_ENABLED}
@@ -399,13 +283,6 @@ function configure_syslog {
 }
 
 function configure_images {
-	check_for_rack_sync
-
-	if [[ $? -eq 124 ]]; then
-		echo "Timed out waiting for rack controller sync."
-		return 1
-	fi
-
 	check_then_set default_osystem ${MAAS_DEFAULT_OS}
 	check_then_set commissioning_distro_series ${MAAS_DEFAULT_DISTRO}
 	check_then_set default_distro_series ${MAAS_DEFAULT_DISTRO}
@@ -424,8 +301,6 @@ function configure_boot_sources {
 	# Need to start an import to get the availability data
 	maas "$ADMIN_USERNAME" boot-resources import
 	sleep 10
-	maas "$ADMIN_USERNAME" boot-resources is-importing
-	sleep 10
 	maas "$ADMIN_USERNAME" boot-resources stop-import
 
 	# Create a selection for the desired distro
@@ -435,23 +310,31 @@ function configure_boot_sources {
 	# Need to start an import to get the availability data
 	maas "$ADMIN_USERNAME" boot-resources import
 	sleep 10
-	maas "$ADMIN_USERNAME" boot-resources is-importing
-	sleep 10
 
 	# Set as default
 	maas ${ADMIN_USERNAME} maas set-config name=default_distro_series value="${MAAS_DEFAULT_DISTRO}"
 	maas ${ADMIN_USERNAME} maas set-config name=commissioning_distro_series value="${MAAS_DEFAULT_DISTRO}"
 
+	# Wait for MAAS to process the new selection
+	sleep 10
 
 	# Delete any selections that do not match the desired distro
-	for row in $(maas ${ADMIN_USERNAME} boot-source-selections read 1 | jq -r \
-		--arg distro "$MAAS_DEFAULT_DISTRO" \
-		'.[] | select(.release != $distro) | "\(.id):\(.boot_source_id)"'); do
-		id="${row%%:*}"
-		boot_source_id="${row##*:}"
-		echo "Deleting selection id $id from boot_source_id $boot_source_id"
-		maas ${ADMIN_USERNAME} boot-source-selection delete "$boot_source_id" "$id"
-	done
+	selections_output=$(maas ${ADMIN_USERNAME} boot-source-selections read 1 2>&1 || echo "[]")
+
+	# Check if output is valid JSON before parsing
+	if echo "$selections_output" | jq -e . >/dev/null 2>&1; then
+		for row in $(echo "$selections_output" | jq -r \
+			--arg distro "$MAAS_DEFAULT_DISTRO" \
+			'.[] | select(.release != $distro) | "\(.id):\(.boot_source_id)"'); do
+			id="${row%%:*}"
+			boot_source_id="${row##*:}"
+			echo "Deleting selection id $id from boot_source_id $boot_source_id"
+			maas ${ADMIN_USERNAME} boot-source-selection delete "$boot_source_id" "$id"
+		done
+	else
+		echo "Warning: Unable to parse boot-source-selections output, skipping cleanup of old selections"
+		echo "Output was: $selections_output"
+	fi
 
 	# Need to re-start an import to get the availability data
 	sleep 10
