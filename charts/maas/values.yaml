@@ -431,7 +431,6 @@ pod:
     rack:
       pod:
         runAsUser: 0
-        fsGroup: 113
       container:
         maas_rack:
           readOnlyRootFilesystem: false
@@ -447,7 +446,6 @@ pod:
     region:
       pod:
         runAsUser: 0
-        fsGroup: 111
       container:
         maas_cache:
           readOnlyRootFilesystem: false

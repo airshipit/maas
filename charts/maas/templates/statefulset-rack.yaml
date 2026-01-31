@@ -67,6 +67,23 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       initContainers:
 {{ tuple $envAll "rack_controller" $mounts_maas_rack_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+        - name: fix-cache-permissions
+          image: {{ .Values.images.tags.maas_rack }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Setting permissions on /var/cache/maas..."
+              mkdir -p /var/cache/maas
+              chown maas:maas /var/cache/maas
+              chmod 755 /var/cache/maas
+              echo "Permissions set successfully"
+          volumeMounts:
+            - name: rackd-state
+              mountPath: /var/cache/maas
+              subPath: cache
+              readOnly: false
       containers:
         - name: maas-rack
           image: {{ .Values.images.tags.maas_rack }}
