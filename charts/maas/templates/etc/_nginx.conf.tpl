@@ -1,8 +1,12 @@
 {{/* file location: /var/lib/maas/http/nginx.conf */}}
 {{- $worker_processes := index .Values.conf.nginx "worker_processes" | default "auto" -}}
 {{- $worker_connections := index .Values.conf.nginx "worker_connections" | default 768 -}}
+load_module /usr/lib/nginx/modules/ngx_stream_module.so;
+
 pid /run/maas-http.pid;
 worker_processes {{ $worker_processes }};
+
+user nobody maas;
 
 error_log /var/log/maas/http/error.log;
 
@@ -34,4 +38,9 @@ http {
     proxy_temp_path /var/lib/maas/http/proxy;
     scgi_temp_path /var/lib/maas/http/scgi;
     uwsgi_temp_path /var/lib/maas/http/uwsgi;
+}
+
+# Passthrough the connection to the internalapiserver that is protected by mtls.
+stream {
+    include /var/lib/maas/http/*.nginx.stream.conf;
 }
