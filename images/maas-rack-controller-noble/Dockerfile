@@ -90,8 +90,8 @@ RUN sed -i -e '$a\include "/etc/bind/bind.keys";' /etc/bind/named.conf && /usr/l
 
 # fix chronyd.pid location
 RUN grep -i "^pidfile " /etc/chrony/chrony.conf && \
-    sed -i 's|^pidfile .*|pidfile /run/chronyd.pid|' /etc/chrony/chrony.conf || \
-    echo 'pidfile /run/chronyd.pid' >> /etc/chrony/chrony.conf
+    sed -i 's|^pidfile .*|pidfile /run/chrony/chronyd.pid|' /etc/chrony/chrony.conf || \
+    echo 'pidfile /run/chrony/chronyd.pid' >> /etc/chrony/chrony.conf
 COPY scripts/override.chrony.conf /etc/systemd/system/chrony.service.d/override.conf
 
 # fix httpproxy.sock permission
