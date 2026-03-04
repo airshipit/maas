@@ -833,3 +833,6 @@ cert_manager:
   issuer:
     kind: ClusterIssuer
     name: ca-issuer
+
+# List of extra manifests to deploy
+extraObjects: []
