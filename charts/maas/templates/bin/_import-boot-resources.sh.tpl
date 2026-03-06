@@ -19,6 +19,10 @@ set -x
 JOB_TIMEOUT=${JOB_TIMEOUT:-900}
 RETRY_TIMER=${RETRY_TIMER:-10}
 
+function log {
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+}
+
 function timer {
 	retry_wait=$1
 	shift
@@ -40,6 +44,45 @@ function timer {
 	return 124
 }
 
+# Resilient wrapper for maas CLI commands.
+# Retries on transient failures (502/503, HTML error pages, non-zero exit)
+# with exponential backoff: 10 -> 20 -> 40 -> 80 -> 160 -> 320.
+# Fails hard (return 1) when backoff exceeds 300s so the pod restarts.
+function maas_cli {
+	local delay=10
+	local max_delay=300
+
+	while true; do
+		local output
+		# Disable xtrace so debug lines don't get captured into output via 2>&1
+		{ local xtrace_was_set=$-; set +x; } 2>/dev/null
+		output=$(command maas "$@" 2>&1)
+		local rc=$?
+		[[ "$xtrace_was_set" == *x* ]] && set -x
+
+		# Only retry on transient HTTP errors (502/503/HTML error pages)
+		# Non-zero exit with valid API response (JSON error) is NOT retried
+		if echo "$output" | grep -qiE '<html|502 Bad Gateway|503 Service|Bad Gateway|Internal Server Error'; then
+			log "WARNING: maas $* got transient HTTP error (rc=$rc, delay=${delay}s)" >&2
+			log "Output: $(echo "$output" | head -5)" >&2
+
+			if [[ $delay -gt $max_delay ]]; then
+				log "ERROR: maas $* still failing after exponential backoff exceeded ${max_delay}s - giving up" >&2
+				return 1
+			fi
+
+			log "Retrying in ${delay}s..." >&2
+			sleep $delay
+			delay=$((delay * 2))
+		else
+			# Valid API response (no HTML errors) - always succeed
+			# Non-zero rc with valid JSON/text is a legitimate API answer, not a failure
+			echo "$output"
+			return 0
+		fi
+	done
+}
+
 function start_import {
 	local import_start_time=$(date +%s)
 	local last_log_time=$import_start_time
@@ -51,30 +94,31 @@ function start_import {
 	# Use local timeout to avoid polluting global JOB_TIMEOUT
 	local timeout=$JOB_TIMEOUT
 
-	echo "Starting import at $(date) (timeout: ${timeout}s, stall threshold: ${stall_threshold}s)"
+	log "Starting import (timeout: ${timeout}s, stall threshold: ${stall_threshold}s)"
 
 	while [[ ${timeout} -gt 0 ]]; do
 		# Issue import command once at the start
 		if [[ $import_issued == false ]]; then
-			echo "Issuing boot-resources import command..."
-			maas ${ADMIN_USERNAME} boot-resources import
+			log "Issuing boot-resources import command..."
+			maas_cli ${ADMIN_USERNAME} boot-resources import || exit 1
 			import_issued=true
 			sleep 30
 		fi
 
 		local current_time=$(date +%s)
 		local elapsed=$((current_time - import_start_time))
-		local is_importing=$(maas ${ADMIN_USERNAME} boot-resources is-importing 2>/dev/null || echo "unknown")
+		local is_importing
+		is_importing=$(maas_cli ${ADMIN_USERNAME} boot-resources is-importing) || is_importing="unknown"
 
 		# Check if import is complete
 		if [[ "$is_importing" == "false" ]]; then
-			echo "Import completed successfully after ${elapsed}s!"
+			log "Import completed successfully after ${elapsed}s!"
 			return 0
 		fi
 
 		# Track status changes
 		if [[ "$is_importing" != "$last_is_importing" ]]; then
-			echo "Status changed: ${last_is_importing} → ${is_importing}"
+			log "Status changed: ${last_is_importing} → ${is_importing}"
 			last_is_importing="$is_importing"
 			last_status_change_time=$current_time
 			# Reset restart flag on status change - allows restart if stalls again
@@ -84,14 +128,14 @@ function start_import {
 		# Detect stall: no status change for stall_threshold seconds
 		local time_since_change=$((current_time - last_status_change_time))
 		if [[ $restart_done == false ]] && [[ $time_since_change -ge $stall_threshold ]] && [[ "$is_importing" != "false" ]]; then
-			echo "========================================"
-			echo "WARNING: Import stalled - no status change for ${time_since_change}s (threshold: ${stall_threshold}s)"
-			echo "Current status: is_importing=${is_importing}"
-			echo "Attempting recovery via region restart..."
-			echo "========================================"
+			log "========================================"
+			log "WARNING: Import stalled - no status change for ${time_since_change}s (threshold: ${stall_threshold}s)"
+			log "Current status: is_importing=${is_importing}"
+			log "Attempting recovery via region restart..."
+			log "========================================"
 
 			if restart_stalled_import; then
-				echo "Recovery successful, continuing import monitoring..."
+				log "Recovery successful, continuing import monitoring..."
 				# Reset state after successful restart
 				import_start_time=$(date +%s)
 				last_log_time=$import_start_time
@@ -101,18 +145,18 @@ function start_import {
 				import_issued=false
 				sleep 15
 			else
-				echo "========================================"
-				echo "ERROR: Failed to recover from stalled import"
-				echo "Region restart or re-login failed"
-				echo "Cannot continue - aborting import"
-				echo "========================================"
+				log "========================================"
+				log "ERROR: Failed to recover from stalled import"
+				log "Region restart or re-login failed"
+				log "Cannot continue - aborting import"
+				log "========================================"
 				return 1
 			fi
 		fi
 
 		# Progress log every 2 iterations
 		if [[ $((current_time - last_log_time)) -ge $((RETRY_TIMER * 2)) ]]; then
-			echo "Import in progress... (elapsed: ${elapsed}s, is_importing: ${is_importing}, stalled: ${time_since_change}s/${stall_threshold}s, timeout: ${timeout}s)"
+			log "Import in progress... (elapsed: ${elapsed}s, is_importing: ${is_importing}, stalled: ${time_since_change}s/${stall_threshold}s, timeout: ${timeout}s)"
 			last_log_time=$current_time
 		fi
 
@@ -120,11 +164,11 @@ function start_import {
 		sleep $RETRY_TIMER
 	done
 
-	echo "========================================"
-	echo "ERROR: Import timed out after ${elapsed}s"
-	echo "Final state: is_importing=${is_importing}"
-	echo "========================================"
-	echo "Increase 'jobs.import_boot_resources.timeout' in values.yaml"
+	log "========================================"
+	log "ERROR: Import timed out after ${elapsed}s"
+	log "Final state: is_importing=${is_importing}"
+	log "========================================"
+	log "Increase 'jobs.import_boot_resources.timeout' in values.yaml"
 	return 124
 }
 
@@ -132,7 +176,7 @@ function restart_region_statefulset {
 	# Disable debug output to avoid cluttering logs with large JSON responses
 	set +x
 
-	echo "Triggering rollout restart of maas-region statefulset via Kubernetes API..."
+	log "Triggering rollout restart of maas-region statefulset via Kubernetes API..."
 
 	PATCH_DATA='{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}}}}}'
 
@@ -147,14 +191,14 @@ function restart_region_statefulset {
 
 	# Check if patch was successful by looking for error in response
 	if echo "$patch_response" | grep -qi "error"; then
-		echo "ERROR: Failed to patch statefulset:"
+		log "ERROR: Failed to patch statefulset:"
 		echo "$patch_response" | jq -r '.message // .' 2>/dev/null || echo "$patch_response"
 		return 1
 	else
-		echo "Restart command sent successfully"
+		log "Restart command sent successfully"
 	fi
 
-	echo "Waiting for statefulset rollout to complete..."
+	log "Waiting for statefulset rollout to complete..."
 
 	# Wait for statefulset to be ready (equivalent to kubectl rollout status)
 	local max_wait=300  # 5 minutes timeout
@@ -172,11 +216,11 @@ function restart_region_statefulset {
 		local current_replicas=$(echo "$sts_status" | jq -r '.status.currentReplicas // 0')
 		local updated_replicas=$(echo "$sts_status" | jq -r '.status.updatedReplicas // 0')
 
-		echo "Statefulset status: replicas=${replicas}, ready=${ready_replicas}, current=${current_replicas}, updated=${updated_replicas}"
+		log "Statefulset status: replicas=${replicas}, ready=${ready_replicas}, current=${current_replicas}, updated=${updated_replicas}"
 
 		# Check if rollout is complete
 		if [[ "$ready_replicas" == "$replicas" ]] && [[ "$updated_replicas" == "$replicas" ]] && [[ "$current_replicas" == "$replicas" ]] && [[ "$replicas" != "0" ]]; then
-			echo "Statefulset rollout completed successfully!"
+			log "Statefulset rollout completed successfully!"
 			return 0
 		fi
 
@@ -184,11 +228,11 @@ function restart_region_statefulset {
 		waited=$((waited + 5))
 
 		if [[ $((waited % 30)) -eq 0 ]]; then
-			echo "Still waiting for rollout... (${waited}s elapsed)"
+			log "Still waiting for rollout... (${waited}s elapsed)"
 		fi
 	done
 
-	echo "WARNING: Timeout waiting for statefulset rollout after ${max_wait}s"
+	log "WARNING: Timeout waiting for statefulset rollout after ${max_wait}s"
 	set -x
 	return 1
 }
@@ -197,43 +241,43 @@ function restart_stalled_import {
 	# Disable debug output to avoid cluttering logs
 	set +x
 
-	echo "Attempting to restart stalled import..."
-	echo "Stopping current import..."
-	maas ${ADMIN_USERNAME} boot-resources stop-import || true
+	log "Attempting to restart stalled import..."
+	log "Stopping current import..."
+	maas_cli ${ADMIN_USERNAME} boot-resources stop-import || true
 	sleep 15
 
 	# Restart the region statefulset to clear stuck state
 	if ! restart_region_statefulset; then
-		echo "ERROR: Failed to restart region statefulset"
+		log "ERROR: Failed to restart region statefulset"
 		return 1
 	fi
 
-	echo "Waiting for region to be ready after restart..."
+	log "Waiting for region to be ready after restart..."
 	max_wait=90
 	waited=0
-	until wget --spider -q ${MAAS_ENDPOINT} 2>/dev/null; do
+	until wget -q -O /dev/null --timeout=5 ${MAAS_ENDPOINT}/api/2.0/version/ 2>/dev/null; do
 		sleep 3
 		waited=$((waited + 3))
 		if [[ $waited -gt $max_wait ]]; then
-			echo "WARNING: Region may not be fully ready yet, proceeding anyway"
+			log "WARNING: Region may not be fully ready yet, proceeding anyway"
 			break
 		fi
 		if [[ $((waited % 15)) -eq 0 ]]; then
-			echo "Still waiting for region API... (${waited}s elapsed)"
+			log "Still waiting for region API... (${waited}s elapsed)"
 		fi
 	done
 
-	echo "Re-establishing MAAS session after restart..."
+	log "Re-establishing MAAS session after restart..."
 	if ! maas_login; then
-		echo "ERROR: Failed to re-establish MAAS session"
+		log "ERROR: Failed to re-establish MAAS session"
 		return 1
 	fi
 
-	echo "Restarting import after region restart and cleanup..."
-	maas ${ADMIN_USERNAME} boot-resources import
+	log "Restarting import after region restart and cleanup..."
+	maas_cli ${ADMIN_USERNAME} boot-resources import || return 1
 	sleep 10
 
-	echo "Import restarted at $(date)"
+	log "Import restarted successfully"
 	set -x
 }
 
@@ -241,15 +285,17 @@ function check_then_set_single {
 	option="$1"
 	value="$2"
 
-	cur_val=$(maas ${ADMIN_USERNAME} maas get-config name=${option} | tail -1 | tr -d '"')
+	local raw_val
+	raw_val=$(maas_cli ${ADMIN_USERNAME} maas get-config name=${option}) || return 1
+	cur_val=$(echo "$raw_val" | tail -1 | tr -d '"')
 	desired_val=$(echo ${value} | tr -d '"')
 
 	if [[ $cur_val != $desired_val ]]; then
-		echo "Setting MAAS option ${option} to ${desired_val}"
-		maas ${ADMIN_USERNAME} maas set-config name=${option} value=${desired_val}
+		log "Setting MAAS option ${option} to ${desired_val}"
+		maas_cli ${ADMIN_USERNAME} maas set-config name=${option} value=${desired_val} || return 1
 		return $?
 	else
-		echo "MAAS option ${option} already set to ${cur_val}"
+		log "MAAS option ${option} already set to ${cur_val}"
 		return 0
 	fi
 }
@@ -292,34 +338,34 @@ function configure_images {
 function configure_boot_sources {
 	# Set the boot source URL if using local image cache
 	if [[ $USE_IMAGE_CACHE == 'true' ]]; then
-		maas ${ADMIN_USERNAME} boot-source update 1 url=http://localhost:8888/maas/images/ephemeral-v3/daily/
+		maas_cli ${ADMIN_USERNAME} boot-source update 1 url=http://localhost:8888/maas/images/ephemeral-v3/daily/ || exit 1
 	fi
 
 	# Read all selections for boot_source_id 1
-	maas ${ADMIN_USERNAME} boot-source-selections read 1
+	maas_cli ${ADMIN_USERNAME} boot-source-selections read 1 || exit 1
 
 	# Need to start an import to get the availability data
-	maas "$ADMIN_USERNAME" boot-resources import
+	maas_cli "$ADMIN_USERNAME" boot-resources import || exit 1
 	sleep 10
-	maas "$ADMIN_USERNAME" boot-resources stop-import
+	maas_cli "$ADMIN_USERNAME" boot-resources stop-import || exit 1
 
 	# Create a selection for the desired distro
-	maas ${ADMIN_USERNAME} boot-source-selections create 1 os="${MAAS_DEFAULT_OS}" \
-		release="${MAAS_DEFAULT_DISTRO}" arches="amd64" subarches='*' labels='*'
+	maas_cli ${ADMIN_USERNAME} boot-source-selections create 1 os="${MAAS_DEFAULT_OS}" \
+		release="${MAAS_DEFAULT_DISTRO}" arches="amd64" subarches='*' labels='*' || exit 1
 
 	# Need to start an import to get the availability data
-	maas "$ADMIN_USERNAME" boot-resources import
+	maas_cli "$ADMIN_USERNAME" boot-resources import || exit 1
 	sleep 10
 
 	# Set as default
-	maas ${ADMIN_USERNAME} maas set-config name=default_distro_series value="${MAAS_DEFAULT_DISTRO}"
-	maas ${ADMIN_USERNAME} maas set-config name=commissioning_distro_series value="${MAAS_DEFAULT_DISTRO}"
+	maas_cli ${ADMIN_USERNAME} maas set-config name=default_distro_series value="${MAAS_DEFAULT_DISTRO}" || exit 1
+	maas_cli ${ADMIN_USERNAME} maas set-config name=commissioning_distro_series value="${MAAS_DEFAULT_DISTRO}" || exit 1
 
 	# Wait for MAAS to process the new selection
 	sleep 10
 
 	# Delete any selections that do not match the desired distro
-	selections_output=$(maas ${ADMIN_USERNAME} boot-source-selections read 1 2>&1 || echo "[]")
+	selections_output=$(maas_cli ${ADMIN_USERNAME} boot-source-selections read 1) || exit 1
 
 	# Check if output is valid JSON before parsing
 	if echo "$selections_output" | jq -e . >/dev/null 2>&1; then
@@ -328,19 +374,19 @@ function configure_boot_sources {
 			'.[] | select(.release != $distro) | "\(.id):\(.boot_source_id)"'); do
 			id="${row%%:*}"
 			boot_source_id="${row##*:}"
-			echo "Deleting selection id $id from boot_source_id $boot_source_id"
-			maas ${ADMIN_USERNAME} boot-source-selection delete "$boot_source_id" "$id"
+			log "Deleting selection id $id from boot_source_id $boot_source_id"
+			maas_cli ${ADMIN_USERNAME} boot-source-selection delete "$boot_source_id" "$id" || exit 1
 		done
 	else
-		echo "Warning: Unable to parse boot-source-selections output, skipping cleanup of old selections"
-		echo "Output was: $selections_output"
+		log "Warning: Unable to parse boot-source-selections output, skipping cleanup of old selections"
+		log "Output was: $selections_output"
 	fi
 
 	# Need to re-start an import to get the availability data
 	sleep 10
-	maas "$ADMIN_USERNAME" boot-resources stop-import
+	maas_cli "$ADMIN_USERNAME" boot-resources stop-import || exit 1
 	sleep 10
-	maas "$ADMIN_USERNAME" boot-resources import
+	maas_cli "$ADMIN_USERNAME" boot-resources import || exit 1
 
 }
 
@@ -361,7 +407,7 @@ echo $output
 
 EOF
 
-  maas "${ADMIN_USERNAME}" commissioning-scripts create name='99-netiface-names.sh' content@=/tmp/script.sh
+  maas_cli "${ADMIN_USERNAME}" commissioning-scripts create name='99-netiface-names.sh' content@=/tmp/script.sh || exit 1
 
   rm /tmp/script.sh
 }
@@ -405,6 +451,6 @@ start_import
 if [[ $? -eq 0 ]]; then
 	configure_images
 else
-	echo "Image import FAILED!"
+	log "Image import FAILED!"
 	exit 1
 fi
