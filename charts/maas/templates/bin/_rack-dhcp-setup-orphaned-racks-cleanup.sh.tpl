@@ -27,6 +27,7 @@ export MAAS_ENDPOINT
 export MAAS_API_KEY
 
 maas login admin "${MAAS_ENDPOINT}" "${MAAS_API_KEY}"
+maas refresh 2>/dev/null || true
 
 # Wait for this rack controller to be registered and running
 echo "Waiting for local rack controller to be registered and running..."

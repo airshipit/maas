@@ -68,6 +68,7 @@ function establish_session {
 		sleep 5
 	done
 	echo "MAAS session established successfully"
+	maas refresh 2>/dev/null || true
 	return 0
 }
 

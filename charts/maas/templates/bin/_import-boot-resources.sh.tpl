@@ -432,7 +432,12 @@ function maas_login {
 	{{- else }}
 	maas login ${ADMIN_USERNAME} ${MAAS_ENDPOINT} $KEY
 	{{- end }}
-	return $?
+	local rc=$?
+	if [[ $rc -eq 0 ]]; then
+		log "Refreshing local API description cache..."
+		command maas refresh 2>/dev/null || true
+	fi
+	return $rc
 }
 
 timer "$RETRY_TIMER" maas_login
