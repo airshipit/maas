@@ -18,7 +18,7 @@ ARG no_proxy
 ENV DEBIAN_FRONTEND=noninteractive
 ENV container=docker
 
-ENV MAAS_VERSION=1:3.5.10-16398-g.8e932f0fa-0ubuntu1~22.04.1
+ENV MAAS_VERSION=1:3.5.11-16404-g.4e3041434-0ubuntu1~22.04.1
 ENV MAAS_PPA=ppa:maas/3.5
 
 RUN apt-get -qq update \
