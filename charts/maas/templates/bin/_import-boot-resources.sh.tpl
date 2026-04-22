@@ -292,8 +292,14 @@ function check_then_set_single {
 
 	if [[ $cur_val != $desired_val ]]; then
 		log "Setting MAAS option ${option} to ${desired_val}"
-		maas_cli ${ADMIN_USERNAME} maas set-config name=${option} value=${desired_val} || return 1
-		return $?
+		local result
+		result=$(maas_cli ${ADMIN_USERNAME} maas set-config name=${option} value=${desired_val}) || return 1
+		# Check if MAAS rejected the value (e.g. kernel not yet available after import)
+		if echo "$result" | grep -q '"is not a valid'; then
+			log "WARNING: MAAS rejected value '${desired_val}' for ${option} (images may still be syncing), will retry"
+			return 1
+		fi
+		return 0
 	else
 		log "MAAS option ${option} already set to ${cur_val}"
 		return 0

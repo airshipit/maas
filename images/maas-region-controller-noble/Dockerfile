@@ -18,7 +18,7 @@ ARG no_proxy
 ENV DEBIAN_FRONTEND=noninteractive
 ENV container=docker
 
-ENV MAAS_VERSION=1:3.6.3-17614-g.f7993b9c4-0ubuntu1~24.04.1
+ENV MAAS_VERSION=1:3.6.4-17623-g.46a516275-0ubuntu1~24.04.1
 ENV MAAS_PPA=ppa:maas/3.6
 
 RUN apt-get -qq update \
@@ -70,6 +70,8 @@ COPY 3.6_partitiontable_does_not_exist.patch /tmp/3.6_partitiontable_does_not_ex
 COPY 3.6_regex_tags.patch /tmp/3.6_regex_tags.patch
 # Patch to restrict access to zone transfers
 COPY 3.6_transfer_trusted_only.patch /tmp/3.6_transfer_trusted_only.patch
+# Workaround for Temporal Server < 1.25 incompatibility with TERMINATE_IF_RUNNING policy
+COPY 3.6_temporal_workflow_policy.patch /tmp/3.6_temporal_workflow_policy.patch
 
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed_network.py < /tmp/3.6_route.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver && patch preseed.py < /tmp/3.6_kernel_package.patch
@@ -79,6 +81,7 @@ RUN cd /usr/lib/python3/dist-packages/twisted/web && patch server.py < /tmp/3.6_
 RUN cd /usr/lib/python3/dist-packages/maasserver/api && patch partitions.py < /tmp/3.6_partitiontable_does_not_exist.patch
 RUN cd /usr/lib/python3/dist-packages/maasserver/models && patch ownerdata.py < /tmp/3.6_regex_tags.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/dns && patch named.conf.options.inside.maas.template < /tmp/3.6_transfer_trusted_only.patch
+RUN cd /usr/lib/python3/dist-packages/maasserver/workflow && patch __init__.py < /tmp/3.6_temporal_workflow_policy.patch
 
 # echo journalctl logs to the container's stdout
 COPY journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service

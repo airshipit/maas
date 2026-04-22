@@ -19,7 +19,7 @@ set -ex
 
 function check_boot_images {
 	local is_importing=$(maas local boot-resources is-importing 2>/dev/null || echo "false")
-	local synced_imgs=$(maas local boot-resources read 2>/dev/null | tr -d '\n' | grep -oE '{[^}]+}' | grep ubuntu | grep -c Synced || echo "0")
+	local synced_imgs=$(maas local boot-resources read 2>/dev/null | tr -d '\n' | grep -oE '{[^}]+}' | grep ubuntu | grep Synced | wc -l | tr -d '[:space:]')
 
 	if echo "$is_importing" | grep -q 'true'; then
 		echo "Boot resources currently importing... (synced: $synced_imgs)"
@@ -36,7 +36,7 @@ function check_boot_images {
 }
 
 function check_rack_controllers {
-	rack_cnt=$(maas local rack-controllers read | grep -c hostname)
+	local rack_cnt=$(maas local rack-controllers read 2>/dev/null | grep hostname | wc -l | tr -d '[:space:]')
 	if [[ $rack_cnt -gt 0 ]]; then
 		echo "Found $rack_cnt rack controllers."
 		return 0
