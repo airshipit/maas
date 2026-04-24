@@ -21,9 +21,11 @@
         - airship-maas-docker-build-gate-ubuntu-jammy
         - airship-maas-docker-build-gate-ubuntu-noble
         - airship-maas-lint-yaml
-        - maas-airskiff-deployment-noble-kubeadm
-        - maas-airskiff-deployment-jammy-kubeadm
-        - maas-airskiff-deployment-focal-kubeadm
+        # disabled in order to decrease load on opendev infra
+        # - maas-airskiff-deployment-noble-kubeadm
+        # - maas-airskiff-deployment-jammy-kubeadm
+        # - maas-airskiff-deployment-focal-kubeadm
+        - maas-airskiff-deployment-noble-kubeadm-maas-upgrade
     gate:
       jobs:
         - airship-maas-lint-ws
@@ -41,94 +43,100 @@
         - maas-upload-git-mirror
 
 - nodeset:
-    name: airship-maas-single-node
-    nodes:
-      - name: primary
-        label: ubuntu-bionic
-
-- nodeset:
     name: airship-maas-single-node-jammy
     nodes:
       - name: primary
         label: ubuntu-jammy
 
+- nodeset:
+    name: airship-maas-single-node-noble
+    nodes:
+      - name: primary
+        label: ubuntu-noble
+
 - job:
     name: airship-maas-lint-ws
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
     description: |
       Lints all files for trailing whitespace
     run: tools/gate/playbooks/zuul-linter.yaml
     timeout: 300
-    nodeset: airship-maas-single-node-jammy
+    nodeset: airship-maas-single-node-noble
 
 - job:
     name: airship-maas-chart-build-gate
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
     description: Build charts using pinned Helm toolkit.
-    run: tools/gate/playbooks/helm-linter.yaml
-    timeout: 600
-    nodeset: airship-maas-single-node-jammy
+    timeout: 3600
+    parent: airship-chart-build-base
+    nodeset: airship-maas-single-node-noble
+    required-projects:
+      - name: airship/treasuremap
+        override-checkout: v1.9
     vars:
-      HTK_COMMIT: 80041dfbb5c22aa67dcd8dfa3332a943aa0d366c
+      HTK_COMMIT: d89bc42b57f8c2898520181550b5019dcf31c06f
 
 - job:
     name: airship-maas-chart-build-latest-htk
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
     description: Build charts using latest Helm toolkit.
     voting: false
-    run: tools/gate/playbooks/helm-linter.yaml
-    timeout: 600
-    nodeset: airship-maas-single-node-jammy
+    timeout: 3600
+    parent: airship-chart-build-base
+    nodeset: airship-maas-single-node-noble
+    required-projects:
+      - name: airship/treasuremap
+        override-checkout: v1.9
     vars:
       HTK_COMMIT: master
 
 - job:
     name: airship-maas-docker-build-gate-ubuntu-noble
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
     timeout: 3600
-    run: tools/gate/playbooks/docker-image-build.yaml
-    nodeset: airship-maas-single-node-jammy
-    files:
-      - "^images/.*"
+    parent: airship-docker-build-gate-base
+    nodeset: airship-maas-single-node-noble
+    required-projects:
+      - name: airship/treasuremap
+        override-checkout: v1.9
     vars:
       publish: false
       distro: ubuntu_noble
+      run_verbose_build: true
+      trivy_fail_on_vulns: true
+      trivy_severity: CRITICAL,HIGH
       tags:
         dynamic:
           patch_set: true
 
 - job:
     name: airship-maas-docker-build-gate-ubuntu-jammy
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
     timeout: 3600
-    run: tools/gate/playbooks/docker-image-build.yaml
-    nodeset: airship-maas-single-node-jammy
-    files:
-      - "^images/.*"
+    parent: airship-docker-build-gate-base
+    nodeset: airship-maas-single-node-noble
+    required-projects:
+      - name: airship/treasuremap
+        override-checkout: v1.9
     vars:
       publish: false
       distro: ubuntu_jammy
+      run_verbose_build: true
+      trivy_fail_on_vulns: true
+      trivy_severity: CRITICAL,HIGH
       tags:
         dynamic:
           patch_set: true
 
 - job:
     name: airship-maas-docker-build-gate-ubuntu-focal
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
     timeout: 3600
-    run: tools/gate/playbooks/docker-image-build.yaml
-    nodeset: airship-maas-single-node-jammy
-    files:
-      - "^images/.*"
+    parent: airship-docker-build-gate-base
+    nodeset: airship-maas-single-node-noble
+    required-projects:
+      - name: airship/treasuremap
+        override-checkout: v1.9
     vars:
       publish: false
       distro: ubuntu_focal
+      run_verbose_build: true
+      trivy_fail_on_vulns: true
+      trivy_severity: CRITICAL,HIGH
       tags:
         dynamic:
           patch_set: true
@@ -136,27 +144,23 @@
 
 - job:
     name: airship-maas-lint-yaml
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
     voting: true
     timeout: 900
     run: tools/gate/playbooks/lint-yaml.yaml
-    nodeset: airship-maas-single-node-jammy
+    nodeset: airship-maas-single-node-noble
     irrelevant-files:
       - "^charts/maas/templates/.*"
 
 - job:
     name: airship-maas-docker-publish-focal
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
     timeout: 3600
-    run: tools/gate/playbooks/docker-image-build.yaml
-    nodeset: airship-maas-single-node-jammy
-    secrets:
-      - airship_maas_quay_creds_2026
-    irrelevant-files:
-      - "^images/.*"
+    parent: airship-docker-build-gate-base
+    nodeset: airship-maas-single-node-noble
+    required-projects:
+      - name: airship/treasuremap
+        override-checkout: v1.9
     vars:
+      quay_creds: "{{ airship_maas_quay_creds_2026 }}"
       publish: true
       distro: ubuntu_focal
       tags:
@@ -168,16 +172,14 @@
 
 - job:
     name: airship-maas-docker-publish-jammy
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
     timeout: 3600
-    run: tools/gate/playbooks/docker-image-build.yaml
-    nodeset: airship-maas-single-node-jammy
-    secrets:
-      - airship_maas_quay_creds_2026
-    irrelevant-files:
-      - "^images/.*"
+    parent: airship-docker-build-gate-base
+    nodeset: airship-maas-single-node-noble
+    required-projects:
+      - name: airship/treasuremap
+        override-checkout: v1.9
     vars:
+      quay_creds: "{{ airship_maas_quay_creds_2026 }}"
       publish: true
       distro: ubuntu_jammy
       tags:
@@ -189,16 +191,14 @@
 
 - job:
     name: airship-maas-docker-publish-noble
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
     timeout: 3600
-    run: tools/gate/playbooks/docker-image-build.yaml
-    nodeset: airship-maas-single-node-jammy
-    secrets:
-      - airship_maas_quay_creds_2026
-    irrelevant-files:
-      - "^images/.*"
+    parent: airship-docker-build-gate-base
+    nodeset: airship-maas-single-node-noble
+    required-projects:
+      - name: airship/treasuremap
+        override-checkout: v1.9
     vars:
+      quay_creds: "{{ airship_maas_quay_creds_2026 }}"
       publish: true
       distro: ubuntu_noble
       tags:
@@ -208,14 +208,75 @@
         static:
           - latest
 
+# - job:
+#     name: maas-airskiff-deployment-noble-kubeadm
+#     description: |
+#       Deploy maas using Airskiff and submitted Shipyard changes.
+#     parent: treasuremap-airskiff-deploy-maas-drydock-base
+#     nodeset: treasuremap-airskiff-5nodes-ubuntu_noble
+#     required-projects:
+#       - name: airship/treasuremap
+#         override-checkout: v1.9
+#     roles:
+#       - zuul: airship/treasuremap
+#     vars:
+#       treasuremap_ref: v1.9
+#       ENABLE_SLEEP: false
+#       ENABLE_MAAS_UPGRADE: false
+#       CLONE_MAAS: false
+#       MAKE_MAAS_IMAGES: true
+#       DISTRO: ubuntu_noble
+#       gate_scripts_relative_path: ../../airship/treasuremap
+#       zuul_treasuremap_relative_path: ../../airship/treasuremap
+
+# - job:
+#     name: maas-airskiff-deployment-jammy-kubeadm
+#     description: |
+#       Deploy maas using Airskiff and submitted Shipyard changes.
+#     parent: treasuremap-airskiff-deploy-maas-drydock-base
+#     nodeset: treasuremap-airskiff-5nodes-ubuntu_noble
+#     required-projects:
+#       - name: airship/treasuremap
+#         override-checkout: v1.9
+#     roles:
+#       - zuul: airship/treasuremap
+#     vars:
+#       treasuremap_ref: v1.9
+#       ENABLE_SLEEP: false
+#       ENABLE_MAAS_UPGRADE: true
+#       CLONE_MAAS: false
+#       MAKE_MAAS_IMAGES: true
+#       DISTRO: ubuntu_jammy
+#       gate_scripts_relative_path: ../../airship/treasuremap
+#       zuul_treasuremap_relative_path: ../../airship/treasuremap
+
+# - job:
+#     name: maas-airskiff-deployment-focal-kubeadm
+#     description: |
+#       Deploy maas using Airskiff and submitted Shipyard changes.
+#     parent: treasuremap-airskiff-deploy-maas-drydock-base
+#     nodeset: treasuremap-airskiff-5nodes-ubuntu_noble
+#     required-projects:
+#       - name: airship/treasuremap
+#         override-checkout: v1.9
+#     roles:
+#       - zuul: airship/treasuremap
+#     vars:
+#       treasuremap_ref: v1.9
+#       ENABLE_SLEEP: false
+#       ENABLE_MAAS_UPGRADE: true
+#       CLONE_MAAS: false
+#       MAKE_MAAS_IMAGES: true
+#       DISTRO: ubuntu_focal
+#       gate_scripts_relative_path: ../../airship/treasuremap
+#       zuul_treasuremap_relative_path: ../../airship/treasuremap
+
 - job:
-    name: maas-airskiff-deployment-noble-kubeadm
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
+    name: maas-airskiff-deployment-noble-kubeadm-maas-upgrade
     description: |
       Deploy maas using Airskiff and submitted Shipyard changes.
     parent: treasuremap-airskiff-deploy-maas-drydock-base
-    nodeset: treasuremap-airskiff-1node-32GB-ubuntu_jammy
+    nodeset: treasuremap-airskiff-5nodes-ubuntu_noble
     required-projects:
       - name: airship/treasuremap
         override-checkout: v1.9
@@ -223,56 +284,14 @@
       - zuul: airship/treasuremap
     vars:
       treasuremap_ref: v1.9
+      ENABLE_SLEEP: false
+      ENABLE_MAAS_UPGRADE: true
       CLONE_MAAS: false
       MAKE_MAAS_IMAGES: true
       DISTRO: ubuntu_noble
-      DOCKER_REGISTRY: localhost:5000
       gate_scripts_relative_path: ../../airship/treasuremap
       zuul_treasuremap_relative_path: ../../airship/treasuremap
 
-- job:
-    name: maas-airskiff-deployment-jammy-kubeadm
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
-    description: |
-      Deploy maas using Airskiff and submitted Shipyard changes.
-    parent: treasuremap-airskiff-deploy-maas-drydock-base
-    nodeset: treasuremap-airskiff-1node-32GB-ubuntu_jammy
-    required-projects:
-      - name: airship/treasuremap
-        override-checkout: v1.9
-    roles:
-      - zuul: airship/treasuremap
-    vars:
-      treasuremap_ref: v1.9
-      CLONE_MAAS: false
-      MAKE_MAAS_IMAGES: true
-      DISTRO: ubuntu_jammy
-      DOCKER_REGISTRY: localhost:5000
-      gate_scripts_relative_path: ../../airship/treasuremap
-      zuul_treasuremap_relative_path: ../../airship/treasuremap
-
-- job:
-    name: maas-airskiff-deployment-focal-kubeadm
-    # Pinned for now due to Ansible 11 stopped verbosive output.
-    ansible-version: 9
-    description: |
-      Deploy maas using Airskiff and submitted Shipyard changes.
-    parent: treasuremap-airskiff-deploy-maas-drydock-base
-    nodeset: treasuremap-airskiff-1node-32GB-ubuntu_jammy
-    required-projects:
-      - name: airship/treasuremap
-        override-checkout: v1.9
-    roles:
-      - zuul: airship/treasuremap
-    vars:
-      treasuremap_ref: v1.9
-      CLONE_MAAS: false
-      MAKE_MAAS_IMAGES: true
-      DISTRO: ubuntu_focal
-      DOCKER_REGISTRY: localhost:5000
-      gate_scripts_relative_path: ../../airship/treasuremap
-      zuul_treasuremap_relative_path: ../../airship/treasuremap
 
 - secret:
     name: airship_maas_quay_creds

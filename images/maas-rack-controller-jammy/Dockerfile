@@ -18,7 +18,7 @@ ARG no_proxy
 ENV DEBIAN_FRONTEND=noninteractive
 ENV container=docker
 
-ENV MAAS_VERSION=1:3.5.11-16404-g.4e3041434-0ubuntu1~22.04.1
+ENV MAAS_VERSION=1:3.5.12-16413-g.7fb94f378-0ubuntu1~22.04.1
 ENV MAAS_PPA=ppa:maas/3.5
 
 RUN apt-get -qq update \
@@ -53,7 +53,7 @@ RUN apt-get -qq update \
  && apt-get install -y \
         maas-rack-controller=$MAAS_VERSION \
  && rm -rf /var/lib/apt/lists/*\
- && rm -f /etc/ssl/private/snakeoil.*
+ && rm -f /etc/ssl/private/ssl-cert-snakeoil.*
 
 # Preserve the directory structure, permissions, and contents of /var/lib/maas
 RUN mkdir -p /opt/maas/ && tar -cvzf /opt/maas/var-lib-maas.tgz /var/lib/maas

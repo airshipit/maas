@@ -28,7 +28,9 @@ RUN apt-get -qq update && \
       gpgv \
       python3-certifi \
       simplestreams \
-      ubuntu-cloudimage-keyring
+      ubuntu-cloudimage-keyring \
+      && rm -rf /var/lib/apt/lists/*\
+      && rm -f /etc/ssl/private/.*snakeoil.*
 
 RUN sstream-mirror --keyring=/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg ${SSTREAM_IMAGE} \
     /var/www/html/maas/images/ephemeral-v3/daily 'arch=amd64' "release~${SSTREAM_RELEASE}" --max=1 --progress

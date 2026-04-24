@@ -59,6 +59,10 @@ dependencies:
     import_resources:
       jobs:
         - maas-bootstrap-admin-user
+      pod:
+        - labels:
+            application: maas
+            component: rack
       services:
         - service: maas_region
           endpoint: internal
@@ -104,19 +108,19 @@ manifests:
 
 images:
   tags:
-    db_init: docker.io/library/postgres:14.5
-    db_sync: quay.io/airshipit/maas-region-controller:latest
-    maas_rack: quay.io/airshipit/maas-rack-controller:latest
-    maas_region: quay.io/airshipit/maas-region-controller:latest
-    bootstrap: quay.io/airshipit/maas-region-controller:latest
-    export_api_key: quay.io/airshipit/maas-region-controller:latest
-    maas_cache: quay.io/airshipit/sstream-cache:latest
+    db_init: docker.io/library/postgres:17.4
+    db_sync: quay.io/airshipit/maas-region-controller-noble:latest
+    maas_rack: quay.io/airshipit/maas-rack-controller-noble:latest
+    maas_region: quay.io/airshipit/maas-region-controller-noble:latest
+    bootstrap: quay.io/airshipit/maas-region-controller-noble:latest
+    export_api_key: quay.io/airshipit/maas-region-controller-noble:latest
+    maas_cache: quay.io/airshipit/sstream-cache-focal:latest
     dep_check: quay.io/airshipit/kubernetes-entrypoint:latest-ubuntu_focal
     ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.26.1
     ingress_vip: docker.io/busybox:latest
     error_pages: gcr.io/google_containers/ingress-gce-404-server-with-metrics-amd64:v1.6.0
-    maas_syslog: quay.io/airshipit/maas-region-controller:latest
-    enable_tls: quay.io/airshipit/maas-region-controller:latest
+    maas_syslog: quay.io/airshipit/maas-region-controller-noble:latest
+    enable_tls: quay.io/airshipit/maas-region-controller-noble:latest
   pull_policy: IfNotPresent
   local_registry:
     # TODO(portdirect): this chart does not yet support local image cacheing

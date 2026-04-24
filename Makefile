@@ -26,8 +26,8 @@ PUSH_IMAGE        ?= false
 # use this variable for image labels added in internal build process
 LABEL             ?= org.airshipit.build=community
 COMMIT            ?= $(shell git rev-parse HEAD)
-DISTRO            ?= ubuntu_jammy
-DISTRO_ALIAS	  ?= ubuntu_jammy
+DISTRO            ?= ubuntu_noble
+DISTRO_ALIAS	  ?= ubuntu_noble
 STRIPPED_DISTRO   := $(shell echo $(DISTRO) | sed 's/^ubuntu_//')
 STRIPPED_DISTRO_ALIAS   := $(shell echo $(DISTRO_ALIAS) | sed 's/^ubuntu_//')
 IMAGE_NAME        := maas-rack-controller maas-region-controller sstream-cache
@@ -104,11 +104,11 @@ build:
         $(IMAGE_DIR)
 ifneq ($(DISTRO), $(DISTRO_ALIAS))
 	docker tag $(IMAGE) $(IMAGE_ALIAS)
-ifeq ($(DOCKER_REGISTRY), localhost:5000)
+ifeq (,$(findstring quay.io,$(DOCKER_REGISTRY)))
 	docker push $(IMAGE_ALIAS)
 endif
 endif
-ifeq ($(DOCKER_REGISTRY), localhost:5000)
+ifeq (,$(findstring quay.io,$(DOCKER_REGISTRY)))
 	docker push $(IMAGE)
 endif
 ifeq ($(PUSH_IMAGE), true)

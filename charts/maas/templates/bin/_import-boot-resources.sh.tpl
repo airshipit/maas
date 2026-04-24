@@ -287,7 +287,7 @@ function check_then_set_single {
 
 	local raw_val
 	raw_val=$(maas_cli ${ADMIN_USERNAME} maas get-config name=${option}) || return 1
-	cur_val=$(echo "$raw_val" | tail -1 | tr -d '"')
+	cur_val=$(echo "$raw_val" | tail -1 | tr -d '"' | tr ' ' ',')
 	desired_val=$(echo ${value} | tr -d '"')
 
 	if [[ $cur_val != $desired_val ]]; then
@@ -295,7 +295,7 @@ function check_then_set_single {
 		local result
 		result=$(maas_cli ${ADMIN_USERNAME} maas set-config name=${option} value=${desired_val}) || return 1
 		# Check if MAAS rejected the value (e.g. kernel not yet available after import)
-		if echo "$result" | grep -q '"is not a valid'; then
+		if echo "$result" | grep -q 'is not a valid'; then
 			log "WARNING: MAAS rejected value '${desired_val}' for ${option} (images may still be syncing), will retry"
 			return 1
 		fi
@@ -335,65 +335,142 @@ function configure_syslog {
 }
 
 function configure_images {
-	check_then_set default_osystem ${MAAS_DEFAULT_OS}
-	check_then_set commissioning_distro_series ${MAAS_DEFAULT_DISTRO}
-	check_then_set default_distro_series ${MAAS_DEFAULT_DISTRO}
-	check_then_set default_min_hwe_kernel ${MAAS_DEFAULT_KERNEL}
+	# Single-attempt per setting — no internal retry timer.
+	# If MAAS rejects a value (images not yet in DB), the caller retries the
+	# entire import+configure cycle via the outer timer, re-triggering start_import
+	# rather than spinning on set-config alone.
+	local rc=0
+	check_then_set_single default_osystem ${MAAS_DEFAULT_OS} || rc=1
+	check_then_set_single commissioning_distro_series ${MAAS_DEFAULT_DISTRO} || rc=1
+	check_then_set_single default_distro_series ${MAAS_DEFAULT_DISTRO} || rc=1
+	check_then_set_single default_min_hwe_kernel ${MAAS_DEFAULT_KERNEL} || true
+	return $rc
 }
 
 function configure_boot_sources {
 	# Set the boot source URL if using local image cache
 	if [[ $USE_IMAGE_CACHE == 'true' ]]; then
-		maas_cli ${ADMIN_USERNAME} boot-source update 1 url=http://localhost:8888/maas/images/ephemeral-v3/daily/ || exit 1
+		maas_cli ${ADMIN_USERNAME} boot-source update 1 \
+			url=http://localhost:8888/maas/images/ephemeral-v3/daily/ || exit 1
 	fi
 
-	# Read all selections for boot_source_id 1
-	maas_cli ${ADMIN_USERNAME} boot-source-selections read 1 || exit 1
+	local selections
+	selections=$(maas_cli ${ADMIN_USERNAME} boot-source-selections read 1) || exit 1
 
-	# Need to start an import to get the availability data
-	maas_cli "$ADMIN_USERNAME" boot-resources import || exit 1
-	sleep 10
-	maas_cli "$ADMIN_USERNAME" boot-resources stop-import || exit 1
+	local desired_id
+	desired_id=$(echo "$selections" | jq -r \
+		--arg os "${MAAS_DEFAULT_OS}" \
+		--arg distro "${MAAS_DEFAULT_DISTRO}" \
+		'.[] | select(.os == $os and .release == $distro) | .id' 2>/dev/null)
 
-	# Create a selection for the desired distro
-	maas_cli ${ADMIN_USERNAME} boot-source-selections create 1 os="${MAAS_DEFAULT_OS}" \
-		release="${MAAS_DEFAULT_DISTRO}" arches="amd64" subarches='*' labels='*' || exit 1
+	if [[ -z "$desired_id" ]]; then
+		# The desired distro is not yet in selections. UPDATE the first existing
+		# selection in-place rather than deleting it and creating a new one.
+		# Deletion is blocked by MAAS when the selection is the current
+		# commissioning OS ("Unable to delete... used in ephemeral environments").
+		# An in-place update changes the release without triggering that check,
+		# ensuring the sstream import will only see the desired distro and won't
+		# hang waiting for a distro the local sstream container doesn't carry.
+		local first_id
+		first_id=$(echo "$selections" | jq -r 'first | .id // empty' 2>/dev/null)
 
-	# Need to start an import to get the availability data
-	maas_cli "$ADMIN_USERNAME" boot-resources import || exit 1
-	sleep 10
+		if [[ -n "$first_id" ]]; then
+			log "Updating selection id=${first_id} in-place to ${MAAS_DEFAULT_OS}/${MAAS_DEFAULT_DISTRO}"
+			maas_cli ${ADMIN_USERNAME} boot-source-selection update 1 "${first_id}" \
+				os="${MAAS_DEFAULT_OS}" release="${MAAS_DEFAULT_DISTRO}" \
+				arches="amd64" subarches='*' labels='*' || exit 1
+		else
+			log "No existing selections — creating ${MAAS_DEFAULT_OS}/${MAAS_DEFAULT_DISTRO}"
+			maas_cli ${ADMIN_USERNAME} boot-source-selections create 1 \
+				os="${MAAS_DEFAULT_OS}" release="${MAAS_DEFAULT_DISTRO}" \
+				arches="amd64" subarches='*' labels='*' || exit 1
+		fi
 
-	# Set as default
-	maas_cli ${ADMIN_USERNAME} maas set-config name=default_distro_series value="${MAAS_DEFAULT_DISTRO}" || exit 1
-	maas_cli ${ADMIN_USERNAME} maas set-config name=commissioning_distro_series value="${MAAS_DEFAULT_DISTRO}" || exit 1
-
-	# Wait for MAAS to process the new selection
-	sleep 10
-
-	# Delete any selections that do not match the desired distro
-	selections_output=$(maas_cli ${ADMIN_USERNAME} boot-source-selections read 1) || exit 1
-
-	# Check if output is valid JSON before parsing
-	if echo "$selections_output" | jq -e . >/dev/null 2>&1; then
-		for row in $(echo "$selections_output" | jq -r \
-			--arg distro "$MAAS_DEFAULT_DISTRO" \
-			'.[] | select(.release != $distro) | "\(.id):\(.boot_source_id)"'); do
-			id="${row%%:*}"
-			boot_source_id="${row##*:}"
-			log "Deleting selection id $id from boot_source_id $boot_source_id"
-			maas_cli ${ADMIN_USERNAME} boot-source-selection delete "$boot_source_id" "$id" || exit 1
-		done
+		# Re-read after update/create so the stale-cleanup below sees fresh state
+		selections=$(maas_cli ${ADMIN_USERNAME} boot-source-selections read 1) || exit 1
 	else
-		log "Warning: Unable to parse boot-source-selections output, skipping cleanup of old selections"
-		log "Output was: $selections_output"
+		log "Selection for ${MAAS_DEFAULT_OS}/${MAAS_DEFAULT_DISTRO} already exists (id=${desired_id})"
 	fi
 
-	# Need to re-start an import to get the availability data
-	sleep 10
-	maas_cli "$ADMIN_USERNAME" boot-resources stop-import || exit 1
-	sleep 10
-	maas_cli "$ADMIN_USERNAME" boot-resources import || exit 1
+	# Remove all remaining selections not pointing to the desired distro.
+	# MUST be done before start_import — if any stale selection remains,
+	# the local sstream (which only carries the desired distro) will never
+	# satisfy it and is-importing will never return false.
+	#
+	# If MAAS refuses to delete a selection because it is the current
+	# commissioning OS, update it in-place to the desired distro instead.
+	# After import completes, configure_images will switch commissioning to
+	# the new distro and cleanup_old_boot_source_selections removes duplicates.
+	local stale_ids
+	stale_ids=$(echo "$selections" | jq -r \
+		--arg distro "${MAAS_DEFAULT_DISTRO}" \
+		'.[] | select(.release != $distro) | .id' 2>/dev/null)
 
+	for id in $stale_ids; do
+		log "Deleting stale selection id=${id}"
+		local result
+		result=$(maas_cli ${ADMIN_USERNAME} boot-source-selection delete 1 "${id}") || true
+		if echo "$result" | grep -qi "Unable to delete\|ephemeral"; then
+			log "Delete blocked (commissioning OS restriction) — updating selection id=${id} to ${MAAS_DEFAULT_OS}/${MAAS_DEFAULT_DISTRO} in-place"
+			local update_result
+			update_result=$(maas_cli ${ADMIN_USERNAME} boot-source-selection update 1 "${id}" \
+				os="${MAAS_DEFAULT_OS}" release="${MAAS_DEFAULT_DISTRO}" \
+				arches="amd64" subarches='*' labels='*') || exit 1
+			# maas_cli returns 0 even for API-level errors; inspect the response
+			if echo "$update_result" | grep -qi "error\|not found\|does not exist"; then
+				log "ERROR: in-place update of selection id=${id} failed: ${update_result}"
+				exit 1
+			fi
+		fi
+	done
+
+	# Final safety check: assert no stale selections remain before start_import.
+	# Any stale entry would cause the import to hang waiting for a distro the
+	# local sstream doesn't carry.
+	local remaining_stale
+	remaining_stale=$(maas_cli ${ADMIN_USERNAME} boot-source-selections read 1 | jq -r \
+		--arg distro "${MAAS_DEFAULT_DISTRO}" \
+		'.[] | select(.release != $distro) | .id' 2>/dev/null)
+	if [[ -n "$remaining_stale" ]]; then
+		log "ERROR: stale boot-source selections still present after cleanup (ids: ${remaining_stale}). Aborting to prevent import hang."
+		exit 1
+	fi
+}
+
+function cleanup_old_boot_source_selections {
+	# After configure_images has switched commissioning_distro_series to the new
+	# distro, remove any duplicate selections that were updated in-place from the
+	# old distro. Keep only the first one found for the desired distro.
+	local selections
+	selections=$(maas_cli ${ADMIN_USERNAME} boot-source-selections read 1) || return 1
+
+	if ! echo "$selections" | jq -e . >/dev/null 2>&1; then
+		log "Warning: Unable to parse boot-source-selections output, skipping cleanup"
+		return 0
+	fi
+
+	local keep_id
+	keep_id=$(echo "$selections" | jq -r \
+		--arg distro "$MAAS_DEFAULT_DISTRO" \
+		'[.[] | select(.release == $distro)] | first | .id // empty' 2>/dev/null)
+
+	if [[ -z "$keep_id" ]]; then
+		log "Warning: no ${MAAS_DEFAULT_DISTRO} selection found in cleanup — nothing to do"
+		return 0
+	fi
+
+	for row in $(echo "$selections" | jq -r \
+		--argjson keep "${keep_id}" \
+		'.[] | select(.id != $keep) | "\(.id):\(.boot_source_id)"'); do
+		local id="${row%%:*}"
+		local boot_source_id="${row##*:}"
+		log "Deleting duplicate selection id=${id} from boot_source_id=${boot_source_id}"
+		local result
+		result=$(maas_cli ${ADMIN_USERNAME} boot-source-selection delete "$boot_source_id" "$id") || true
+		if echo "$result" | grep -qi "Unable to delete\|ephemeral"; then
+			log "WARNING: Cannot delete selection ${id}: ${result} — skipping"
+		fi
+	done
 }
 
 function create_extra_commissioning_script {
@@ -455,13 +532,20 @@ configure_syslog
 configure_extra_settings
 create_extra_commissioning_script
 
-# make call to import images
-timer "$RETRY_TIMER" configure_boot_sources
-start_import
+# Add desired distro selection, then import, then apply configs, then clean up old selections.
+# Order matters:
+#   1. configure_boot_sources    — ensure only the desired distro is in selections
+#   2. import_and_configure loop — retry start_import + configure_images as a unit:
+#        if configure_images fails (images not yet accepted by MAAS), the outer
+#        timer re-runs start_import on the next attempt rather than spinning on
+#        set-config alone, which would loop forever against an empty boot-resource DB.
+#   3. cleanup_old_boot_source_selections — remove duplicates left by in-place updates
 
-if [[ $? -eq 0 ]]; then
-	configure_images
-else
-	log "Image import FAILED!"
-	exit 1
-fi
+function import_and_configure {
+	start_import || return 1
+	configure_images || return 1
+}
+
+timer "$RETRY_TIMER" configure_boot_sources
+timer "$RETRY_TIMER" import_and_configure || { log "Import and configure FAILED!"; exit 1; }
+cleanup_old_boot_source_selections

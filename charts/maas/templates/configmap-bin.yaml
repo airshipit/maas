@@ -56,6 +56,8 @@ data:
 {{ tuple "bin/_maas-vip-configure.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   start-syslog.sh: |
 {{ tuple "bin/_start-syslog.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  region-readiness.sh: |
+{{ tuple "bin/_region-rediness.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
 {{- if .Values.conf.maas.tls.enabled }}
   enable-tls.sh: |
 {{ tuple "bin/_enable-tls.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}

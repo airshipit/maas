@@ -155,6 +155,11 @@ spec:
                   fieldPath: metadata.namespace
             - name: MAAS_REGION_SECRET
               value: {{ .Values.secrets.maas_region.name }}
+            - name: ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.maas_users.admin }}
+                  key: USERNAME
           ports:
             - name: region-api
               containerPort: {{ tuple "maas_region" "podport" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
@@ -239,8 +244,14 @@ spec:
             - name: region-proxy
               containerPort: {{ tuple "maas_region" "podport" "region_proxy" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
           readinessProbe:
-            tcpSocket:
-              port: {{ tuple "maas_region" "podport" "region_api" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+            exec:
+              command:
+                - /bin/bash
+                - /tmp/region-readiness.sh
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
           command:
             - /tmp/start.sh
           volumeMounts:
@@ -287,6 +298,10 @@ spec:
             - name: maas-bin
               mountPath: /tmp/start.sh
               subPath: start.sh
+              readOnly: true
+            - name: maas-bin
+              mountPath: /tmp/region-readiness.sh
+              subPath: region-readiness.sh
               readOnly: true
             - name: maas-etc
               mountPath: /etc/nsswitch.conf
