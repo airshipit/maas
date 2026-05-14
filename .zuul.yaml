@@ -159,6 +159,9 @@
     required-projects:
       - name: airship/treasuremap
         override-checkout: v1.9
+    secrets:
+      - name: airship_maas_quay_creds_2026
+        secret: airship_maas_quay_creds_2026
     vars:
       quay_creds: "{{ airship_maas_quay_creds_2026 }}"
       publish: true
@@ -178,6 +181,9 @@
     required-projects:
       - name: airship/treasuremap
         override-checkout: v1.9
+    secrets:
+      - name: airship_maas_quay_creds_2026
+        secret: airship_maas_quay_creds_2026
     vars:
       quay_creds: "{{ airship_maas_quay_creds_2026 }}"
       publish: true
@@ -197,6 +203,9 @@
     required-projects:
       - name: airship/treasuremap
         override-checkout: v1.9
+    secrets:
+      - name: airship_maas_quay_creds_2026
+        secret: airship_maas_quay_creds_2026
     vars:
       quay_creds: "{{ airship_maas_quay_creds_2026 }}"
       publish: true
