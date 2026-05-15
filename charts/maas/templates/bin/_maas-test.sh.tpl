@@ -77,9 +77,7 @@ function establish_session {
 update-ca-certificates
 {{- end }}
 
-establish_session
-
-if [[ $? -ne 0 ]]; then
+if ! establish_session; then
 	echo "MAAS API login FAILED!"
 	exit 1
 fi
