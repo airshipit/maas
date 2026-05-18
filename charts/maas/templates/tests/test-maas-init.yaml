@@ -38,11 +38,7 @@ spec:
     - name: maas-api-test
       env:
         - name: 'MAAS_URL'
-{{- if empty .Values.conf.maas.url.maas_url }}
-          value: {{ tuple "maas_region" "public" "region_api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | quote }}
-{{- else }}
-          value: {{ .Values.conf.maas.url.maas_url }}
-{{- end }}
+          value: {{ tuple "maas_region" "internal" "region_api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | quote }}
         - name: 'MAAS_API_KEY'
           valueFrom:
             secretKeyRef:
