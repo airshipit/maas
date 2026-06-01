@@ -25,7 +25,8 @@
         # - maas-airskiff-deployment-noble-kubeadm
         # - maas-airskiff-deployment-jammy-kubeadm
         # - maas-airskiff-deployment-focal-kubeadm
-        - maas-airskiff-deployment-noble-kubeadm-maas-upgrade
+        - maas-airskiff-deployment-noble-jammyhost-kubeadm-maas-upgrade
+        - maas-airskiff-deployment-noble-noblehost-kubeadm-maas-upgrade
     gate:
       jobs:
         - airship-maas-lint-ws
@@ -281,7 +282,7 @@
 #       zuul_treasuremap_relative_path: ../../airship/treasuremap
 
 - job:
-    name: maas-airskiff-deployment-noble-kubeadm-maas-upgrade
+    name: maas-airskiff-deployment-noble-noblehost-kubeadm-maas-upgrade
     description: |
       Deploy maas using Airskiff and submitted Shipyard changes.
     parent: treasuremap-airskiff-deploy-maas-drydock-base
@@ -303,6 +304,29 @@
       gate_scripts_relative_path: ../../airship/treasuremap
       zuul_treasuremap_relative_path: ../../airship/treasuremap
 
+
+- job:
+    name: maas-airskiff-deployment-noble-jammyhost-kubeadm-maas-upgrade
+    description: |
+      Deploy maas using Airskiff and submitted Shipyard changes.
+    parent: treasuremap-airskiff-deploy-maas-drydock-base
+    nodeset: treasuremap-airskiff-5nodes-ubuntu_jammy
+    required-projects:
+      - name: airship/treasuremap
+        override-checkout: v1.9
+    roles:
+      - zuul: airship/treasuremap
+    vars:
+      treasuremap_ref: v1.9
+      ENABLE_SLEEP: false
+      ENABLE_MAAS_UPGRADE: true
+      CLONE_MAAS: false
+      MAKE_MAAS_IMAGES: true
+      helm_version: 4.2.0
+      HELM_ARTIFACT_URL: https://get.helm.sh/helm-v4.2.0-linux-amd64.tar.gz
+      DISTRO: ubuntu_noble
+      gate_scripts_relative_path: ../../airship/treasuremap
+      zuul_treasuremap_relative_path: ../../airship/treasuremap
 
 - secret:
     name: airship_maas_quay_creds

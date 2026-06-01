@@ -438,6 +438,8 @@ pod:
       container:
         maas_rack:
           readOnlyRootFilesystem: false
+          appArmorProfile:
+            type: Unconfined
           capabilities:
             add:
               - "DAC_READ_SEARCH"
@@ -455,6 +457,8 @@ pod:
           readOnlyRootFilesystem: false
         maas_region:
           readOnlyRootFilesystem: false
+          appArmorProfile:
+            type: Unconfined
           capabilities:
             add:
               - "SYS_ADMIN"

@@ -57,4 +57,18 @@ if [[ $sh_set = false ]]; then
   exit 1
 fi
 set -e
+# Fix AppArmor preventing rsyslogd from reading /var/lib/maas/rsyslog.conf.
+# On Noble the profile was renamed from usr.sbin.rsyslogd to rsyslogd, so
+# maas-common.postinst (which only checks the old path) never reloads it.
+# Reload the profile from the container filesystem (which has the MAAS rules
+# in rsyslog.d/maas) into the shared AppArmor securityfs before systemd starts.
+# --skip-read-cache forces recompile from source, bypassing a cached binary
+# profile that may predate the MAAS rules installation.
+if [ -d /sys/kernel/security/apparmor ] && command -v apparmor_parser >/dev/null 2>&1; then
+  for _p in /etc/apparmor.d/rsyslogd /etc/apparmor.d/usr.sbin.rsyslogd; do
+    [ -f "$_p" ] && { apparmor_parser --replace --skip-read-cache --write-cache "$_p" || true; break; }
+  done
+  unset _p
+fi
+
 exec /sbin/init --log-target=console 3>&1

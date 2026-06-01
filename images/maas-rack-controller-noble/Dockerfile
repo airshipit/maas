@@ -78,6 +78,13 @@ RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch 
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/drivers/power && patch redfish.py < /tmp/3.6_redfish_retries.patch
 RUN cd /usr/lib/python3/dist-packages/provisioningserver/templates/dns && patch named.conf.options.inside.maas.template < /tmp/3.6_transfer_trusted_only.patch
 
+# Disable rsyslog modules that require privileges not available in containers.
+# imklog needs CAP_SYSLOG to read /proc/kmsg; $FileOwner/$FileGroup need CAP_CHOWN.
+# Noble host kernels enforce these restrictions more strictly than Jammy.
+RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf \
+ && sed -i '/\$FileOwner/s/^/#/' /etc/rsyslog.conf \
+ && sed -i '/\$FileGroup/s/^/#/' /etc/rsyslog.conf
+
 # echo journalctl logs to the container's stdout
 COPY scripts/journalctl-to-tty.service /etc/systemd/system/journalctl-to-tty.service
 RUN systemctl enable journalctl-to-tty.service
@@ -93,6 +100,8 @@ RUN grep -i "^pidfile " /etc/chrony/chrony.conf && \
     sed -i 's|^pidfile .*|pidfile /run/chrony/chronyd.pid|' /etc/chrony/chrony.conf || \
     echo 'pidfile /run/chrony/chronyd.pid' >> /etc/chrony/chrony.conf
 COPY scripts/override.chrony.conf /etc/systemd/system/chrony.service.d/override.conf
+RUN mkdir -p /etc/systemd/system/maas-syslog.service.d
+COPY scripts/override.maas-syslog.conf /etc/systemd/system/maas-syslog.service.d/override.conf
 
 # fix httpproxy.sock permission
 COPY scripts/maas-http-watcher.service /etc/systemd/system/maas-http-watcher.service

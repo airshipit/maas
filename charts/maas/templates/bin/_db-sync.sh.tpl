@@ -18,6 +18,14 @@ set -ex
 
 # error: rsyslog: Unrecognized service
 rm -f /var/run/rsyslogd.pid || true
+# imklog requires CAP_SYSLOG which is not available in containers
+sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
+# Disable file ownership directives that require CAP_CHOWN (not available in containers)
+sed -i '/\$FileOwner/s/^/#/' /etc/rsyslog.conf
+sed -i '/\$FileGroup/s/^/#/' /etc/rsyslog.conf
+# Pre-create log files so rsyslog (running as nobody) can write without chown
+touch /var/log/syslog /var/log/auth.log
+chmod 666 /var/log/syslog /var/log/auth.log
 service rsyslog restart || true
 
 maas-region dbupgrade
