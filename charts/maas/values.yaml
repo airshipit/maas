@@ -105,6 +105,7 @@ manifests:
   configmap_ingress: true
   maas_ingress: true
   network_policy: false
+  httproute_region: false
 
 images:
   tags:
@@ -167,6 +168,14 @@ network:
         cluster: "maas-ingress"
       annotations:
         nginx.ingress.kubernetes.io/rewrite-target: "/"
+    httproute:
+      public: true
+      parentRef:
+        name: maas-gateway
+        # sectionName: maas-region-api
+        # namespace: maas
+      annotations: {}
+
     node_port:
       enabled: false
 
@@ -247,6 +256,7 @@ conf:
     url:
       maas_url: null
     ingress_disable_gui: false
+    httproute_disable_gui: false
     cgroups:
       # When set to true, this won't mount the host path /sys/fs/cgroup. Used
       # to enable use of cgroups v2. Also requires running container as privileged

@@ -1,0 +1,88 @@
+{{/*
+# Copyright (c) 2026 AT&T Intellectual Property. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+*/}}
+
+{{- if and .Values.manifests.httproute_region .Values.network.region_api.httproute.public }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: maas-region-api
+{{- if .Values.network.region_api.httproute.annotations }}
+  annotations:
+{{ toYaml .Values.network.region_api.httproute.annotations | indent 4 }}
+{{- end }}
+spec:
+  parentRefs:
+{{ toYaml (list .Values.network.region_api.httproute.parentRef) | indent 4 }}
+  hostnames:
+  - {{ tuple "maas_region" "public" . | include "helm-toolkit.endpoints.hostname_fqdn_endpoint_lookup" }}
+  rules:
+  - backendRefs:
+{{- if .Values.conf.maas.tls.enabled }}
+    - kind: Service
+      name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+      port: {{ tuple "maas_region" "secure" "region_api" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+{{- else }}
+    - kind: Service
+      name: {{ tuple "maas_region" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+      port: {{ tuple "maas_region" "internal" "region_api" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+{{- end }}
+    matches:
+{{- if (and .Values.conf.maas.httproute_disable_gui .Values.conf.maas.tls.enabled) }}
+    - path:
+        type: PathPrefix
+        value: /MAAS/api
+    - path:
+        type: PathPrefix
+        value: /MAAS/images-stream
+    - path:
+        type: PathPrefix
+        value: /MAAS/metadata
+    - path:
+        type: PathPrefix
+        value: /MAAS/rpc
+{{- else if .Values.conf.maas.httproute_disable_gui }}
+    - path:
+        type: Exact
+        value: /MAAS/version
+    - path:
+        type: Exact
+        value: /MAAS
+    - path:
+        type: Exact
+        value: /MAAS/
+    - path:
+        type: PathPrefix
+        value: /MAAS/api
+    - path:
+        type: PathPrefix
+        value: /MAAS/images-stream
+    - path:
+        type: PathPrefix
+        value: /MAAS/metadata
+    - path:
+        type: PathPrefix
+        value: /MAAS/rpc
+    - path:
+        type: PathPrefix
+        value: /MAAS/ws
+{{- else }}
+    - path:
+        type: PathPrefix
+        value: /
+{{- end }}
+...
+{{ end }}
