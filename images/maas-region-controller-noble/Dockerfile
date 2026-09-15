@@ -20,6 +20,9 @@ ENV container=docker
 
 ENV MAAS_VERSION=1:3.6.5-17655-g.474ecb517-0ubuntu1~24.04.1
 ENV MAAS_PPA=ppa:maas/3.6
+# MAAS >= 3.6.5 sends curtin a deb822 apt 'sources_list' for 24.04+ targets;
+# older curtin builds cannot parse it and fail in curthooks apt config.
+ENV CURTIN_VERSION=23.1.1-1127-g68310ce3-0ubuntu1~ubuntu24.04.1
 
 RUN apt-get -qq update \
  && apt upgrade -y \
@@ -48,6 +51,7 @@ RUN apt-get -qq update \
  && add-apt-repository -yu $MAAS_PPA \
  && apt-get install -y \
         maas-region-api=$MAAS_VERSION \
+        python3-curtin=$CURTIN_VERSION \
         # tcpdump is required by /usr/lib/maas/beacon-monitor
         tcpdump \
  && rm -rf /var/lib/apt/lists/*\
