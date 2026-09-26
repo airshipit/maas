@@ -44,6 +44,29 @@ data:
 {{ tuple "bin/_register-rack-controller.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   rack-dhcp-setup-orphaned-racks-cleanup.sh: |
 {{ tuple "bin/_rack-dhcp-setup-orphaned-racks-cleanup.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  maas-rackd-watchdog.sh: |
+{{ tuple "bin/_maas-rackd-watchdog.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  maas-rackd-watchdog.service: |
+    [Unit]
+    Description=Restart maas-rackd when the region reports it as not running
+    After=maas-rackd.service
+    Wants=maas-rackd.service
+
+    [Service]
+    Type=simple
+    PassEnvironment=MAAS_ENDPOINT MAAS_API_KEY
+    Environment=HOME=/root
+    Environment=WATCHDOG_INTERVAL={{ .Values.conf.maas.rackd_watchdog.interval }}
+    Environment=WATCHDOG_FAILURE_THRESHOLD={{ .Values.conf.maas.rackd_watchdog.failure_threshold }}
+    Environment=WATCHDOG_COOLDOWN={{ .Values.conf.maas.rackd_watchdog.cooldown }}
+    Environment=WATCHDOG_MAX_RESTARTS={{ .Values.conf.maas.rackd_watchdog.max_restarts }}
+    Environment=WATCHDOG_STARTUP_GRACE={{ .Values.conf.maas.rackd_watchdog.startup_grace }}
+    ExecStart=/usr/local/bin/maas-rackd-watchdog.sh
+    Restart=always
+    RestartSec=30
+
+    [Install]
+    WantedBy=multi-user.target
   maas-test.sh: |
 {{ tuple "bin/_maas-test.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   ntpd.sh: |

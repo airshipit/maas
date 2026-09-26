@@ -71,4 +71,11 @@ if [ -d /sys/kernel/security/apparmor ] && command -v apparmor_parser >/dev/null
   unset _p
 fi
 
+# Enable the maas-rackd watchdog unit when it is mounted into the container.
+if [[ -f /etc/systemd/system/maas-rackd-watchdog.service ]]; then
+  mkdir -p /etc/systemd/system/multi-user.target.wants
+  ln -sf /etc/systemd/system/maas-rackd-watchdog.service \
+    /etc/systemd/system/multi-user.target.wants/maas-rackd-watchdog.service
+fi
+
 exec /sbin/init --log-target=console 3>&1

@@ -257,6 +257,22 @@ conf:
       maas_url: null
     ingress_disable_gui: false
     httproute_disable_gui: false
+    rackd_watchdog:
+      # Run a watchdog inside the rack container that restarts
+      # maas-rackd.service when the region keeps reporting the rackd service
+      # of this rack controller as not running (e.g. "75% connected to region
+      # controllers"), which breaks PXE booting of new nodes.
+      enabled: true
+      # Seconds between checks
+      interval: 60
+      # Consecutive non-running checks before maas-rackd is restarted
+      failure_threshold: 5
+      # Minimum seconds between two restarts
+      cooldown: 600
+      # Restarts without recovery before the watchdog stops restarting
+      max_restarts: 3
+      # Seconds to wait after container start before the first check
+      startup_grace: 600
     cgroups:
       # When set to true, this won't mount the host path /sys/fs/cgroup. Used
       # to enable use of cgroups v2. Also requires running container as privileged

@@ -166,6 +166,16 @@ spec:
               mountPath: /usr/local/bin/rack-dhcp-setup-orphaned-racks-cleanup.sh
               subPath: rack-dhcp-setup-orphaned-racks-cleanup.sh
               readOnly: true
+{{- if .Values.conf.maas.rackd_watchdog.enabled }}
+            - name: maas-bin
+              mountPath: /usr/local/bin/maas-rackd-watchdog.sh
+              subPath: maas-rackd-watchdog.sh
+              readOnly: true
+            - name: maas-bin
+              mountPath: /etc/systemd/system/maas-rackd-watchdog.service
+              subPath: maas-rackd-watchdog.service
+              readOnly: true
+{{- end }}
             - name: rackd-state
               mountPath: /etc/maas
               subPath: etc
