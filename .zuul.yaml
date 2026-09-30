@@ -284,7 +284,7 @@
 - job:
     name: maas-airskiff-deployment-noble-noblehost-kubeadm-maas-upgrade
     description: |
-      Deploy maas using Airskiff and submitted Shipyard changes.
+      Deploy maas using Airskiff and submitted MAAS changes.
     parent: treasuremap-airskiff-deploy-maas-drydock-base
     nodeset: treasuremap-airskiff-5nodes-ubuntu_noble
     required-projects:
@@ -298,8 +298,8 @@
       ENABLE_MAAS_UPGRADE: true
       CLONE_MAAS: false
       MAKE_MAAS_IMAGES: true
-      helm_version: 4.2.0
-      HELM_ARTIFACT_URL: https://get.helm.sh/helm-v4.2.0-linux-amd64.tar.gz
+      helm_version: 4.2.2
+      HELM_ARTIFACT_URL: https://get.helm.sh/helm-v4.2.2-linux-amd64.tar.gz
       DISTRO: ubuntu_noble
       gate_scripts_relative_path: ../../airship/treasuremap
       zuul_treasuremap_relative_path: ../../airship/treasuremap
@@ -308,7 +308,7 @@
 - job:
     name: maas-airskiff-deployment-noble-jammyhost-kubeadm-maas-upgrade
     description: |
-      Deploy maas using Airskiff and submitted Shipyard changes.
+      Deploy maas using Airskiff and submitted MAAS changes.
     parent: treasuremap-airskiff-deploy-maas-drydock-base
     nodeset: treasuremap-airskiff-5nodes-ubuntu_jammy
     required-projects:
@@ -322,8 +322,8 @@
       ENABLE_MAAS_UPGRADE: true
       CLONE_MAAS: false
       MAKE_MAAS_IMAGES: true
-      helm_version: 4.2.0
-      HELM_ARTIFACT_URL: https://get.helm.sh/helm-v4.2.0-linux-amd64.tar.gz
+      helm_version: 4.2.2
+      HELM_ARTIFACT_URL: https://get.helm.sh/helm-v4.2.2-linux-amd64.tar.gz
       DISTRO: ubuntu_noble
       gate_scripts_relative_path: ../../airship/treasuremap
       zuul_treasuremap_relative_path: ../../airship/treasuremap

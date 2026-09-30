@@ -17,7 +17,7 @@
 set -x
 
 HELM=$1
-HELM_ARTIFACT_URL=${HELM_ARTIFACT_URL:-"https://get.helm.sh/helm-v4.2.0-linux-amd64.tar.gz"}
+HELM_ARTIFACT_URL=${HELM_ARTIFACT_URL:-"https://get.helm.sh/helm-v4.2.2-linux-amd64.tar.gz"}
 
 
 function install_helm_binary {

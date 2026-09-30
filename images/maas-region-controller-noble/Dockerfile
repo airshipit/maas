@@ -18,7 +18,7 @@ ARG no_proxy
 ENV DEBIAN_FRONTEND=noninteractive
 ENV container=docker
 
-ENV MAAS_VERSION=1:3.6.5-17655-g.474ecb517-0ubuntu1~24.04.1
+ENV MAAS_VERSION=1:3.6.6-17672-g.08d455f29-0ubuntu1~24.04.1
 ENV MAAS_PPA=ppa:maas/3.6
 # MAAS >= 3.6.5 sends curtin a deb822 apt 'sources_list' for 24.04+ targets;
 # older curtin builds cannot parse it and fail in curthooks apt config.
