@@ -15,6 +15,7 @@
     check:
       jobs:
         - airship-maas-lint-ws
+        - airship-maas-boot-proxy-golang-unit
         - airship-maas-chart-build-gate
         - airship-maas-chart-build-latest-htk
         - airship-maas-docker-build-gate-ubuntu-noble
@@ -24,6 +25,7 @@
     gate:
       jobs:
         - airship-maas-lint-ws
+        - airship-maas-boot-proxy-golang-unit
         - airship-maas-chart-build-gate
         - airship-maas-docker-build-gate-ubuntu-noble
         - airship-maas-lint-yaml
@@ -98,6 +100,18 @@
     nodeset: airship-maas-single-node-noble
     irrelevant-files:
       - "^charts/maas/templates/.*"
+
+- job:
+    name: airship-maas-boot-proxy-golang-unit
+    description: |
+      Check formatting, vet and unit test the maas-boot-proxy (Go).
+    voting: true
+    timeout: 1800
+    run: tools/gate/playbooks/boot-proxy-golang-unit.yaml
+    nodeset: airship-maas-single-node-noble
+    files:
+      - "^images/maas-boot-proxy/.*"
+      - "^tools/gate/playbooks/boot-proxy-golang-unit.yaml$"
 
 - job:
     name: airship-maas-docker-publish-noble

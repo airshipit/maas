@@ -1,0 +1,141 @@
+#!/bin/sh
+# bond: initramfs-tools init-PREMOUNT hook that forms an in-kernel 802.3ad (LACP)
+# bond BEFORE the ephemeral network is configured, so an node whose mgmt link is
+# an LACP port-channel member is not suspended/black-holed by the switch.
+#
+# Runs in init-premount (after the NIC driver is loaded, before configure_networking).
+#
+# Members may be given as PCI addresses (e.g. 0000:3b:00.0) OR interface names. PCI is
+# preferred because it is STABLE across environments: the same NIC is "ens2f1" in the
+# ephemeral initramfs but "enp94s0f1" in the deployed OS, and the MAC differs per node --
+# only the PCI address is constant. This matches site manifests that define NICs by PCI.
+#
+# Kernel cmdline params injected by the maas-boot-proxy (space-separated words; each
+# value has no spaces; members comma-separated so PCI colons don't clash):
+#   gen_bond=<bondname>            e.g. bond0
+#   gen_members=<m1,m2,...>        PCI addrs (0000:3b:00.0) and/or ifnames (ens2f1)
+#   gen_mode=<mode>               default 802.3ad
+#   gen_rate=<lacp_rate>          default fast
+#   gen_hash=<xmit_hash_policy>   default layer3+4
+#   gen_vlan=<vid>                optional; creates <bond>.<vid> as the tagged iface
+
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in
+  prereqs) prereqs; exit 0 ;;
+esac
+
+log() { echo "bond: $*"; }
+
+BOND="" ; MEMBERS="" ; MODE="" ; RATE="" ; HASH="" ; VID=""
+for x in $(cat /proc/cmdline); do
+  case "$x" in
+    gen_bond=*)    BOND="${x#gen_bond=}" ;;
+    gen_members=*) MEMBERS="${x#gen_members=}" ;;
+    gen_mode=*)    MODE="${x#gen_mode=}" ;;
+    gen_rate=*)    RATE="${x#gen_rate=}" ;;
+    gen_hash=*)    HASH="${x#gen_hash=}" ;;
+    gen_vlan=*)    VID="${x#gen_vlan=}" ;;
+  esac
+done
+
+[ -n "$BOND" ] && [ -n "$MEMBERS" ] || exit 0
+[ -n "$MODE" ] || MODE="802.3ad"
+[ -n "$RATE" ] || RATE="fast"
+[ -n "$HASH" ] || HASH="layer3+4"
+
+log "loading bonding + 8021q"
+modprobe bonding 2>/dev/null || true
+modprobe 8021q   2>/dev/null || true
+
+# Resolve a member spec (PCI address or ifname) to the current interface name, waiting
+# for it to appear. Prints the ifname on stdout (logs go to stderr).
+resolve_member() {
+  spec="$1"
+  case "$spec" in
+    *:*)  # colon -> PCI address (ifnames never contain ':')
+      pci="$spec"
+      case "$pci" in *:*:*.*) ;; *) pci="0000:$pci" ;; esac
+      c=0
+      while [ $c -lt 60 ]; do
+        d="/sys/bus/pci/devices/${pci}/net"
+        if [ -d "$d" ]; then
+          n=$(ls "$d" 2>/dev/null | head -n1)
+          [ -n "$n" ] && { echo "$n"; return 0; }
+        fi
+        [ $c -eq 0 ] && log "waiting for PCI ${pci} net device ..." >&2
+        sleep 1; c=$((c + 1))
+      done
+      log "PCI ${pci} produced no net device after ${c}s" >&2
+      return 1
+      ;;
+    *)    # interface name
+      c=0
+      while [ ! -d "/sys/class/net/${spec}" ] && [ $c -lt 60 ]; do
+        [ $c -eq 0 ] && log "waiting for ifname ${spec} ..." >&2
+        sleep 1; c=$((c + 1))
+      done
+      echo "$spec"
+      [ -d "/sys/class/net/${spec}" ]
+      ;;
+  esac
+}
+
+RESOLVED=""
+OLDIFS="$IFS"; IFS=','
+for m in $MEMBERS; do
+  IFS="$OLDIFS"
+  name=$(resolve_member "$m")
+  if [ -n "$name" ]; then
+    log "member ${m} -> ${name}"
+    RESOLVED="${RESOLVED}${RESOLVED:+ }${name}"
+  else
+    log "member ${m} could not be resolved -- skipping"
+  fi
+  IFS=','
+done
+IFS="$OLDIFS"
+
+[ -n "$RESOLVED" ] || { log "no members resolved; aborting bond setup"; exit 0; }
+
+log "creating ${BOND} mode=${MODE} lacp_rate=${RATE} hash=${HASH} members=[${RESOLVED}]"
+
+if [ ! -d "/sys/class/net/${BOND}" ]; then
+  echo "+${BOND}" > /sys/class/net/bonding_masters
+fi
+
+echo "$MODE" > "/sys/class/net/${BOND}/bonding/mode"
+echo "$RATE" > "/sys/class/net/${BOND}/bonding/lacp_rate" 2>/dev/null || true
+echo "$HASH" > "/sys/class/net/${BOND}/bonding/xmit_hash_policy" 2>/dev/null || true
+
+for name in $RESOLVED; do
+  ip link set "$name" down 2>/dev/null || true
+  echo "+${name}" > "/sys/class/net/${BOND}/bonding/slaves" 2>/dev/null || log "enslave ${name} failed"
+done
+
+ip link set "$BOND" up 2>/dev/null || true
+for name in $RESOLVED; do ip link set "$name" up 2>/dev/null || true; done
+
+if [ -n "$VID" ]; then
+  VDEV="${BOND}.${VID}"
+  log "creating vlan ${VDEV} (id ${VID}) on ${BOND}"
+  if [ ! -d "/sys/class/net/${VDEV}" ]; then
+    ip link add link "$BOND" name "$VDEV" type vlan id "$VID" 2>/dev/null \
+      || vconfig add "$BOND" "$VID" 2>/dev/null || log "vlan create failed"
+  fi
+  ip link set "$VDEV" up 2>/dev/null || true
+fi
+
+i=0
+while [ $i -lt 30 ]; do
+  if [ "$(cat /sys/class/net/${BOND}/carrier 2>/dev/null)" = "1" ]; then
+    log "${BOND} carrier up after ${i}s"
+    break
+  fi
+  sleep 1
+  i=$((i + 1))
+done
+sleep 2
+
+log "done"
+exit 0

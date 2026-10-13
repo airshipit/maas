@@ -30,7 +30,12 @@ DISTRO            ?= ubuntu_noble
 DISTRO_ALIAS	  ?= ubuntu_noble
 STRIPPED_DISTRO   := $(shell echo $(DISTRO) | sed 's/^ubuntu_//')
 STRIPPED_DISTRO_ALIAS   := $(shell echo $(DISTRO_ALIAS) | sed 's/^ubuntu_//')
-IMAGE_NAME        := maas-rack-controller maas-region-controller sstream-cache
+IMAGE_NAME        := maas-rack-controller maas-region-controller sstream-cache maas-boot-proxy
+# Images that are distro-independent: no -<distro> suffix in image name or directory
+NO_DISTRO_IMAGES  := maas-boot-proxy
+# Distro-independent images are built (and published) only by this distro's jobs, so that
+# the per-distro jobs do not build/push the same image name from different base images
+NO_DISTRO_IMAGES_DISTRO ?= ubuntu_noble
 BUILD_DIR         := $(shell mktemp -d)
 HELM              := $(BUILD_DIR)/helm
 SSTREAM_IMAGE     := "https://images.maas.io/ephemeral-v3/stable/"
@@ -55,18 +60,21 @@ ifeq ($(USE_PROXY), true)
     DOCKER_EXTRA_ARGS += --build-arg "no_proxy=$(NO_PROXY)" --build-arg "NO_PROXY=$(NO_PROXY)"
 endif
 
+# $(call distro_suffix,<image>,<distro>) -> -<distro>, or empty for NO_DISTRO_IMAGES
+distro_suffix = $(if $(filter $(1),$(NO_DISTRO_IMAGES)),,-$(2))
+
 .PHONY: images
 # Build all images in the list
-images: $(IMAGE_NAME)
+images: $(filter-out $(if $(filter $(DISTRO),$(NO_DISTRO_IMAGES_DISTRO)),,$(NO_DISTRO_IMAGES)),$(IMAGE_NAME))
 
 $(IMAGE_NAME):
 	@echo
-	@echo "===== Processing [$@-$(STRIPPED_DISTRO)] image ====="
+	@echo "===== Processing [$@$(call distro_suffix,$@,$(STRIPPED_DISTRO))] image ====="
 	@make build \
-		IMAGE=${DOCKER_REGISTRY}/${IMAGE_PREFIX}/$@-$(STRIPPED_DISTRO):${IMAGE_TAG} \
-		IMAGE_ALIAS=${DOCKER_REGISTRY}/${IMAGE_PREFIX}/$@-$(STRIPPED_DISTRO_ALIAS):${IMAGE_TAG} \
-		IMAGE_NAME_FULL=$@-$(STRIPPED_DISTRO) \
-		IMAGE_DIR=images/$@-$(STRIPPED_DISTRO)
+		IMAGE=${DOCKER_REGISTRY}/${IMAGE_PREFIX}/$@$(call distro_suffix,$@,$(STRIPPED_DISTRO)):${IMAGE_TAG} \
+		IMAGE_ALIAS=${DOCKER_REGISTRY}/${IMAGE_PREFIX}/$@$(call distro_suffix,$@,$(STRIPPED_DISTRO_ALIAS)):${IMAGE_TAG} \
+		IMAGE_NAME_FULL=$@$(call distro_suffix,$@,$(STRIPPED_DISTRO)) \
+		IMAGE_DIR=images/$@$(call distro_suffix,$@,$(STRIPPED_DISTRO))
 
 # Create tgz of the chart
 .PHONY: charts

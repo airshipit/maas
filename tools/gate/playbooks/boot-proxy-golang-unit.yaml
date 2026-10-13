@@ -1,0 +1,39 @@
+# Copyright 2026 The Airship Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- hosts: primary
+  roles:
+    - role: ensure-go
+      vars:
+        go_version: "1.27.0"
+  tasks:
+    - name: Check formatting, vet and unit test the maas-boot-proxy
+      shell: |
+        set -xe
+        export PATH="/usr/local/go/bin:$(go env GOPATH)/bin:${PATH}"
+        go version
+        unformatted="$(gofmt -l .)"
+        if [ -n "${unformatted}" ]; then
+          echo "gofmt needed for:"
+          echo "${unformatted}"
+          exit 1
+        fi
+        go vet ./...
+        go test -race -cover ./...
+        # go.mod must not need changes (the module is stdlib only).
+        go mod tidy
+        git diff --exit-code -- go.mod go.sum
+      args:
+        chdir: "{{ zuul.project.src_dir }}/images/maas-boot-proxy"
+        executable: /bin/bash

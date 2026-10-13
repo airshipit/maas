@@ -1,0 +1,18 @@
+# Generic init-premount ORDER shipped by the bond overlay. It REPLACES MAAS's ORDER
+# (which did not list our injected 'bond' hook). We run bond FIRST (so the LACP
+# bond exists before any network configuration), then every other executable hook in the
+# directory -- preserving MAAS's plymouth/lvm2/cloud-initramfs-dyn-netconf and any future
+# ones without hardcoding their names. Mirrors the original pattern of sourcing
+# /conf/param.conf between hooks.
+if [ -x /scripts/init-premount/bond ]; then
+	/scripts/init-premount/bond "$@"
+	[ -e /conf/param.conf ] && . /conf/param.conf
+fi
+for _gs in /scripts/init-premount/*; do
+	case "${_gs}" in
+		*/ORDER|*/bond) continue ;;
+	esac
+	[ -x "${_gs}" ] || continue
+	"${_gs}" "$@"
+	[ -e /conf/param.conf ] && . /conf/param.conf
+done

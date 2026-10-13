@@ -1,11 +1,14 @@
 # Distribution / packaging
 build/
 *.tgz
+*.gz
 
 # devcontainer
 .devcontainer/
 
 .vscode/
+.idea/
+.junie/
 
 charts/deps/
 !charts/deps/.gitkeep
