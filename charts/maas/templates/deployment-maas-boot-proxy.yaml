@@ -1,0 +1,117 @@
+{{/*
+Copyright (c) 2026 AT&T Intellectual Property. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/}}
+
+{{- if and .Values.manifests.maas_boot_proxy .Values.conf.maas_boot_proxy.enabled }}
+{{- $cfg := .Values.conf.maas_boot_proxy }}
+{{- $port := $cfg.listen_port | default 8248 }}
+{{- $rackSvc := $cfg.rack_service | default dict }}
+{{- $rackPort := $rackSvc.port | default 5248 }}
+{{- if not (or $cfg.upstream .Values.manifests.rack_service) }}
+{{- fail "set conf.maas_boot_proxy.upstream or enable manifests.rack_service" }}
+{{- end }}
+{{- $passTarget := $cfg.upstream | default (printf "http://%s:%v" ($rackSvc.name | default "maas-rack") $rackPort) }}
+{{- $ep := .Values.endpoints.maas_boot_proxy }}
+{{- $fqdn := required "set conf.maas_boot_proxy.proxy_base_url or endpoints.maas_boot_proxy.host_fqdn_override.public" (.Values.conf.maas_boot_proxy.proxy_base_url | default $ep.host_fqdn_override.public) }}
+{{- $base := ternary $fqdn (printf "%s://%s%s" $ep.scheme.default $fqdn $ep.path.default) (hasPrefix "http" $fqdn) }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maas-boot-proxy
+  labels:
+    app: maas-boot-proxy
+spec:
+  replicas: {{ $cfg.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: maas-boot-proxy
+  template:
+    metadata:
+      labels:
+        app: maas-boot-proxy
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: maas-boot-proxy
+          image: {{ .Values.images.tags.maas_boot_proxy }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+          env:
+            - name: LISTEN_ADDR
+              value: {{ printf ":%v" $port | quote }}
+            - name: RACK_UPSTREAM
+              value: {{ $passTarget | quote }}
+            - name: PROXY_BASE
+              value: {{ $base | quote }}
+            - name: NODES_PATH
+              value: /etc/maas-boot-proxy/nodes/nodes.json
+            - name: RELOAD_INTERVAL
+              value: {{ $cfg.reload_interval | default "5s" | quote }}
+            - name: NODE_MISS_WAIT
+              value: {{ $cfg.node_miss_wait | default "0s" | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+{{- with $cfg.resources }}
+          resources:
+{{ toYaml . | indent 12 }}
+{{- end }}
+          ports:
+            - name: http
+              containerPort: {{ $port }}
+          volumeMounts:
+            # Mounted as a directory (never subPath) so kubelet keeps it updated.
+            - name: nodes
+              mountPath: /etc/maas-boot-proxy/nodes
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: {{ $port }}
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: {{ $port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        # Per-node network data (key nodes.json), hot-reloaded by the proxy.
+        - name: nodes
+          configMap:
+            name: {{ $cfg.nodes_configmap | default "maas-boot-proxy-nodes" }}
+            optional: true
+...
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maas-boot-proxy
+  labels:
+    app: maas-boot-proxy
+spec:
+  selector:
+    app: maas-boot-proxy
+  ports:
+    - name: http
+      port: {{ tuple "maas_boot_proxy" "internal" "http" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+      targetPort: {{ $port }}
+...
+{{- end }}

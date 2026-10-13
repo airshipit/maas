@@ -99,6 +99,7 @@ manifests:
   rack_statefulset: true
   syslog_statefulset: true
   syslog_service: true
+  rack_service: false
   test_maas_api: true
   secret_ssh_key: false
   ingress_region: true
@@ -106,6 +107,8 @@ manifests:
   maas_ingress: true
   network_policy: false
   httproute_region: false
+  httproute_boot_proxy: false
+  maas_boot_proxy: false
 
 images:
   tags:
@@ -122,6 +125,7 @@ images:
     error_pages: gcr.io/google_containers/ingress-gce-404-server-with-metrics-amd64:v1.6.0
     maas_syslog: quay.io/airshipit/maas-region-controller-noble:latest
     enable_tls: quay.io/airshipit/maas-region-controller-noble:latest
+    maas_boot_proxy: quay.io/airshipit/maas-boot-proxy:latest
   pull_policy: IfNotPresent
   local_registry:
     # TODO(portdirect): this chart does not yet support local image cacheing
@@ -179,6 +183,13 @@ network:
     node_port:
       enabled: false
 
+  boot_proxy:
+    httproute:
+      public: true
+      parentRef:
+        name: maas-gateway
+      annotations: {}
+
 storage:
   syslog:
     pvc:
@@ -190,6 +201,32 @@ storage:
       size: 5Gi
 
 conf:
+  # MAAS boot proxy; also requires manifests.maas_boot_proxy: true
+  maas_boot_proxy:
+    enabled: false
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 512Mi
+    # Public URL nodes use to reach the proxy, e.g. http://boot.example.com/boot.
+    # If null, built from endpoints.maas_boot_proxy.host_fqdn_override.public.
+    proxy_base_url: null
+    # Rack boot server URL. If null, the maas-rack Service is used
+    # (needs manifests.rack_service: true).
+    upstream: null
+    rack_service:
+      name: maas-rack
+      port: 5248
+    listen_port: 8248
+    # ConfigMap (key nodes.json) with per-node network data, hot-reloaded
+    # by the proxy. Must be in the proxy namespace.
+    nodes_configmap: maas-boot-proxy-nodes
+    reload_interval: 5s
+    # How long a request for an unknown MAC waits for it to appear in nodes.json.
+    node_miss_wait: 0s
   ssh:
     # A SSH private key strings to mount
     # to allow MaaS access virsh over SSH
@@ -846,6 +883,24 @@ endpoints:
         podport: 514
     host_fqdn_override:
       default: null
+  maas_boot_proxy:
+    name: maas-boot-proxy
+    hosts:
+      default: maas-boot-proxy
+      public: boot
+    host_fqdn_override:
+      default: null
+      # DNS name nodes use to reach the proxy; becomes the HTTPRoute hostname.
+      # If null, the HTTPRoute has no hostnames (reachable by IP).
+      public: null
+    path:
+      default: /boot
+    scheme:
+      default: "http"
+    port:
+      http:
+        default: 80
+        podport: 8248
   physicalprovisioner:
     name: drydock
     hosts:

@@ -1,0 +1,54 @@
+{{/*
+# Copyright (c) 2026 AT&T Intellectual Property. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+*/}}
+
+{{- if and .Values.manifests.maas_boot_proxy .Values.manifests.httproute_boot_proxy .Values.conf.maas_boot_proxy.enabled .Values.network.boot_proxy.httproute.public }}
+{{- $path := .Values.endpoints.maas_boot_proxy.path.default | default "/boot" }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: maas-boot-proxy
+  labels:
+    app: maas-boot-proxy
+{{- if .Values.network.boot_proxy.httproute.annotations }}
+  annotations:
+{{ toYaml .Values.network.boot_proxy.httproute.annotations | indent 4 }}
+{{- end }}
+spec:
+  parentRefs:
+{{ toYaml (list .Values.network.boot_proxy.httproute.parentRef) | indent 4 }}
+{{- if .Values.endpoints.maas_boot_proxy.host_fqdn_override.public }}
+  hostnames:
+  - {{ .Values.endpoints.maas_boot_proxy.host_fqdn_override.public | quote }}
+{{- end }}
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: {{ $path | quote }}
+    filters:
+      # Strip the /boot prefix so the proxy (and the rack behind it) sees
+      # /ipxe.cfg-<mac>, /images/..., /iso/...
+      - type: URLRewrite
+        urlRewrite:
+          path:
+            type: ReplacePrefixMatch
+            replacePrefixMatch: /
+    backendRefs:
+    - kind: Service
+      name: maas-boot-proxy
+      port: {{ tuple "maas_boot_proxy" "internal" "http" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+{{- end }}
