@@ -115,8 +115,8 @@ images:
     maas_region: quay.io/airshipit/maas-region-controller-noble:latest
     bootstrap: quay.io/airshipit/maas-region-controller-noble:latest
     export_api_key: quay.io/airshipit/maas-region-controller-noble:latest
-    maas_cache: quay.io/airshipit/sstream-cache-focal:latest
-    dep_check: quay.io/airshipit/kubernetes-entrypoint:latest-ubuntu_focal
+    maas_cache: quay.io/airshipit/sstream-cache-noble:latest
+    dep_check: quay.io/airshipit/kubernetes-entrypoint:latest-ubuntu_noble
     ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.26.1
     ingress_vip: docker.io/busybox:latest
     error_pages: gcr.io/google_containers/ingress-gce-404-server-with-metrics-amd64:v1.6.0
@@ -302,8 +302,8 @@ conf:
       proxy_server: null
     images:
       default_os: "ubuntu"
-      default_image: "focal"
-      default_kernel: "ga-20.04"
+      default_image: "noble"
+      default_kernel: "ga-24.04"
     credentials:
       secret:
         namespace: maas

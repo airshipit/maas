@@ -17,14 +17,14 @@
 
 set -xe
 
-DEFAULT_IMAGE="${DEFAULT_IMAGE:-jammy}"
-DEFAULT_KERNEL="${DEFAULT_KERNEL:-ga-22.04}"
+DEFAULT_IMAGE="${DEFAULT_IMAGE:-noble}"
+DEFAULT_KERNEL="${DEFAULT_KERNEL:-ga-24.04}"
 DEFAULT_OS="${DEFAULT_OS:-ubuntu}"
 
-DEP_CHECK_IMG="${DEP_CHECK_IMG:-quay.io/airshipit/kubernetes-entrypoint:latest-ubuntu_jammy}"
-REGION_CTL_IMG="${REGION_CTL_IMG:-localhost:5000/airshipit/maas-region-controller-jammy:latest}"
-RACK_CTL_IMG="${RACK_CTL_IMG:-localhost:5000/airshipit/maas-rack-controller-jammy:latest}"
-CACHE_IMG="${CACHE_IMG:-localhost:5000/airshipit/sstream-cache-jammy:latest}"
+DEP_CHECK_IMG="${DEP_CHECK_IMG:-quay.io/airshipit/kubernetes-entrypoint:latest-ubuntu_noble}"
+REGION_CTL_IMG="${REGION_CTL_IMG:-localhost:5000/airshipit/maas-region-controller-noble:latest}"
+RACK_CTL_IMG="${RACK_CTL_IMG:-localhost:5000/airshipit/maas-rack-controller-noble:latest}"
+CACHE_IMG="${CACHE_IMG:-localhost:5000/airshipit/sstream-cache-noble:latest}"
 
 # Generate value overrides to deploy maas
 cat <<eof >/tmp/values.maas.yaml

@@ -20,7 +20,7 @@ set -xe
 : ${OSH_EXTRA_HELM_ARGS:=""}
 : ${OSH_EXTRA_HELM_ARGS_POSTGRESQL:="$(helm osh get-values-overrides -p ${OSH_VALUES_OVERRIDES_PATH} -c postgresql ${FEATURES})"}
 
-DEP_CHECK_IMG="${DEP_CHECK_IMG:-quay.io/airshipit/kubernetes-entrypoint:latest-ubuntu_jammy}"
+DEP_CHECK_IMG="${DEP_CHECK_IMG:-quay.io/airshipit/kubernetes-entrypoint:latest-ubuntu_noble}"
 
 # Generate value overrides to deploy postgresql
 cat <<EOF >/tmp/values.postgres.yaml

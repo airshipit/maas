@@ -14,7 +14,7 @@
 set -x
 
 
-: "${DISTRO:="ubuntu_jammy"}"
+: "${DISTRO:="ubuntu_noble"}"
 
 env
 

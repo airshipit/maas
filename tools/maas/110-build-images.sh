@@ -17,17 +17,17 @@
 
 set -xe
 
-: "${BASE_IMG:="public.ecr.aws/docker/library/ubuntu:jammy"}"
+: "${BASE_IMG:="public.ecr.aws/docker/library/ubuntu:noble"}"
 : "${IMG_PATH:="./images"}"
 : "${MAAS_REPO:="quay.io/airshipit"}"
-: "${SSTREAM_RELEASE:="jammy"}"
+: "${SSTREAM_RELEASE:="noble"}"
 
 # Build kube-entrypoint image
 grep -q "${MAAS_REPO}/kubernetes-entrypoint" <(docker image ls) >/dev/null ||
 docker build \
-  -t "${MAAS_REPO}/kubernetes-entrypoint:latest-ubuntu_jammy" \
+  -t "${MAAS_REPO}/kubernetes-entrypoint:latest-ubuntu_noble" \
   --network=host \
-  -f ../kubernetes-entrypoint/images/Dockerfile.ubuntu_jammy \
+  -f ../kubernetes-entrypoint/images/Dockerfile.ubuntu_noble \
   --build-arg MAKE_TARGET=build \
   ../kubernetes-entrypoint
 
@@ -36,15 +36,15 @@ grep -q "${MAAS_REPO}/maas-region-controller" <(docker image ls) >/dev/null ||
 docker build \
   -t "${MAAS_REPO}/maas-region-controller:latest" \
   --network=host \
-  -f "${IMG_PATH}/maas-region-controller-jammy/Dockerfile" \
-  "${IMG_PATH}/maas-region-controller-jammy"
+  -f "${IMG_PATH}/maas-region-controller-noble/Dockerfile" \
+  "${IMG_PATH}/maas-region-controller-noble"
 
 grep -q "${MAAS_REPO}/maas-rack-controller" <(docker image ls) >/dev/null ||
 docker build \
   -t "${MAAS_REPO}/maas-rack-controller:latest" \
   --network=host \
-  -f "${IMG_PATH}/maas-rack-controller-jammy/Dockerfile" \
-  "${IMG_PATH}/maas-rack-controller-jammy"
+  -f "${IMG_PATH}/maas-rack-controller-noble/Dockerfile" \
+  "${IMG_PATH}/maas-rack-controller-noble"
 
 grep -q "${MAAS_REPO}/sstream-cache" <(docker image ls) >/dev/null ||
 docker build \
@@ -63,7 +63,7 @@ stat -f /tmp/maas-rack-controller.tar >/dev/null || docker image save "${MAAS_RE
 stat -f /tmp/sstream-cache.tar >/dev/null || docker image save "${MAAS_REPO}/sstream-cache:latest" -o /tmp/sstream-cache.tar
 
 # Load images to minikube
-grep -q "${MAAS_REPO}/kubernetes-entrypoint:latest-ubuntu_jammy" <(sudo -E minikube image ls) >/dev/null || sudo -E minikube image load /tmp/kubernetes-entrypoint.tar
+grep -q "${MAAS_REPO}/kubernetes-entrypoint:latest-ubuntu_noble" <(sudo -E minikube image ls) >/dev/null || sudo -E minikube image load /tmp/kubernetes-entrypoint.tar
 grep -q "${MAAS_REPO}/maas-region-controller:latest" <(sudo -E minikube image ls) >/dev/null || sudo -E minikube image load /tmp/maas-region-controller.tar
 grep -q "${MAAS_REPO}/maas-rack-controller:latest" <(sudo -E minikube image ls) >/dev/null || sudo -E minikube image load /tmp/maas-rack-controller.tar
 grep -q "${MAAS_REPO}/sstream-cache:latest" <(sudo -E minikube image ls) >/dev/null || sudo -E minikube image load /tmp/sstream-cache.tar

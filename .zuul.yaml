@@ -17,37 +17,21 @@
         - airship-maas-lint-ws
         - airship-maas-chart-build-gate
         - airship-maas-chart-build-latest-htk
-        - airship-maas-docker-build-gate-ubuntu-focal
-        - airship-maas-docker-build-gate-ubuntu-jammy
         - airship-maas-docker-build-gate-ubuntu-noble
         - airship-maas-lint-yaml
-        # disabled in order to decrease load on opendev infra
-        # - maas-airskiff-deployment-noble-kubeadm
-        # - maas-airskiff-deployment-jammy-kubeadm
-        # - maas-airskiff-deployment-focal-kubeadm
-        - maas-airskiff-deployment-noble-jammyhost-kubeadm-maas-upgrade
-        - maas-airskiff-deployment-noble-noblehost-kubeadm-maas-upgrade
+        # disabled until a proper MAAS functional test replaces it
+        # - maas-airskiff-deployment-noble-noblehost-kubeadm-maas-upgrade
     gate:
       jobs:
         - airship-maas-lint-ws
         - airship-maas-chart-build-gate
-        - airship-maas-docker-build-gate-ubuntu-focal
-        - airship-maas-docker-build-gate-ubuntu-jammy
         - airship-maas-docker-build-gate-ubuntu-noble
         - airship-maas-lint-yaml
 
     post:
       jobs:
-        - airship-maas-docker-publish-focal
-        - airship-maas-docker-publish-jammy
         - airship-maas-docker-publish-noble
         - maas-upload-git-mirror
-
-- nodeset:
-    name: airship-maas-single-node-jammy
-    nodes:
-      - name: primary
-        label: ubuntu-jammy
 
 - nodeset:
     name: airship-maas-single-node-noble
@@ -107,43 +91,6 @@
           patch_set: true
 
 - job:
-    name: airship-maas-docker-build-gate-ubuntu-jammy
-    timeout: 3600
-    parent: airship-docker-build-gate-base
-    nodeset: airship-maas-single-node-noble
-    required-projects:
-      - name: airship/treasuremap
-        override-checkout: v1.9
-    vars:
-      publish: false
-      distro: ubuntu_jammy
-      run_verbose_build: true
-      trivy_fail_on_vulns: true
-      trivy_severity: CRITICAL,HIGH
-      tags:
-        dynamic:
-          patch_set: true
-
-- job:
-    name: airship-maas-docker-build-gate-ubuntu-focal
-    timeout: 3600
-    parent: airship-docker-build-gate-base
-    nodeset: airship-maas-single-node-noble
-    required-projects:
-      - name: airship/treasuremap
-        override-checkout: v1.9
-    vars:
-      publish: false
-      distro: ubuntu_focal
-      run_verbose_build: true
-      trivy_fail_on_vulns: true
-      trivy_severity: CRITICAL,HIGH
-      tags:
-        dynamic:
-          patch_set: true
-
-
-- job:
     name: airship-maas-lint-yaml
     voting: true
     timeout: 900
@@ -151,50 +98,6 @@
     nodeset: airship-maas-single-node-noble
     irrelevant-files:
       - "^charts/maas/templates/.*"
-
-- job:
-    name: airship-maas-docker-publish-focal
-    timeout: 3600
-    parent: airship-docker-build-gate-base
-    nodeset: airship-maas-single-node-noble
-    required-projects:
-      - name: airship/treasuremap
-        override-checkout: v1.9
-    secrets:
-      - name: quay_creds
-        secret: airship_maas_quay_creds_2026
-        pass-to-parent: true
-    vars:
-      publish: true
-      distro: ubuntu_focal
-      tags:
-        dynamic:
-          branch: true
-          commit: true
-        static:
-          - latest
-
-- job:
-    name: airship-maas-docker-publish-jammy
-    timeout: 3600
-    parent: airship-docker-build-gate-base
-    nodeset: airship-maas-single-node-noble
-    required-projects:
-      - name: airship/treasuremap
-        override-checkout: v1.9
-    secrets:
-      - name: quay_creds
-        secret: airship_maas_quay_creds_2026
-        pass-to-parent: true
-    vars:
-      publish: true
-      distro: ubuntu_jammy
-      tags:
-        dynamic:
-          branch: true
-          commit: true
-        static:
-          - latest
 
 - job:
     name: airship-maas-docker-publish-noble
@@ -206,7 +109,7 @@
         override-checkout: v1.9
     secrets:
       - name: quay_creds
-        secret: airship_maas_quay_creds_2026
+        secret: airship_maas_quay_creds
         pass-to-parent: true
     vars:
       publish: true
@@ -217,69 +120,6 @@
           commit: true
         static:
           - latest
-
-# - job:
-#     name: maas-airskiff-deployment-noble-kubeadm
-#     description: |
-#       Deploy maas using Airskiff and submitted Shipyard changes.
-#     parent: treasuremap-airskiff-deploy-maas-drydock-base
-#     nodeset: treasuremap-airskiff-5nodes-ubuntu_noble
-#     required-projects:
-#       - name: airship/treasuremap
-#         override-checkout: v1.9
-#     roles:
-#       - zuul: airship/treasuremap
-#     vars:
-#       treasuremap_ref: v1.9
-#       ENABLE_SLEEP: false
-#       ENABLE_MAAS_UPGRADE: false
-#       CLONE_MAAS: false
-#       MAKE_MAAS_IMAGES: true
-#       DISTRO: ubuntu_noble
-#       gate_scripts_relative_path: ../../airship/treasuremap
-#       zuul_treasuremap_relative_path: ../../airship/treasuremap
-
-# - job:
-#     name: maas-airskiff-deployment-jammy-kubeadm
-#     description: |
-#       Deploy maas using Airskiff and submitted Shipyard changes.
-#     parent: treasuremap-airskiff-deploy-maas-drydock-base
-#     nodeset: treasuremap-airskiff-5nodes-ubuntu_noble
-#     required-projects:
-#       - name: airship/treasuremap
-#         override-checkout: v1.9
-#     roles:
-#       - zuul: airship/treasuremap
-#     vars:
-#       treasuremap_ref: v1.9
-#       ENABLE_SLEEP: false
-#       ENABLE_MAAS_UPGRADE: true
-#       CLONE_MAAS: false
-#       MAKE_MAAS_IMAGES: true
-#       DISTRO: ubuntu_jammy
-#       gate_scripts_relative_path: ../../airship/treasuremap
-#       zuul_treasuremap_relative_path: ../../airship/treasuremap
-
-# - job:
-#     name: maas-airskiff-deployment-focal-kubeadm
-#     description: |
-#       Deploy maas using Airskiff and submitted Shipyard changes.
-#     parent: treasuremap-airskiff-deploy-maas-drydock-base
-#     nodeset: treasuremap-airskiff-5nodes-ubuntu_noble
-#     required-projects:
-#       - name: airship/treasuremap
-#         override-checkout: v1.9
-#     roles:
-#       - zuul: airship/treasuremap
-#     vars:
-#       treasuremap_ref: v1.9
-#       ENABLE_SLEEP: false
-#       ENABLE_MAAS_UPGRADE: true
-#       CLONE_MAAS: false
-#       MAKE_MAAS_IMAGES: true
-#       DISTRO: ubuntu_focal
-#       gate_scripts_relative_path: ../../airship/treasuremap
-#       zuul_treasuremap_relative_path: ../../airship/treasuremap
 
 - job:
     name: maas-airskiff-deployment-noble-noblehost-kubeadm-maas-upgrade
@@ -304,58 +144,8 @@
       gate_scripts_relative_path: ../../airship/treasuremap
       zuul_treasuremap_relative_path: ../../airship/treasuremap
 
-
-- job:
-    name: maas-airskiff-deployment-noble-jammyhost-kubeadm-maas-upgrade
-    description: |
-      Deploy maas using Airskiff and submitted MAAS changes.
-    parent: treasuremap-airskiff-deploy-maas-drydock-base
-    nodeset: treasuremap-airskiff-5nodes-ubuntu_jammy
-    required-projects:
-      - name: airship/treasuremap
-        override-checkout: v1.9
-    roles:
-      - zuul: airship/treasuremap
-    vars:
-      treasuremap_ref: v1.9
-      ENABLE_SLEEP: false
-      ENABLE_MAAS_UPGRADE: true
-      CLONE_MAAS: false
-      MAKE_MAAS_IMAGES: true
-      helm_version: 4.2.2
-      HELM_ARTIFACT_URL: https://get.helm.sh/helm-v4.2.2-linux-amd64.tar.gz
-      DISTRO: ubuntu_noble
-      gate_scripts_relative_path: ../../airship/treasuremap
-      zuul_treasuremap_relative_path: ../../airship/treasuremap
-
 - secret:
     name: airship_maas_quay_creds
-    data:
-      username: !encrypted/pkcs1-oaep
-        - C3OlPbC72jwWy2KO224B+JoIThvsAhEvNG2USHtIISHWQPTod3fA2rDut28dopMoBiit4
-          qRK3V0e93LsjfiVLYgdxnlkNcKH6iNk6YT6pkCGx5veVHUxJcfl+x0EAFwK0sEMHjLxvN
-          3nahnLQG67WUDGdz0lMFnDG8pLU/tOzD9E5rNnbZOYjyVdmWXWVHIQGkwnK7fTkLbBCfu
-          KQR2DfmbqNcXMAQpsAM7himvYcRO/Fh18bO0ebsNscV2C31KhZgBnmtnaYu7wJvTh2W9+
-          rCFpKzBwJlnD97KfMv4ZlWwSH9QvwUC2UO/vcED9yZDwVFHU5okwI0QSwLyoGRs7T+Flc
-          Rwk8xGghJDgcxRjH7HHS3pDHaB1kZucEN+g10o2IRFLUcS4w2zYPrXfOZDWKymsvdkUW8
-          4XRuqSAuDdTHcjDk7aKpnySb0hDcVf5zNNFA7GqLajkBmaH59fKx1MjNocO3KmpHQ6yb+
-          TTIn4aK8xhT/S/Azy0khTTN/w/4A6JZ+eRVtDsnP0X4yJvWiYUP80OKk7/Vr3EyV3s1WN
-          n7YRW8veKEqi9CqzfZtW1MeQ6Bu8VrIduc/XST6JyYd8AyjmliiSs7YNCbd/Sz+pjl4I8
-          rQW7vThr7W9CQCEi+UMoUebArOM9d+LBGtlqZBROI1P1QaSPcxPm3f1/Rl7aqM=
-      password: !encrypted/pkcs1-oaep
-        - Aun3qSkZsZT+d7Zk7sLR2QoVEhK95OEJjJ6TdPMeSfuhAyIwQ0b9sBUk1BAsrOjlIdQO1
-          AOYhSpunpaita2KP1nt67GQwuQZkcZIE3UMQAUjIkU1fyTGwa3ZYR2Z4/fTzuslzRzOcL
-          9lvTaULTeXEoxs413shUK1W6EpMb5GMVUW4DvKwy4ei9ZBNVO+540p741+GgDZEH6UDKc
-          KGtYbsGDRudAAded82NsaODvoIOiXq9oQxiBDepv6Hyah8gqMuKBpLIQIsBRPeANtEBLN
-          M5S9SG4PygAveOa2pQya+HfPXy03QCDJ1DKhq7JRQGXfegSFi3RA52EXOpMXwrubM8mB/
-          LItJngcTvvKAGhipd7bTkMSSzXEOrnBBFLz6uol2pJNQtAHf//9Q1sI1PiV4Uzq91k4Yb
-          rFw9aOWKzlR3p6uxI/h+lOBdJhweb3IDkSMTbaWwNXn0RHVwBQJ8lwuXmyLNcl1VA7JFL
-          6sHAsxpOY+KFOLee2SfH/5uoNZW9ElxAjdGxzvKo7a+xnwgctzadSzVSoXRODf3RTFqbY
-          AQfFdvKSs5s1ytan8O2orSm0OtAMSjlL45WO/WXOk8xh9NcHh3XnOdLHm++A0x5vRDx9S
-          XOd766NTksnmoHHWP27YvRXxxFA+EBjgLq+xCiKS2QlYtOp88aBO+0hVHDTcLE=
-
-- secret:
-    name: airship_maas_quay_creds_2026
     data:
       username: !encrypted/pkcs1-oaep
         - JL/NqVJ2BQE/jOprOIybgQHwJ9tE8P2eLUxP6onaTNU6Tcs0ExqJhecEu0Rxj2ZdcWQ8U
@@ -391,59 +181,11 @@
       git_mirror_repository: airshipit/maas
     secrets:
       - name: git_mirror_credentials
-        secret: maas-airshipit-github-ed25519-secret-2026-01-13
+        secret: maas-airshipit-github-ed25519-secret
         pass-to-parent: true
 
 - secret:
-    name: maas-airshipit-github-secret-2023-03-23
-    data:
-      user: git
-      host: github.com
-      host_key: github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
-      ssh_key: !encrypted/pkcs1-oaep
-        - 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
-
-- secret:
-    name: maas-airshipit-github-ed25519-secret-2026-01-13
+    name: maas-airshipit-github-ed25519-secret
     data:
       user: git
       host: github.com
