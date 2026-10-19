@@ -1,0 +1,65 @@
+apiVersion: maas.airshipit.org/v1alpha1
+kind: MAASMachine
+metadata:
+  name: node-oam
+  namespace: maas
+spec:
+  desiredState: Deployed
+  identity:
+    hostname: node-oam
+    macAddresses:
+      - "52:54:00:00:00:02"
+  bmc:
+    powerType: redfish
+    address: 192.0.2.43
+    username: admin
+    passwordSecretRef:
+      name: node-oam-bmc
+      key: password
+  os:
+    distro: ubuntu
+    release: noble
+  bootMode: uefi
+  # VirtualMedia: the operator builds a self-contained (MODE=direct) per-node iPXE
+  # ISO and mounts it over Redfish. Use this on nodes whose boot NIC is an 802.3ad
+  # bond on a segment with no MAAS-managed DHCP: the ISO forms the LACP bond in the
+  # initramfs (via the bond overlay) so the ephemeral image can reach MAAS.
+  provisioning:
+    method: VirtualMedia
+  deviceAliases:
+    - name: gp_nic01
+      address: "0000:83:00.1"
+      bus: pci
+      dev: nic
+    - name: gp_nic02
+      address: "0000:04:00.0"
+      bus: pci
+      dev: nic
+  network:
+    primaryNetwork: oam
+    dns:
+      nameservers:
+        - 203.0.113.5
+    fabrics:
+      oam-fabric:
+        bonds:
+          bond1:
+            interfaces:
+              - match:
+                  deviceAlias: gp_nic01
+              - match:
+                  deviceAlias: gp_nic02
+            parameters:
+              mode: "802.3ad"
+              lacpRate: fast
+              transmitHashPolicy: layer3+4
+        # The IP-bearing VLAN interface is the boot NIC; its 802.1Q tag drives both
+        # the iPXE fetch VLAN and the in-kernel bond VLAN (bond1.41).
+        vlans:
+          bond1.41:
+            id: 41
+            link: bond1
+            network: oam
+            addresses:
+              - 198.51.100.87/24
+            gateway4: 198.51.100.121

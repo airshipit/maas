@@ -3,6 +3,10 @@ build/
 *.tgz
 *.gz
 
+# Go operator build artifacts
+/bin/
+cover.out
+
 # devcontainer
 .devcontainer/
 

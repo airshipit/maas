@@ -20,6 +20,8 @@ yaml-files:
 ignore: |
   **/charts/deps/**
   **/charts/maas/templates/**
+  **/charts/maas/crds/**
+  **/config/crd/**
   **/build/**
   **/build/charts/maas/templates/job-db-sync.yaml
   **/docs/**

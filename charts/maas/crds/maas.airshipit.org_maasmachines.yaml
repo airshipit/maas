@@ -1,0 +1,1085 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.23.0
+  name: maasmachines.maas.airshipit.org
+spec:
+  group: maas.airshipit.org
+  names:
+    kind: MAASMachine
+    listKind: MAASMachineList
+    plural: maasmachines
+    shortNames:
+    - mm
+    singular: maasmachine
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.systemId
+      name: System ID
+      type: string
+    - jsonPath: .spec.desiredState
+      name: Desired
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.powerState
+      name: Power
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          MAASMachine is the Schema for the maasmachines API. It represents a desired
+          physical machine provisioned via Canonical MAAS.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: MAASMachineSpec defines the desired state of a MAASMachine.
+            properties:
+              bmc:
+                description: |-
+                  BMC holds out-of-band power credentials used to enlist the machine when
+                  it is not already present in MAAS.
+                properties:
+                  address:
+                    description: Address is the BMC address/host.
+                    type: string
+                  parameters:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      Parameters carries additional power driver parameters passed to MAAS as is.
+                      For redfish, "redfish_system_id" (or "node_id") selects the target system.
+                    type: object
+                  password:
+                    description: |-
+                      Password is the BMC password provided inline. It overrides
+                      PasswordSecretRef; prefer the Secret reference.
+                    type: string
+                  passwordSecretRef:
+                    description: PasswordSecretRef references a Secret key holding
+                      the BMC password.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                      optional:
+                        description: Specify whether the Secret or its key must be
+                          defined
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  powerType:
+                    description: PowerType is the MAAS power driver (e.g. "ipmi",
+                      "redfish", "amt").
+                    type: string
+                  username:
+                    description: Username is the BMC username.
+                    type: string
+                type: object
+              bootMode:
+                description: BootMode selects the firmware boot mode (bios/uefi).
+                enum:
+                - bios
+                - uefi
+                type: string
+              cpuSets:
+                additionalProperties:
+                  type: string
+                description: 'CPUSets maps a name to an isolated CPU list, e.g. "dpdk":
+                  "2-9,14-21".'
+                type: object
+              desiredState:
+                default: Deployed
+                description: DesiredState is the MAAS lifecycle state to drive the
+                  machine toward.
+                enum:
+                - Commissioned
+                - Ready
+                - Deployed
+                - Released
+                type: string
+              deviceAliases:
+                description: |-
+                  DeviceAliases maps manifest-stable names to bus addresses. Interfaces and
+                  storage reference these aliases.
+                items:
+                  description: |-
+                    DeviceAlias maps a manifest-stable, human-authored name (e.g. "pxe_nic01",
+                    "bootdisk") to a physical device by its bus address. This is the SKU-stable
+                    addressing layer MAAS does not provide from discovery (MAAS reports ephemeral
+                    kernel names + per-unit serials). Interfaces and disks reference these aliases
+                    and the operator resolves each alias to the MAAS-discovered device by matching
+                    its bus address.
+                  properties:
+                    address:
+                      description: Address is the bus address, e.g. PCI "0000:06:00.0"
+                        or SCSI "0:2.0.0".
+                      type: string
+                    bus:
+                      description: Bus is how Address is interpreted.
+                      enum:
+                      - pci
+                      - scsi
+                      - idrac
+                      - usb
+                      - virtio
+                      type: string
+                    dev:
+                      description: Dev is an informational device class ("disk" or
+                        "nic"); it is not validated.
+                      type: string
+                    name:
+                      description: Name is the stable alias referenced by interfaces
+                        and storage.
+                      type: string
+                  required:
+                  - address
+                  - name
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
+              hugePages:
+                description: HugePages requests hugepage allocations on the node.
+                items:
+                  description: HugePages requests a hugepage allocation on the node.
+                  properties:
+                    count:
+                      description: Count is the number of pages of this size to allocate.
+                      format: int64
+                      type: integer
+                    name:
+                      description: Name is a stable label for the allocation (map
+                        key), often a NUMA group.
+                      type: string
+                    size:
+                      description: Size is the hugepage size, e.g. "2M" or "1G".
+                      type: string
+                  required:
+                  - count
+                  - name
+                  - size
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
+              identity:
+                description: Identity is how the operator matches or names the machine
+                  in MAAS.
+                properties:
+                  architecture:
+                    description: |-
+                      Architecture is the MAAS architecture string (e.g. "amd64/generic") used
+                      when pre-creating the machine via the MAAS API. Defaults to
+                      "amd64/generic" when empty.
+                    type: string
+                  hostname:
+                    description: |-
+                      Hostname is the desired MAAS hostname for the machine. It may be an FQDN,
+                      in which case the domain part is applied as the MAAS domain.
+                    type: string
+                  macAddresses:
+                    description: |-
+                      MACAddresses are boot interface MAC addresses used to match or enlist a
+                      machine.
+                    items:
+                      type: string
+                    type: array
+                  systemId:
+                    description: SystemID is the MAAS system_id of an already-enrolled
+                      machine.
+                    type: string
+                type: object
+              kernelParams:
+                additionalProperties:
+                  type: string
+                description: |-
+                  KernelParams are appended to the deployed node's kernel command line
+                  (e.g. isolcpus, intel_iommu, hugepagesz).
+                type: object
+              network:
+                description: Network is the machine-level networking layout.
+                properties:
+                  dns:
+                    description: DNS defines host-wide DNS nameservers and search
+                      paths.
+                    properties:
+                      nameservers:
+                        description: Nameservers lists upstream DNS servers configured
+                          on the node.
+                        items:
+                          type: string
+                        type: array
+                      search:
+                        description: Search lists DNS search domains configured on
+                          the node.
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  fabrics:
+                    additionalProperties:
+                      description: FabricNetplanConfig models Netplan v2 interface
+                        categories scoped to a specific MAAS fabric.
+                      properties:
+                        bonds:
+                          additionalProperties:
+                            description: BondConfig represents a bonded link-aggregation
+                              group.
+                            properties:
+                              addresses:
+                                description: Addresses is the list of IPv4 or IPv6
+                                  addresses with prefix length (e.g. "172.30.1.13/25").
+                                items:
+                                  type: string
+                                type: array
+                              dns:
+                                description: DNS configures resolver settings specific
+                                  to this interface or its subnet.
+                                properties:
+                                  nameservers:
+                                    description: Nameservers lists upstream DNS servers
+                                      configured on the node.
+                                    items:
+                                      type: string
+                                    type: array
+                                  search:
+                                    description: Search lists DNS search domains configured
+                                      on the node.
+                                    items:
+                                      type: string
+                                    type: array
+                                type: object
+                              gateway4:
+                                description: Gateway4 sets the default IPv4 gateway
+                                  for this interface.
+                                type: string
+                              interfaces:
+                                description: Interfaces lists the member physical
+                                  interfaces of this bond.
+                                items:
+                                  description: BondMemberAttachment selects a member
+                                    of a bond interface.
+                                  properties:
+                                    match:
+                                      description: Match selects the physical interface.
+                                      properties:
+                                        deviceAlias:
+                                          description: DeviceAlias resolves this interface
+                                            to a physical NIC by bus address.
+                                          type: string
+                                        macAddress:
+                                          description: MACAddress selects physical
+                                            NIC by MAC.
+                                          type: string
+                                      type: object
+                                  required:
+                                  - match
+                                  type: object
+                                type: array
+                              linkMode:
+                                description: LinkMode is the link state/mode (e.g.
+                                  "link-up", "unconfigured").
+                                type: string
+                              mtu:
+                                description: MTU overrides the interface MTU.
+                                type: integer
+                              network:
+                                description: Network is the logical network alias
+                                  (e.g. "pxe", "oam", "storage").
+                                type: string
+                              parameters:
+                                description: Parameters holds bonding mode and timing
+                                  parameters.
+                                properties:
+                                  downDelay:
+                                    description: DownDelay is the delay before disabling
+                                      a link after it goes down, in milliseconds.
+                                    type: integer
+                                  lacpRate:
+                                    description: LACPRate is the 802.3ad LACPDU transmit
+                                      rate.
+                                    enum:
+                                    - slow
+                                    - fast
+                                    type: string
+                                  miiMonitorInterval:
+                                    description: MIIMonitorInterval is the MII link
+                                      monitoring interval in milliseconds.
+                                    type: integer
+                                  mode:
+                                    default: 802.3ad
+                                    description: Mode is the bonding mode (e.g. "802.3ad",
+                                      "active-backup", "balance-rr").
+                                    enum:
+                                    - balance-rr
+                                    - active-backup
+                                    - balance-xor
+                                    - broadcast
+                                    - 802.3ad
+                                    - balance-tlb
+                                    - balance-alb
+                                    type: string
+                                  transmitHashPolicy:
+                                    description: TransmitHashPolicy is the transmit
+                                      hash policy for balancing modes.
+                                    enum:
+                                    - layer2
+                                    - layer2+3
+                                    - layer3+4
+                                    - encap2+3
+                                    - encap3+4
+                                    type: string
+                                  upDelay:
+                                    description: UpDelay is the delay before enabling
+                                      a link after it comes up, in milliseconds.
+                                    type: integer
+                                required:
+                                - mode
+                                type: object
+                              routes:
+                                description: Routes are additional static routes attached
+                                  to this interface.
+                                items:
+                                  description: Route is a static route programmed
+                                    on the deployed node.
+                                  properties:
+                                    destination:
+                                      description: Destination is the target CIDR;
+                                        "0.0.0.0/0" expresses a default route.
+                                      type: string
+                                    gateway:
+                                      description: Gateway is the next-hop address.
+                                      type: string
+                                    metric:
+                                      description: Metric optionally sets the route
+                                        metric.
+                                      type: integer
+                                  required:
+                                  - destination
+                                  - gateway
+                                  type: object
+                                type: array
+                            required:
+                            - interfaces
+                            type: object
+                          description: Bonds defines link aggregation groups connected
+                            to this fabric.
+                          type: object
+                        ethernets:
+                          additionalProperties:
+                            description: EthernetConfig represents a physical ethernet
+                              interface definition.
+                            properties:
+                              addresses:
+                                description: Addresses is the list of IPv4 or IPv6
+                                  addresses with prefix length (e.g. "172.30.1.13/25").
+                                items:
+                                  type: string
+                                type: array
+                              dns:
+                                description: DNS configures resolver settings specific
+                                  to this interface or its subnet.
+                                properties:
+                                  nameservers:
+                                    description: Nameservers lists upstream DNS servers
+                                      configured on the node.
+                                    items:
+                                      type: string
+                                    type: array
+                                  search:
+                                    description: Search lists DNS search domains configured
+                                      on the node.
+                                    items:
+                                      type: string
+                                    type: array
+                                type: object
+                              gateway4:
+                                description: Gateway4 sets the default IPv4 gateway
+                                  for this interface.
+                                type: string
+                              linkMode:
+                                description: LinkMode is the link state/mode (e.g.
+                                  "link-up", "unconfigured").
+                                type: string
+                              match:
+                                description: Match selects the physical device.
+                                properties:
+                                  deviceAlias:
+                                    description: DeviceAlias resolves this interface
+                                      to a physical NIC by bus address.
+                                    type: string
+                                  macAddress:
+                                    description: MACAddress selects physical NIC by
+                                      MAC.
+                                    type: string
+                                type: object
+                              mtu:
+                                description: MTU overrides the interface MTU.
+                                type: integer
+                              network:
+                                description: Network is the logical network alias
+                                  (e.g. "pxe", "oam", "storage").
+                                type: string
+                              routes:
+                                description: Routes are additional static routes attached
+                                  to this interface.
+                                items:
+                                  description: Route is a static route programmed
+                                    on the deployed node.
+                                  properties:
+                                    destination:
+                                      description: Destination is the target CIDR;
+                                        "0.0.0.0/0" expresses a default route.
+                                      type: string
+                                    gateway:
+                                      description: Gateway is the next-hop address.
+                                      type: string
+                                    metric:
+                                      description: Metric optionally sets the route
+                                        metric.
+                                      type: integer
+                                  required:
+                                  - destination
+                                  - gateway
+                                  type: object
+                                type: array
+                              sriov:
+                                description: SRIOV requests virtual functions on a
+                                  physical interface.
+                                properties:
+                                  trustMode:
+                                    description: TrustMode enables trusted mode on
+                                      the created virtual functions.
+                                    type: boolean
+                                  vfCount:
+                                    description: VFCount is the number of virtual
+                                      functions to enable.
+                                    minimum: 0
+                                    type: integer
+                                required:
+                                - vfCount
+                                type: object
+                            type: object
+                          description: Ethernets defines physical interfaces connected
+                            to this fabric.
+                          type: object
+                        vlans:
+                          additionalProperties:
+                            description: VLANConfig represents an 802.1Q tagged virtual
+                              interface.
+                            properties:
+                              addresses:
+                                description: Addresses is the list of IPv4 or IPv6
+                                  addresses with prefix length (e.g. "172.30.1.13/25").
+                                items:
+                                  type: string
+                                type: array
+                              dns:
+                                description: DNS configures resolver settings specific
+                                  to this interface or its subnet.
+                                properties:
+                                  nameservers:
+                                    description: Nameservers lists upstream DNS servers
+                                      configured on the node.
+                                    items:
+                                      type: string
+                                    type: array
+                                  search:
+                                    description: Search lists DNS search domains configured
+                                      on the node.
+                                    items:
+                                      type: string
+                                    type: array
+                                type: object
+                              gateway4:
+                                description: Gateway4 sets the default IPv4 gateway
+                                  for this interface.
+                                type: string
+                              id:
+                                description: ID is the IEEE 802.1Q VLAN ID (0 for
+                                  untagged).
+                                maximum: 4094
+                                minimum: 0
+                                type: integer
+                              link:
+                                description: Link is the parent interface name within
+                                  the fabric (e.g. "bond1" or "pxe").
+                                type: string
+                              linkMode:
+                                description: LinkMode is the link state/mode (e.g.
+                                  "link-up", "unconfigured").
+                                type: string
+                              mtu:
+                                description: MTU overrides the interface MTU.
+                                type: integer
+                              network:
+                                description: Network is the logical network alias
+                                  (e.g. "pxe", "oam", "storage").
+                                type: string
+                              routes:
+                                description: Routes are additional static routes attached
+                                  to this interface.
+                                items:
+                                  description: Route is a static route programmed
+                                    on the deployed node.
+                                  properties:
+                                    destination:
+                                      description: Destination is the target CIDR;
+                                        "0.0.0.0/0" expresses a default route.
+                                      type: string
+                                    gateway:
+                                      description: Gateway is the next-hop address.
+                                      type: string
+                                    metric:
+                                      description: Metric optionally sets the route
+                                        metric.
+                                      type: integer
+                                  required:
+                                  - destination
+                                  - gateway
+                                  type: object
+                                type: array
+                            required:
+                            - id
+                            - link
+                            type: object
+                          description: VLANs defines 802.1Q tagged virtual interfaces
+                            in this fabric.
+                          type: object
+                      type: object
+                    description: Fabrics maps each L2 Fabric name to its Netplan-idiomatic
+                      interface layout.
+                    type: object
+                  primaryNetwork:
+                    description: PrimaryNetwork is the primary logical network name
+                      (e.g. "oam").
+                    type: string
+                type: object
+              os:
+                description: OS is the operating system to deploy when DesiredState
+                  is Deployed.
+                properties:
+                  distro:
+                    description: Distro is the OS distribution (e.g. "ubuntu").
+                    type: string
+                  kernel:
+                    description: Kernel is an optional HWE/kernel selector (e.g. "ga-24.04").
+                    type: string
+                  release:
+                    description: Release is the OS release/series (e.g. "noble").
+                    type: string
+                type: object
+              ownerData:
+                additionalProperties:
+                  type: string
+                description: OwnerData is arbitrary key/value data stored on the MAAS
+                  machine object.
+                type: object
+              packageRepositories:
+                description: PackageRepositories are apt/rpm sources configured on
+                  the node.
+                items:
+                  description: PackageRepo is an apt/rpm repository configured on
+                    the node.
+                  properties:
+                    arches:
+                      description: Arches restricts the repository to the listed architectures.
+                      items:
+                        type: string
+                      type: array
+                    components:
+                      description: Components are the apt components to enable.
+                      items:
+                        type: string
+                      type: array
+                    distributions:
+                      description: Distributions are the apt distributions/suites
+                        to enable.
+                      items:
+                        type: string
+                      type: array
+                    gpgKey:
+                      description: GPGKey is the armored signing key or a key URL.
+                      type: string
+                    name:
+                      description: Name is a stable identifier for the repository
+                        (map key).
+                      type: string
+                    type:
+                      description: Type is the repository class.
+                      enum:
+                      - apt
+                      - rpm
+                      type: string
+                    url:
+                      description: URL is the repository base URL.
+                      type: string
+                  required:
+                  - name
+                  - type
+                  - url
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
+              placement:
+                description: Placement organizes the machine within MAAS (zone, pool,
+                  tags).
+                properties:
+                  resourcePool:
+                    description: ResourcePool is the MAAS resource pool for the machine.
+                    type: string
+                  tags:
+                    description: Tags are MAAS tags to ensure are applied to the machine.
+                    items:
+                      type: string
+                    type: array
+                  zone:
+                    description: Zone is the MAAS zone to place the machine in.
+                    type: string
+                type: object
+              provisioning:
+                description: |-
+                  Provisioning selects how the machine is bootstrapped into the MAAS
+                  lifecycle.
+                properties:
+                  method:
+                    default: Auto
+                    description: |-
+                      Method selects the bootstrap mechanism. The default, Auto, picks Network
+                      or VirtualMedia automatically; set one explicitly to override that choice.
+                    enum:
+                    - Auto
+                    - Network
+                    - VirtualMedia
+                    type: string
+                type: object
+              resources:
+                description: Resources constrains machine allocation to a minimum
+                  compute footprint.
+                properties:
+                  minCPU:
+                    description: MinCPU is the minimum number of CPU cores the allocated
+                      machine must have.
+                    minimum: 0
+                    type: integer
+                  minDiskGB:
+                    description: |-
+                      MinDiskGB is the minimum size, in gigabytes, of at least one disk on the
+                      allocated machine.
+                    minimum: 0
+                    type: integer
+                  minMemoryMB:
+                    description: |-
+                      MinMemoryMB is the minimum amount of RAM, in megabytes, the allocated
+                      machine must have.
+                    format: int64
+                    minimum: 0
+                    type: integer
+                type: object
+              sshAuthorizedKeys:
+                description: SSHAuthorizedKeys are public keys authorized on the deployed
+                  node.
+                items:
+                  type: string
+                type: array
+              storage:
+                description: Storage is the desired storage layout.
+                properties:
+                  bootDeviceAlias:
+                    description: BootDeviceAlias pins the boot disk when using a Layout
+                      preset.
+                    type: string
+                  disks:
+                    description: Disks defines explicit partitioning; overrides Layout
+                      when set.
+                    items:
+                      description: Disk is an explicitly partitioned block device.
+                      properties:
+                        bootable:
+                          description: Bootable marks this disk as the boot device.
+                          type: boolean
+                        deviceAlias:
+                          description: DeviceAlias (preferred) selects the block device
+                            by bus address.
+                          type: string
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels are free-form key/value labels used
+                            to identify the disk.
+                          type: object
+                        name:
+                          description: Name selects the block device by MAAS/kernel
+                            name when no alias is used.
+                          type: string
+                        partitionTable:
+                          description: PartitionTable is the partition table type.
+                          enum:
+                          - gpt
+                          - mbr
+                          type: string
+                        partitions:
+                          description: Partitions is the ordered set of partitions
+                            on the disk.
+                          items:
+                            description: Partition is a partition carved from a Disk.
+                            properties:
+                              bootable:
+                                description: Bootable marks the partition bootable.
+                                type: boolean
+                              filesystem:
+                                description: |-
+                                  Filesystem places a filesystem directly on the partition. Omit when the
+                                  partition is used as an LVM physical volume.
+                                properties:
+                                  label:
+                                    description: Label is the filesystem label.
+                                    type: string
+                                  mountOptions:
+                                    description: MountOptions are extra mount options
+                                      (fstab field).
+                                    type: string
+                                  mountPoint:
+                                    description: MountPoint is the absolute mount
+                                      path; omit for swap or unmounted volumes.
+                                    type: string
+                                  type:
+                                    description: Type is the filesystem type.
+                                    enum:
+                                    - ext4
+                                    - xfs
+                                    - btrfs
+                                    - vfat
+                                    - fat32
+                                    - swap
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                              grow:
+                                description: Grow expands the partition to fill the
+                                  remaining free space.
+                                type: boolean
+                              labels:
+                                additionalProperties:
+                                  type: string
+                                description: Labels are free-form key/value labels
+                                  used to identify the partition.
+                                type: object
+                              name:
+                                description: Name is a stable handle for the partition
+                                  (map key), e.g. "root", "pv0".
+                                type: string
+                              number:
+                                description: Number optionally pins the partition
+                                  number/order.
+                                type: integer
+                              sizeGiB:
+                                description: |-
+                                  SizeGiB is the partition size in GiB; omit with Grow=true to consume the
+                                  remaining free space on the disk.
+                                format: int64
+                                type: integer
+                            required:
+                            - name
+                            type: object
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
+                      type: object
+                    type: array
+                  layout:
+                    default: flat
+                    description: Layout is the MAAS quick preset applied when Disks
+                      is empty.
+                    enum:
+                    - flat
+                    - lvm
+                    - bcache
+                    - vmfs6
+                    - blank
+                    type: string
+                  volumeGroups:
+                    description: VolumeGroups defines LVM on top of disks/partitions
+                      used as PVs.
+                    items:
+                      description: VolumeGroup is an LVM volume group built from disks/partitions
+                        used as PVs.
+                      properties:
+                        logicalVolumes:
+                          description: LogicalVolumes are the volumes carved from
+                            this group.
+                          items:
+                            description: LogicalVolume is an LVM logical volume within
+                              a VolumeGroup.
+                            properties:
+                              filesystem:
+                                description: Filesystem places a filesystem on the
+                                  logical volume.
+                                properties:
+                                  label:
+                                    description: Label is the filesystem label.
+                                    type: string
+                                  mountOptions:
+                                    description: MountOptions are extra mount options
+                                      (fstab field).
+                                    type: string
+                                  mountPoint:
+                                    description: MountPoint is the absolute mount
+                                      path; omit for swap or unmounted volumes.
+                                    type: string
+                                  type:
+                                    description: Type is the filesystem type.
+                                    enum:
+                                    - ext4
+                                    - xfs
+                                    - btrfs
+                                    - vfat
+                                    - fat32
+                                    - swap
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                              grow:
+                                description: Grow expands the volume to fill the remaining
+                                  free extents.
+                                type: boolean
+                              name:
+                                description: Name is the logical volume name.
+                                type: string
+                              sizeGiB:
+                                description: |-
+                                  SizeGiB is the volume size in GiB; omit with Grow=true to consume the
+                                  remaining free extents in the volume group.
+                                format: int64
+                                type: integer
+                            required:
+                            - name
+                            type: object
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
+                        members:
+                          description: |-
+                            Members reference physical volumes: a whole disk ("bootdisk") or a
+                            partition ("bootdisk:pv0").
+                          items:
+                            type: string
+                          type: array
+                        name:
+                          description: Name is the volume group name.
+                          type: string
+                      required:
+                      - members
+                      - name
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                type: object
+              userDataSecretRef:
+                description: |-
+                  UserDataSecretRef references a Secret key containing raw cloud-init
+                  user-data applied at deploy time.
+                properties:
+                  key:
+                    description: The key of the secret to select from.  Must be a
+                      valid secret key.
+                    type: string
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                  optional:
+                    description: Specify whether the Secret or its key must be defined
+                    type: boolean
+                required:
+                - key
+                type: object
+                x-kubernetes-map-type: atomic
+            type: object
+          status:
+            description: MAASMachineStatus defines the observed state of a MAASMachine.
+            properties:
+              addresses:
+                description: Addresses are IP addresses currently reported by MAAS
+                  for the machine.
+                items:
+                  type: string
+                type: array
+              conditions:
+                description: Conditions represent the latest available observations
+                  of state.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              isoObjectKey:
+                description: |-
+                  ISOObjectKey is the object-store key of the per-node iPXE ISO currently
+                  published for this machine, when ProvisioningMethod is VirtualMedia. It is
+                  used to reclaim the artifact when the machine is deleted or re-imaged.
+                type: string
+              macAddresses:
+                description: |-
+                  MACAddresses are the interface MAC addresses MAAS has registered for the
+                  machine, seeded from spec.identity.macAddresses or the BMC-discovered NICs.
+                  MAAS serves per-node boot config keyed by any of them (ipxe.cfg-<mac>).
+                items:
+                  type: string
+                type: array
+              observedGeneration:
+                description: ObservedGeneration is the .metadata.generation last reconciled.
+                format: int64
+                type: integer
+              phase:
+                description: Phase is a coarse, human-readable reconciliation phase.
+                enum:
+                - Pending
+                - Enlisting
+                - Commissioning
+                - Ready
+                - Deploying
+                - Deployed
+                - Releasing
+                - Released
+                - Failed
+                type: string
+              powerState:
+                description: PowerState is the last observed MAAS power state.
+                type: string
+              providerId:
+                description: |-
+                  ProviderID is a stable identifier of the form maas:///<zone>/<system_id>,
+                  suitable for use as a Kubernetes node providerID.
+                type: string
+              provisioningMethod:
+                description: |-
+                  ProvisioningMethod is the boot mechanism the operator resolved for this
+                  machine (Network or VirtualMedia), after applying Auto inference.
+                enum:
+                - Auto
+                - Network
+                - VirtualMedia
+                type: string
+              resolvedAliases:
+                additionalProperties:
+                  type: string
+                description: |-
+                  ResolvedAliases echoes each spec DeviceAlias to the MAAS-discovered device
+                  name it resolved to, so operators can audit bus-address mapping.
+                type: object
+              systemId:
+                description: SystemID is the MAAS system_id assigned to the machine,
+                  once known.
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

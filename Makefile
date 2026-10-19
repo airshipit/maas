@@ -134,3 +134,46 @@ helm_lint: clean helm-install
 	cp -R charts/* build/charts/
 	$(HELM) dep up build/charts/maas
 	$(HELM) lint build/charts/maas
+
+# ---------------------------------------------------------------------------
+# MaaS Operator (Go) targets
+# ---------------------------------------------------------------------------
+
+LOCALBIN          ?= $(CURDIR)/bin
+CONTROLLER_GEN    ?= $(LOCALBIN)/controller-gen
+CONTROLLER_TOOLS_VERSION ?= v0.23.0
+
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+
+# Install controller-gen locally into ./bin
+.PHONY: controller-gen
+controller-gen: $(LOCALBIN)
+	@test -x $(CONTROLLER_GEN) || \
+		GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+
+# Generate deepcopy methods
+.PHONY: generate
+generate: controller-gen
+	$(CONTROLLER_GEN) object:headerFile=hack/boilerplate.go.txt paths=./api/...
+
+# Generate CRD manifests into the chart (config/crd is a symlink to it)
+.PHONY: manifests
+manifests: controller-gen
+	$(CONTROLLER_GEN) crd paths=./api/... output:crd:artifacts:config=charts/maas/crds
+
+.PHONY: go-fmt
+go-fmt:
+	go fmt ./...
+
+.PHONY: go-vet
+go-vet:
+	go vet ./...
+
+.PHONY: go-test
+go-test:
+	go test ./... -coverprofile cover.out
+
+.PHONY: go-build
+go-build: generate go-fmt go-vet
+	go build ./...

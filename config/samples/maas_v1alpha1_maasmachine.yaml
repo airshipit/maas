@@ -1,0 +1,53 @@
+apiVersion: maas.airshipit.org/v1alpha1
+kind: MAASMachine
+metadata:
+  name: node-1
+  namespace: maas
+spec:
+  desiredState: Deployed
+  identity:
+    hostname: node-1
+    macAddresses:
+      - "52:54:00:00:00:01"
+  bmc:
+    powerType: ipmi
+    address: 10.0.0.10
+    username: admin
+    passwordSecretRef:
+      name: node-1-bmc
+      key: password
+  placement:
+    zone: rack-1
+    resourcePool: compute
+    tags:
+      - kubernetes
+  os:
+    distro: ubuntu
+    release: noble
+  bootMode: uefi
+  deviceAliases:
+    - name: pxe_nic01
+      address: "0000:06:00.0"
+      bus: pci
+      dev: nic
+    - name: bootdisk
+      address: "0:2.0.0"
+      bus: scsi
+      dev: disk
+  network:
+    primaryNetwork: pxe
+    dns:
+      nameservers:
+        - 10.0.0.2
+    fabrics:
+      pxe-fabric:
+        ethernets:
+          pxe0:
+            match:
+              deviceAlias: pxe_nic01
+            network: pxe
+            addresses:
+              - 10.0.0.10/24
+  storage:
+    layout: lvm
+    bootDeviceAlias: bootdisk

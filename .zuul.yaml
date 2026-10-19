@@ -16,6 +16,7 @@
       jobs:
         - airship-maas-lint-ws
         - airship-maas-boot-proxy-golang-unit
+        - airship-maas-operator-golang-unit
         - airship-maas-chart-build-gate
         - airship-maas-chart-build-latest-htk
         - airship-maas-docker-build-gate-ubuntu-noble
@@ -26,6 +27,7 @@
       jobs:
         - airship-maas-lint-ws
         - airship-maas-boot-proxy-golang-unit
+        - airship-maas-operator-golang-unit
         - airship-maas-chart-build-gate
         - airship-maas-docker-build-gate-ubuntu-noble
         - airship-maas-lint-yaml
@@ -112,6 +114,26 @@
     files:
       - "^images/maas-boot-proxy/.*"
       - "^tools/gate/playbooks/boot-proxy-golang-unit.yaml$"
+
+- job:
+    name: airship-maas-operator-golang-unit
+    description: |
+      Generate, vet, build and unit test the MaaS operator (Go).
+    voting: true
+    timeout: 1800
+    run: tools/gate/playbooks/operator-golang-unit.yaml
+    nodeset: airship-maas-single-node-noble
+    files:
+      - "^api/.*"
+      - "^cmd/.*"
+      - "^internal/.*"
+      - "^config/.*"
+      - "^charts/maas/crds/.*"
+      - "^hack/.*"
+      - "^go.mod$"
+      - "^go.sum$"
+      - "^Makefile$"
+      - "^tools/gate/playbooks/operator-golang-unit.yaml$"
 
 - job:
     name: airship-maas-docker-publish-noble
